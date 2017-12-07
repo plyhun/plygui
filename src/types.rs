@@ -16,6 +16,6 @@ impl UiMemberCommon {
 		self.0.id
 	}    
     pub fn member_id(&self) -> &'static str {
-    	unsafe { (self.0.fn_member_id)(&self.0) }
+    	self.0.member_id()
     }
 }
