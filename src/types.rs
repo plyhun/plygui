@@ -9,7 +9,7 @@ pub enum Visibility {
 }
 
 #[repr(C)]
-pub struct UiMemberCommon(development::UiMemberBase);
+pub struct UiMemberCommon(pub(crate) development::UiMemberBase);
 
 impl UiMemberCommon {
 	pub fn id(&self) -> ids::Id {

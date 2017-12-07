@@ -3,10 +3,10 @@ pub mod layout;
 use super::{types, ids};
 
 pub struct UiMemberFunctions {
-    fn_member_id: unsafe fn(&UiMemberBase) -> &'static str,
-    fn_is_control: unsafe fn(&UiMemberBase) -> Option<&UiControlBase>,
-    fn_is_control_mut: unsafe fn(&mut UiMemberBase) -> Option<&mut UiControlBase>,
-    fn_size: unsafe fn(&UiMemberBase) -> (u16, u16),	
+    pub fn_member_id: unsafe fn(&UiMemberBase) -> &'static str,
+    pub fn_is_control: unsafe fn(&UiMemberBase) -> Option<&UiControlBase>,
+    pub fn_is_control_mut: unsafe fn(&mut UiMemberBase) -> Option<&mut UiControlBase>,
+    pub fn_size: unsafe fn(&UiMemberBase) -> (u16, u16),	
 }
 
 #[repr(C)]

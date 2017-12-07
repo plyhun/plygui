@@ -7,6 +7,7 @@ pub mod layout;
 pub mod ids;
 pub mod traits;
 pub mod types;
+pub mod utils;
 
 //pub use std::fmt::{Result as FmtResult, Formatter, Debug};
 
