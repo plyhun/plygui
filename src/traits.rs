@@ -16,7 +16,6 @@ pub trait UiMember {
     
     unsafe fn native_id(&self) -> usize;
     
-    // Keep in sync with UiMemberBase !!
     fn member_id(&self) -> &'static str;
     fn is_control(&self) -> Option<&UiControl>;
     fn is_control_mut(&mut self) -> Option<&mut UiControl>;
