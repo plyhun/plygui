@@ -7,6 +7,8 @@ pub struct UiMemberFunctions {
     pub fn_is_control: unsafe fn(&UiMemberBase) -> Option<&UiControlBase>,
     pub fn_is_control_mut: unsafe fn(&mut UiMemberBase) -> Option<&mut UiControlBase>,
     pub fn_size: unsafe fn(&UiMemberBase) -> (u16, u16),	
+    /*pub fn_draw: unsafe fn(&mut UiMemberBase, coords: Option<(i32, i32)>),
+    pub fn_measure: unsafe fn(&mut UiMemberBase, w: u16, h: u16) -> (u16, u16, bool),*/
 }
 
 #[repr(C)]
@@ -45,4 +47,15 @@ impl UiMemberBase {
     pub fn size(&self) -> (u16, u16) {
     	unsafe { (self.functions.fn_size)(self) }
     }
+    /*pub fn draw(&mut self, coords: Option<(i32, i32)>) {
+    	unsafe { (self.functions.fn_draw)(self, coords) }
+    }
+    pub fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) {
+    	unsafe { (self.functions.fn_measure)(self, w, h) }
+    }*/
+}
+
+pub trait UiDrawable {
+	fn draw(&mut self, coords: Option<(i32, i32)>);
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
 }

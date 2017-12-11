@@ -1,4 +1,4 @@
-use super::{layout, types, ids};
+use super::{layout, types, ids, development};
 
 pub trait UiApplication {
     fn new_window(&mut self, title: &str, width: u16, height: u16, has_menu: bool) -> Box<UiWindow>;
@@ -35,10 +35,7 @@ pub trait UiLayedOut: UiMember {
 	fn set_layout_alignment(&mut self, layout::Alignment);    
 }
 
-pub trait UiControl: UiLayedOut {
-    fn draw(&mut self, coords: Option<(i32, i32)>);
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
-
+pub trait UiControl: UiLayedOut + development::UiDrawable {
     fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
     fn is_container(&self) -> Option<&UiContainer>;
 
