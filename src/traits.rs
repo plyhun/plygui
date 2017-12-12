@@ -1,7 +1,7 @@
 use super::{layout, types, ids, development};
 
 pub trait UiApplication {
-    fn new_window(&mut self, title: &str, width: u16, height: u16, has_menu: bool) -> Box<UiWindow>;
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
     fn name(&self) -> &str;
     fn start(&mut self);
 }

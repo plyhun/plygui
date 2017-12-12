@@ -8,6 +8,12 @@ pub enum Visibility {
     Gone,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WindowStartSize {
+	Exact(u16, u16),
+	Fullscreen,
+}
+
 #[repr(C)]
 pub struct UiMemberCommon(pub(crate) development::UiMemberBase);
 
