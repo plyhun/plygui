@@ -17,8 +17,3 @@ pub mod utils;
 
 #[cfg(feature = "markup")]
 pub mod markup;
-
-//pub use std::fmt::{Result as FmtResult, Formatter, Debug};
-
-
-
