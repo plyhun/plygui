@@ -46,6 +46,9 @@ pub trait UiControl: UiLayedOut + development::UiDrawable {
     fn parent_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
     fn root(&self) -> Option<&types::UiMemberCommon>;
     fn root_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
+    
+    #[cfg(feature = "markup")]
+    fn fill_from_markup(&mut self, &super::markup::Markup, &super::markup::MarkupRegistry, &mut super::markup::MarkupIds);
 }
 
 pub trait UiContainer: UiMember {
@@ -96,6 +99,7 @@ pub trait UiWindow: UiSingleContainer {}
 pub trait UiButton: UiControl {
     //fn new(label: &str) -> Box<Self>;
     fn label(&self) -> &str;
+    fn set_label(&mut self, &str);
     fn on_left_click(&mut self, Option<Box<FnMut(&mut UiButton)>>);
 }
 

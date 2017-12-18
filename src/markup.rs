@@ -7,7 +7,13 @@ pub const ID: &str = "id";
 pub const TYPE: &str = "type";
 pub const CHILD: &str = "child";
 pub const CHILDREN: &str = "children";
-const FIELDS: &'static [&'static str] = &[ID, TYPE];
+const FIELDS: &[&str] = &[ID, TYPE];
+
+pub const MEMBER_TYPE_LINEAR_LAYOUT: &str = "LinearLayout";
+pub const MEMBER_TYPE_BUTTON: &str = "Button";
+
+pub type MarkupRegistry = HashMap<String, fn() -> Box<super::traits::UiControl>>;
+pub type MarkupIds = HashMap<String, super::ids::Id>;
 
 #[derive(Debug, Clone)]
 pub struct Markup {
@@ -23,7 +29,26 @@ pub enum MarkupNode {
 	Children(Vec<Markup>),
 }
 
-pub type MarkupIds = HashMap<String, super::ids::Id>;
+impl MarkupNode {
+	pub fn as_attribute(&self) -> &str {
+		match *self {
+			MarkupNode::Attribute(ref attr) => attr.as_str(),
+			_ => panic!("MarkupNode is not an Attribute: {:?}", self),
+		}
+	}
+	pub fn as_child(&self) -> &Markup {
+		match *self {
+			MarkupNode::Child(ref markup) => markup,
+			_ => panic!("MarkupNode is not a Child Markup: {:?}", self),
+		}
+	}
+	pub fn as_children(&self) -> &[Markup] {
+		match *self {
+			MarkupNode::Children(ref children) => children.as_slice(),
+			_ => panic!("MarkupNode is not the Children Markups: {:?}", self),
+		}
+	}
+}
 
 impl <'de> Deserialize<'de> for Markup {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
@@ -53,13 +78,13 @@ impl<'de> Visitor<'de> for MarkupVisitor {
             match key {
                 TYPE => {
                     if member_type.is_some() {
-                        return Err(de::Error::duplicate_field("type"));
+                        return Err(de::Error::duplicate_field(TYPE));
                     }
                     member_type = Some(map.next_value()?);
                 },
                 ID => {
                     if id.is_some() {
-                        return Err(de::Error::duplicate_field("id"));
+                        return Err(de::Error::duplicate_field(ID));
                     }
                     id = Some(map.next_value()?);
                 },
@@ -86,7 +111,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
         }
         Ok(Markup {
 	        id: id,
-	        member_type: member_type.ok_or_else(|| de::Error::missing_field("type"))?,
+	        member_type: member_type.ok_or_else(|| de::Error::missing_field(TYPE))?,
 	        attributes: attributes,
         })
     }
