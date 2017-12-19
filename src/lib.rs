@@ -4,8 +4,7 @@ extern crate derive_builder;
 #[cfg(feature = "markup")]
 extern crate serde;
 #[cfg(feature = "markup")]
-#[macro_use]
-extern crate serde_derive;
+extern crate serde_json;
 
 pub mod development;
 pub mod members;

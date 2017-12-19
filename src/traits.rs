@@ -48,7 +48,7 @@ pub trait UiControl: UiLayedOut + development::UiDrawable {
     fn root_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
     
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, &super::markup::Markup, &super::markup::MarkupRegistry, &mut super::markup::MarkupIds);
+    fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
 }
 
 pub trait UiContainer: UiMember {

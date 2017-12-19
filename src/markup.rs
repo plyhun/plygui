@@ -3,22 +3,107 @@ use std::collections::HashMap;
 
 use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess};
 
+pub type MemberType = String;
+pub type CallbackPtr = usize;
+pub type MemberSpawner = fn() -> Box<super::traits::UiControl>;
+
 pub const ID: &str = "id";
 pub const TYPE: &str = "type";
 pub const CHILD: &str = "child";
 pub const CHILDREN: &str = "children";
+
 const FIELDS: &[&str] = &[ID, TYPE];
 
 pub const MEMBER_TYPE_LINEAR_LAYOUT: &str = "LinearLayout";
 pub const MEMBER_TYPE_BUTTON: &str = "Button";
 
-pub type MarkupRegistry = HashMap<String, fn() -> Box<super::traits::UiControl>>;
-pub type MarkupIds = HashMap<String, super::ids::Id>;
+pub struct MarkupRegistry {
+	spawners: HashMap<MemberType, MemberSpawner>,
+	ids: HashMap<String, super::ids::Id>,
+	bindings: HashMap<String, CallbackPtr>,
+}
+
+impl MarkupRegistry {
+	pub fn new() -> MarkupRegistry {
+		MarkupRegistry {
+			spawners: HashMap::new(),
+			ids: HashMap::new(),
+			bindings: HashMap::new(),
+		}
+	}
+	
+	pub fn register_member(&mut self, member_type: MemberType, member_spawner: MemberSpawner) -> Result<(), MarkupError> {
+		if self.spawners.get(&member_type).is_none() {
+			self.spawners.insert(member_type, member_spawner); 
+			Ok(())
+		} else {
+			Err(MarkupError::MemberAlreadyRegistered)
+		}
+	}
+	pub fn unregister_member(&mut self, member_type: &MemberType) -> Result<(), MarkupError> {
+		if self.spawners.remove(member_type).is_none() {
+			Err(MarkupError::MemberNotFound)
+		} else {
+			Ok(())
+		}
+	}
+	pub fn member(&self, member_type: &MemberType) -> Result<&MemberSpawner, MarkupError> {
+		self.spawners.get(member_type).ok_or(MarkupError::MemberNotFound)
+	}
+	
+	pub fn bind_callback(&mut self, name: &str, callback: CallbackPtr) -> Result<(), MarkupError> {
+		if self.bindings.get(name).is_none() {
+			self.bindings.insert(name.into(), callback); 
+			Ok(())
+		} else {
+			Err(MarkupError::CallbackAlreadyBinded)
+		}
+	}
+	pub fn unbind_callback(&mut self, name: &str) -> Result<(), MarkupError> {
+		if self.bindings.remove(name).is_none() {
+			Err(MarkupError::CallbackNotFound)
+		} else {
+			Ok(())
+		}
+	}
+	pub fn callback(&self, name: &str) -> Result<&CallbackPtr, MarkupError> {
+		self.bindings.get(name).ok_or(MarkupError::CallbackNotFound)
+	}
+	
+	pub fn store_id(&mut self, control_id: &str, generated_id: super::ids::Id) -> Result<(), MarkupError> {
+		if self.ids.get(control_id).is_none() {
+			self.ids.insert(control_id.into(), generated_id); 
+			Ok(())
+		} else {
+			Err(MarkupError::IdAlreadyExists)
+		}
+	}
+	pub fn remove_id(&mut self, control_id: &str) -> Result<(), MarkupError> {
+		if self.ids.remove(control_id).is_none() {
+			Err(MarkupError::IdNotFound)
+		} else {
+			Ok(())
+		}
+	}
+	pub fn id(&self, control_id: &str) -> Result<&super::ids::Id, MarkupError> {
+		self.ids.get(control_id).ok_or(MarkupError::IdNotFound)
+	}
+}
+
+#[derive(Debug, Clone)]
+pub enum MarkupError {
+	MemberNotFound,
+	MemberAlreadyRegistered,
+	CallbackNotFound,
+	CallbackAlreadyBinded,
+	IdNotFound,
+	IdAlreadyExists,
+}
 
 #[derive(Debug, Clone)]
 pub struct Markup {
 	pub id: Option<String>,
-	pub member_type: String,
+	pub member_type: MemberType,
 	pub attributes: HashMap<String, MarkupNode>
 }
 
@@ -115,4 +200,12 @@ impl<'de> Visitor<'de> for MarkupVisitor {
 	        attributes: attributes,
         })
     }
+}
+
+pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<super::traits::UiControl> {
+	let markup: Markup = super::serde_json::from_str(json).unwrap();
+	
+	let mut control = registry.member(&markup.member_type).unwrap()();
+	control.fill_from_markup(&markup, registry);
+	control
 }
