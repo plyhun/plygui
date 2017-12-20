@@ -248,3 +248,13 @@ macro_rules! fill_from_markup_callbacks {
     	})+
 	}
 }
+#[macro_export]
+macro_rules! fill_from_markup_children {
+	($this: expr, $mrk: ident, $reg: ident) => {
+		for child_markup in $mrk.attributes.get(::plygui_api::markup::CHILDREN).unwrap_or(&::plygui_api::markup::MarkupNode::Children(vec![])).as_children() {
+    		let mut child = $reg.member(&child_markup.member_type).unwrap()();
+    		child.fill_from_markup(child_markup, $reg);
+			$this.push_child(child);
+		}	
+	}
+}
