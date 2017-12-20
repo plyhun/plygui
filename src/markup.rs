@@ -209,3 +209,42 @@ pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<super::tra
 	control.fill_from_markup(&markup, registry);
 	control
 }
+
+#[macro_export]
+macro_rules! bind_markup_callback {
+	($reg: ident, $cb: ident) => {
+		registry.bind_callback(stringify!($cb), $cb as CallbackPtr).unwrap();
+	}
+}
+#[macro_export]
+macro_rules! fill_from_markup_base {
+	($this: expr, $mrk: ident, $reg: ident, $typ:ty, [$($arg:ident),+]) => {
+		if !&[$($arg),+].contains(&$mrk.member_type.as_str()) {
+			match $mrk.id {
+				Some(ref id) => panic!("Markup does not belong to {}: {} ({})", stringify!($typ), $mrk.member_type, id),
+				None => panic!("Markup does not belong to {}: {}", stringify!($typ), $mrk.member_type),
+			}
+		}		
+    	if let Some(ref id) = $mrk.id {
+    		$reg.store_id(&id, $this.id()).unwrap();
+    	}
+	}
+}
+#[macro_export]
+macro_rules! fill_from_markup_label {
+	($this: expr, $mrk: ident) => {
+		$this.set_label(&$mrk.attributes.get("label").unwrap().as_attribute());
+	}
+}
+#[macro_export]
+macro_rules! fill_from_markup_callbacks {
+	($this: expr, $mrk: ident, $reg: ident, [$($cbname:expr => $cbtyp:ty),+]) => {
+		$(if let Some(callback) = $mrk.attributes.get($cbname) {
+    		let callback = $reg.callback(callback.as_attribute()).unwrap();
+    		$this.on_left_click(Some(Box::new(unsafe { 
+    			let callback: $cbtyp = mem::transmute(*callback);
+    			callback 
+    		})));
+    	})+
+	}
+}
