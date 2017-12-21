@@ -4,6 +4,8 @@ pub trait UiApplication {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
     fn name(&self) -> &str;
     fn start(&mut self);
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
 }
 
 pub trait UiMember {
@@ -33,6 +35,9 @@ pub trait UiLayedOut: UiMember {
 	fn set_layout_gravity(&mut self, layout::Gravity);
 	fn set_layout_orientation(&mut self, layout::Orientation);
 	fn set_layout_alignment(&mut self, layout::Alignment);    
+	
+	fn as_member(&self) -> &UiMember;
+	fn as_member_mut(&mut self) -> &mut UiMember;
 }
 
 pub trait UiControl: UiLayedOut + development::UiDrawable {
@@ -46,7 +51,10 @@ pub trait UiControl: UiLayedOut + development::UiDrawable {
     fn parent_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
     fn root(&self) -> Option<&types::UiMemberCommon>;
     fn root_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
-    
+
+	fn as_layed_out(&self) -> &UiLayedOut;
+	fn as_layed_out_mut(&mut self) -> &mut UiLayedOut;
+	    
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
 }
@@ -59,12 +67,18 @@ pub trait UiContainer: UiMember {
     fn is_multi(&self) -> Option<&UiMultiContainer> { None }
     fn is_single_mut(&mut self) -> Option<&mut UiSingleContainer> { None }
     fn is_single(&self) -> Option<&UiSingleContainer> { None }
+    
+	fn as_member(&self) -> &UiMember;
+	fn as_member_mut(&mut self) -> &mut UiMember;
 }
 
 pub trait UiSingleContainer: UiContainer {
 	fn set_child(&mut self, Option<Box<UiControl>>) -> Option<Box<UiControl>>;
     fn child(&self) -> Option<&UiControl>;
     fn child_mut(&mut self) -> Option<&mut UiControl>;
+    
+	fn as_container(&self) -> &UiContainer;
+	fn as_container_mut(&mut self) -> &mut UiContainer;
 }
 
 pub trait UiMultiContainer: UiContainer {
@@ -73,6 +87,9 @@ pub trait UiMultiContainer: UiContainer {
     fn remove_child_from(&mut self, index: usize) -> Option<Box<UiControl>>;
     fn child_at(&self, index: usize) -> Option<&Box<UiControl>>;
     fn child_at_mut(&mut self, index: usize) -> Option<&mut Box<UiControl>>;
+    
+	fn as_container(&self) -> &UiContainer;
+	fn as_container_mut(&mut self) -> &mut UiContainer;
     
     fn clear(&mut self) {
         let len = self.len();
@@ -94,18 +111,29 @@ pub trait UiMultiContainer: UiContainer {
     }
 }
 
-pub trait UiWindow: UiSingleContainer {}
+pub trait UiWindow: UiSingleContainer {
+	fn as_single_container(&self) -> &UiSingleContainer;
+	fn as_single_container_mut(&mut self) -> &mut UiSingleContainer;
+}
 
 pub trait UiButton: UiControl {
     //fn new(label: &str) -> Box<Self>;
     fn label(&self) -> &str;
     fn set_label(&mut self, &str);
     fn on_left_click(&mut self, Option<Box<FnMut(&mut UiButton)>>);
+    
+	fn as_control(&self) -> &UiControl;
+	fn as_control_mut(&mut self) -> &mut UiControl;
 }
 
 pub trait UiLinearLayout: UiMultiContainer + UiControl {
     fn orientation(&self) -> layout::Orientation;
     fn set_orientation(&mut self, layout::Orientation);
+    
+	fn as_control(&self) -> &UiControl;
+	fn as_control_mut(&mut self) -> &mut UiControl;
+	fn as_multi_container(&self) -> &UiMultiContainer;
+	fn as_multi_container_mut(&mut self) -> &mut UiMultiContainer;
 }
 
 pub trait UiRelativeLayout: UiMultiContainer + UiControl {}
