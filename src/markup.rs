@@ -241,10 +241,10 @@ macro_rules! fill_from_markup_callbacks {
 	($this: expr, $mrk: ident, $reg: ident, [$($cbname:expr => $cbtyp:ty),+]) => {
 		$(if let Some(callback) = $mrk.attributes.get($cbname) {
     		let callback = $reg.callback(callback.as_attribute()).unwrap();
-    		$this.on_left_click(Some(Box::new(unsafe { 
-    			let callback: $cbtyp = mem::transmute(*callback);
-    			callback 
-    		})));
+    		$this.on_left_click(Some(unsafe { 
+    			let callback: *mut Box<$cbtyp> = mem::transmute(*callback);
+    			*Box::from_raw(callback)  
+    		}));
     	})+
 	}
 }
