@@ -10,20 +10,19 @@ pub trait UiApplication {
 
 pub trait UiMember {
     fn size(&self) -> (u16, u16);
-    fn on_resize(&mut self, Option<Box<FnMut(&mut UiMember, u16, u16)>>);
+    fn on_resize(&mut self, Option<types::ResizeCallback>);
 
     fn set_visibility(&mut self, visibility: types::Visibility);
     fn visibility(&self) -> types::Visibility;
-	fn id(&self) -> ids::Id;
     
-    unsafe fn native_id(&self) -> usize;
+    fn as_base(&self) -> &types::UiMemberBase;
+    fn as_base_mut(&mut self) -> &mut types::UiMemberBase;
     
-    fn member_id(&self) -> &'static str;
-    fn is_control(&self) -> Option<&UiControl>;
+	fn is_control(&self) -> Option<&UiControl>;
     fn is_control_mut(&mut self) -> Option<&mut UiControl>;
 }
 
-pub trait UiLayedOut: UiMember {
+pub trait UiLayable: UiMember {
 	fn layout_width(&self) -> layout::Size;
 	fn layout_height(&self) -> layout::Size;
 	fn layout_gravity(&self) -> layout::Gravity;
@@ -40,20 +39,20 @@ pub trait UiLayedOut: UiMember {
 	fn as_member_mut(&mut self) -> &mut UiMember;
 }
 
-pub trait UiControl: UiLayedOut + development::UiDrawable {
+pub trait UiControl: UiLayable + development::UiDrawable {
     fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
     fn is_container(&self) -> Option<&UiContainer>;
 
 	fn on_added_to_container(&mut self, &UiContainer, x: u16, y: u16);
     fn on_removed_from_container(&mut self, &UiContainer);
     
-    fn parent(&self) -> Option<&types::UiMemberCommon>;
-    fn parent_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
-    fn root(&self) -> Option<&types::UiMemberCommon>;
-    fn root_mut(&mut self) -> Option<&mut types::UiMemberCommon>;
+    fn parent(&self) -> Option<&UiMember>;
+    fn parent_mut(&mut self) -> Option<&mut UiMember>;
+    fn root(&self) -> Option<&UiMember>;
+    fn root_mut(&mut self) -> Option<&mut UiMember>;
 
-	fn as_layed_out(&self) -> &UiLayedOut;
-	fn as_layed_out_mut(&mut self) -> &mut UiLayedOut;
+	fn as_layable(&self) -> &UiLayable;
+	fn as_layable_mut(&mut self) -> &mut UiLayable;
 	    
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
@@ -120,7 +119,7 @@ pub trait UiButton: UiControl {
     //fn new(label: &str) -> Box<Self>;
     fn label(&self) -> &str;
     fn set_label(&mut self, &str);
-    fn on_left_click(&mut self, Option<Box<FnMut(&mut UiButton)>>);
+    fn on_left_click(&mut self, Option<types::ClickCallback>);
     
 	fn as_control(&self) -> &UiControl;
 	fn as_control_mut(&mut self) -> &mut UiControl;

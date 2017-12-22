@@ -1,11 +1,18 @@
 use std::fmt;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess};
+use typemap::{Key, TypeMap};
 
 pub type MemberType = String;
-pub type CallbackPtr = usize;
+//pub type CallbackPtr = usize;
 pub type MemberSpawner = fn() -> Box<super::traits::UiControl>;
+
+struct CallbackKeyWrapper<T>(PhantomData<T>);
+struct CallbackWrapper<T>(Box<T>);
+
+impl <T: 'static> Key for CallbackKeyWrapper<T> { type Value = CallbackWrapper<T>; }
 
 pub const ID: &str = "id";
 pub const TYPE: &str = "type";
@@ -20,7 +27,7 @@ pub const MEMBER_TYPE_BUTTON: &str = "Button";
 pub struct MarkupRegistry {
 	spawners: HashMap<MemberType, MemberSpawner>,
 	ids: HashMap<String, super::ids::Id>,
-	bindings: HashMap<String, CallbackPtr>,
+	bindings: HashMap<String, TypeMap>,
 }
 
 impl MarkupRegistry {
@@ -51,9 +58,11 @@ impl MarkupRegistry {
 		self.spawners.get(member_type).ok_or(MarkupError::MemberNotFound)
 	}
 	
-	pub fn bind_callback(&mut self, name: &str, callback: CallbackPtr) -> Result<(), MarkupError> {
+	pub fn bind_callback<CallbackFn, Args>(&mut self, name: &str, callback: CallbackFn) -> Result<(), MarkupError> where CallbackFn: FnOnce<Args> + 'static {
 		if self.bindings.get(name).is_none() {
-			self.bindings.insert(name.into(), callback); 
+			let mut tm = TypeMap::new();
+			tm.insert::<CallbackKeyWrapper<CallbackFn>>(CallbackWrapper(Box::new(callback)));
+			self.bindings.insert(name.into(), tm); 
 			Ok(())
 		} else {
 			Err(MarkupError::CallbackAlreadyBinded)
@@ -66,8 +75,9 @@ impl MarkupRegistry {
 			Ok(())
 		}
 	}
-	pub fn callback(&self, name: &str) -> Result<&CallbackPtr, MarkupError> {
-		self.bindings.get(name).ok_or(MarkupError::CallbackNotFound)
+	pub fn callback<CallbackFn, Args>(&mut self, name: &str) -> Result<Box<CallbackFn>, MarkupError> where CallbackFn: FnOnce<Args> + 'static {
+		let tm = self.bindings.get_mut(name).ok_or(MarkupError::CallbackNotFound)?;
+		tm.remove::<CallbackKeyWrapper<CallbackFn>>().ok_or(MarkupError::CallbackNotFound).map(|wrapper|wrapper.0)
 	}
 	
 	pub fn store_id(&mut self, control_id: &str, generated_id: super::ids::Id) -> Result<(), MarkupError> {
