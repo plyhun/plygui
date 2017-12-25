@@ -47,20 +47,32 @@ impl UiMemberBase {
 macro_rules! callback {
 	($id: ident, $($typ:tt)+) => {
 		pub struct $id(Box<$($typ)+>);
-		impl <T> From<T> for $id where T: $($typ)+ + Sized {
+		impl <T> From<T> for $id where T: $($typ)+ + Sized + 'static {
 			fn from(t: T) -> $id {
 				$id(Box::new(t))
 			}
 		}
 		
-		/*impl AsRef<$($typ)+> for $id {
-			fn as_ref(&self) -> &$($typ)+ {
-				self.0.as_ref()
+		/*impl AsRef<Box<$($typ)+>> for $id {
+			fn as_ref(&self) -> &Box<$($typ)+> {
+				&self.0
 			}
 		}*/
+		
+		impl AsRef<$($typ)+> for $id {
+			fn as_ref(&self) -> &($($typ)+ + 'static) {
+				self.0.as_ref()
+			}
+		}
+		impl AsMut<$($typ)+> for $id {
+			fn as_mut(&mut self) -> &mut ($($typ)+ + 'static) {
+				self.0.as_mut()
+			}
+		}
 	}
 }
 
 callback!(ResizeCallback, FnMut(&mut traits::UiMember, u16, u16));
 callback!(ClickCallback, FnMut(&mut traits::UiButton));
+
 

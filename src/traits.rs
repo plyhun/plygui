@@ -20,6 +20,8 @@ pub trait UiMember {
     
 	fn is_control(&self) -> Option<&UiControl>;
     fn is_control_mut(&mut self) -> Option<&mut UiControl>;
+    
+    unsafe fn native_id(&self) -> usize;
 }
 
 pub trait UiLayable: UiMember {
@@ -46,10 +48,10 @@ pub trait UiControl: UiLayable + development::UiDrawable {
 	fn on_added_to_container(&mut self, &UiContainer, x: u16, y: u16);
     fn on_removed_from_container(&mut self, &UiContainer);
     
-    fn parent(&self) -> Option<&UiMember>;
-    fn parent_mut(&mut self) -> Option<&mut UiMember>;
-    fn root(&self) -> Option<&UiMember>;
-    fn root_mut(&mut self) -> Option<&mut UiMember>;
+    fn parent(&self) -> Option<&types::UiMemberBase>;
+    fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase>;
+    fn root(&self) -> Option<&types::UiMemberBase>;
+    fn root_mut(&mut self) -> Option<&mut types::UiMemberBase>;
 
 	fn as_layable(&self) -> &UiLayable;
 	fn as_layable_mut(&mut self) -> &mut UiLayable;
