@@ -1,4 +1,4 @@
-use super::{layout, types, ids, development};
+use super::{layout, callbacks, types, ids, development};
 
 pub trait UiApplication {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
@@ -10,7 +10,7 @@ pub trait UiApplication {
 
 pub trait UiMember {
     fn size(&self) -> (u16, u16);
-    fn on_resize(&mut self, Option<types::ResizeCallback>);
+    fn on_resize(&mut self, Option<callbacks::Resize>);
 
     fn set_visibility(&mut self, visibility: types::Visibility);
     fn visibility(&self) -> types::Visibility;
@@ -121,7 +121,7 @@ pub trait UiButton: UiControl {
     //fn new(label: &str) -> Box<Self>;
     fn label(&self) -> &str;
     fn set_label(&mut self, &str);
-    fn on_left_click(&mut self, Option<types::ClickCallback>);
+    fn on_left_click(&mut self, Option<callbacks::Click>);
     
 	fn as_control(&self) -> &UiControl;
 	fn as_control_mut(&mut self) -> &mut UiControl;

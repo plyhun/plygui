@@ -1,3 +1,5 @@
+use super::{ids, callbacks, traits};
+
 use std::fmt;
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -6,13 +8,12 @@ use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess};
 use typemap::{Key, TypeMap};
 
 pub type MemberType = String;
-//pub type CallbackPtr = usize;
-pub type MemberSpawner = fn() -> Box<super::traits::UiControl>;
+pub type MemberSpawner = fn() -> Box<traits::UiControl>;
 
 struct CallbackKeyWrapper<T>(PhantomData<T>);
-struct CallbackWrapper<T>(Box<T>);
+struct CallbackWrapper<T: callbacks::Callback>(T);
 
-impl <T: 'static> Key for CallbackKeyWrapper<T> { type Value = CallbackWrapper<T>; }
+impl <T: 'static> Key for CallbackKeyWrapper<T> where T: callbacks::Callback { type Value = CallbackWrapper<T>; }
 
 pub const ID: &str = "id";
 pub const TYPE: &str = "type";
@@ -26,7 +27,7 @@ pub const MEMBER_TYPE_BUTTON: &str = "Button";
 
 pub struct MarkupRegistry {
 	spawners: HashMap<MemberType, MemberSpawner>,
-	ids: HashMap<String, super::ids::Id>,
+	ids: HashMap<String, ids::Id>,
 	bindings: HashMap<String, TypeMap>,
 }
 
@@ -38,7 +39,6 @@ impl MarkupRegistry {
 			bindings: HashMap::new(),
 		}
 	}
-	
 	pub fn register_member(&mut self, member_type: MemberType, member_spawner: MemberSpawner) -> Result<(), MarkupError> {
 		if self.spawners.get(&member_type).is_none() {
 			self.spawners.insert(member_type, member_spawner); 
@@ -58,26 +58,23 @@ impl MarkupRegistry {
 		self.spawners.get(member_type).ok_or(MarkupError::MemberNotFound)
 	}
 	
-	pub fn bind_callback<CallbackFn, Args>(&mut self, name: &str, callback: CallbackFn) -> Result<(), MarkupError> where CallbackFn: FnOnce<Args> + 'static {
+	pub fn push_callback<CallbackFn>(&mut self, name: &str, callback: CallbackFn) -> Result<(), MarkupError> where CallbackFn: callbacks::Callback + 'static {
 		if self.bindings.get(name).is_none() {
 			let mut tm = TypeMap::new();
-			tm.insert::<CallbackKeyWrapper<CallbackFn>>(CallbackWrapper(Box::new(callback)));
+			tm.insert::<CallbackKeyWrapper<CallbackFn>>(CallbackWrapper(callback));
 			self.bindings.insert(name.into(), tm); 
 			Ok(())
 		} else {
 			Err(MarkupError::CallbackAlreadyBinded)
 		}
 	}
-	pub fn unbind_callback(&mut self, name: &str) -> Result<(), MarkupError> {
-		if self.bindings.remove(name).is_none() {
-			Err(MarkupError::CallbackNotFound)
-		} else {
-			Ok(())
-		}
+	pub fn peek_callback<CallbackFn>(&self, name: &str) -> Result<&CallbackFn, MarkupError> where CallbackFn: callbacks::Callback + 'static {
+		let tm = self.bindings.get(name).ok_or(MarkupError::CallbackNotFound)?;
+		tm.get::<CallbackKeyWrapper<CallbackFn>>().ok_or(MarkupError::CallbackNotFound).map(|wrapper| &wrapper.0)
 	}
-	pub fn callback<CallbackFn, Args>(&mut self, name: &str) -> Result<Box<CallbackFn>, MarkupError> where CallbackFn: FnOnce<Args> + 'static {
+	pub fn pop_callback<CallbackFn>(&mut self, name: &str) -> Result<CallbackFn, MarkupError> where CallbackFn: callbacks::Callback + 'static {
 		let tm = self.bindings.get_mut(name).ok_or(MarkupError::CallbackNotFound)?;
-		tm.remove::<CallbackKeyWrapper<CallbackFn>>().ok_or(MarkupError::CallbackNotFound).map(|wrapper|wrapper.0)
+		tm.remove::<CallbackKeyWrapper<CallbackFn>>().ok_or(MarkupError::CallbackNotFound).map(|wrapper| wrapper.0)
 	}
 	
 	pub fn store_id(&mut self, control_id: &str, generated_id: super::ids::Id) -> Result<(), MarkupError> {
@@ -236,7 +233,7 @@ macro_rules! fill_from_markup_base {
 			}
 		}		
     	if let Some(ref id) = $mrk.id {
-    		$reg.store_id(&id, $this.id()).unwrap();
+    		$reg.store_id(&id, $this.as_base().id()).unwrap();
     	}
 	}
 }

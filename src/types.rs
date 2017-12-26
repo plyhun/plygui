@@ -1,4 +1,4 @@
-use super::{development, ids, traits};
+use super::{development, ids};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -16,12 +16,6 @@ pub enum WindowStartSize {
 
 #[repr(C)]
 pub struct UiMemberBase(pub(crate) development::UiMemberCommon);
-
-/*impl <'a> From<&'a UiMemberBase> for &'a development::UiMemberCommon {
-	fn from(this: &'a UiMemberBase) -> &'a development::UiMemberCommon {
-		&this.0
-	}
-}*/
 
 impl AsRef<UiMemberBase> for development::UiMemberCommon {
 	fn as_ref(&self) -> &UiMemberBase {
@@ -42,37 +36,3 @@ impl UiMemberBase {
     	self.0.member_id()
     }
 }
-
-#[macro_export]
-macro_rules! callback {
-	($id: ident, $($typ:tt)+) => {
-		pub struct $id(Box<$($typ)+>);
-		impl <T> From<T> for $id where T: $($typ)+ + Sized + 'static {
-			fn from(t: T) -> $id {
-				$id(Box::new(t))
-			}
-		}
-		
-		/*impl AsRef<Box<$($typ)+>> for $id {
-			fn as_ref(&self) -> &Box<$($typ)+> {
-				&self.0
-			}
-		}*/
-		
-		impl AsRef<$($typ)+> for $id {
-			fn as_ref(&self) -> &($($typ)+ + 'static) {
-				self.0.as_ref()
-			}
-		}
-		impl AsMut<$($typ)+> for $id {
-			fn as_mut(&mut self) -> &mut ($($typ)+ + 'static) {
-				self.0.as_mut()
-			}
-		}
-	}
-}
-
-callback!(ResizeCallback, FnMut(&mut traits::UiMember, u16, u16));
-callback!(ClickCallback, FnMut(&mut traits::UiButton));
-
-
