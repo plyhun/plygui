@@ -55,6 +55,17 @@ impl UiMemberCommon {
     }*/
 }
 
+impl AsRef<UiMemberCommon> for types::UiMemberBase {
+	fn as_ref(&self) -> &UiMemberCommon {
+		unsafe { ::std::mem::transmute(self) }
+	} 
+}
+impl AsMut<UiMemberCommon> for types::UiMemberBase {
+	fn as_mut(&mut self) -> &mut UiMemberCommon {
+		unsafe { ::std::mem::transmute(self) }
+	} 
+}
+
 pub trait UiDrawable {
 	fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
