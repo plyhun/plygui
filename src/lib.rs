@@ -1,8 +1,5 @@
 //#![cfg_attr(feature = "markup", feature(unboxed_closures))] 
 
-#[macro_use]
-extern crate derive_builder;
-
 #[cfg(feature = "markup")]
 extern crate serde;
 #[cfg(feature = "markup")]

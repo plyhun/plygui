@@ -24,18 +24,25 @@ pub trait UiMember {
     unsafe fn native_id(&self) -> usize;
 }
 
+pub trait UiHasOrientation {
+	fn layout_orientation(&self) -> layout::Orientation;
+	fn set_layout_orientation(&mut self, layout::Orientation);
+}
+
 pub trait UiHasLayout: UiMember {
 	fn layout_width(&self) -> layout::Size;
 	fn layout_height(&self) -> layout::Size;
 	fn layout_gravity(&self) -> layout::Gravity;
-	fn layout_orientation(&self) -> layout::Orientation;
 	fn layout_alignment(&self) -> layout::Alignment;
+	fn layout_padding(&self) -> layout::BoundarySize;
+	fn layout_margin(&self) -> layout::BoundarySize;
 	
 	fn set_layout_width(&mut self, layout::Size);
 	fn set_layout_height(&mut self, layout::Size);
 	fn set_layout_gravity(&mut self, layout::Gravity);
-	fn set_layout_orientation(&mut self, layout::Orientation);
 	fn set_layout_alignment(&mut self, layout::Alignment);    
+	fn set_layout_padding(&mut self, layout::BoundarySizeArgs);
+	fn set_layout_margin(&mut self, layout::BoundarySizeArgs);
 	
 	fn as_member(&self) -> &UiMember;
 	fn as_member_mut(&mut self) -> &mut UiMember;
@@ -45,7 +52,7 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
     fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
     fn is_container(&self) -> Option<&UiContainer>;
 
-	fn on_added_to_container(&mut self, &UiContainer, x: u16, y: u16);
+	fn on_added_to_container(&mut self, &UiContainer, x: i32, y: i32);
     fn on_removed_from_container(&mut self, &UiContainer);
     
     fn parent(&self) -> Option<&types::UiMemberBase>;
@@ -138,7 +145,7 @@ pub trait UiButton: UiControl + UiClickable + UiHasLabel {
 	fn as_has_label_mut(&mut self) -> &mut UiHasLabel;	
 }
 
-pub trait UiLinearLayout: UiMultiContainer + UiControl {
+pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn orientation(&self) -> layout::Orientation;
     fn set_orientation(&mut self, layout::Orientation);
     
@@ -146,6 +153,8 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl {
 	fn as_control_mut(&mut self) -> &mut UiControl;
 	fn as_multi_container(&self) -> &UiMultiContainer;
 	fn as_multi_container_mut(&mut self) -> &mut UiMultiContainer;
+	fn as_has_orientation(&self) -> &UiHasOrientation;
+	fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
 
 pub trait UiRelativeLayout: UiMultiContainer + UiControl {}

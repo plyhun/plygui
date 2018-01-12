@@ -1,6 +1,6 @@
-pub mod layout;
+//pub mod layout;
 
-use super::{types, ids};
+use super::{types, ids, layout};
 
 pub struct UiMemberFunctions {
     pub fn_member_id: unsafe fn(&UiMemberCommon) -> &'static str,
@@ -14,7 +14,7 @@ pub struct UiMemberFunctions {
 #[repr(C)]
 pub struct UiControlCommon {
     pub member_base: UiMemberCommon,
-    pub layout: layout::LayoutBase,
+    pub layout: layout::Attributes,
 }
 
 #[repr(C)]
