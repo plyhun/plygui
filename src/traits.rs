@@ -2,7 +2,7 @@ use super::{layout, callbacks, types, ids, development};
 
 pub trait UiApplication {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
-    fn name(&self) -> &str;
+    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
