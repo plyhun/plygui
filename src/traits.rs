@@ -24,7 +24,7 @@ pub trait UiMember {
     unsafe fn native_id(&self) -> usize;
 }
 
-pub trait UiLayable: UiMember {
+pub trait UiHasLayout: UiMember {
 	fn layout_width(&self) -> layout::Size;
 	fn layout_height(&self) -> layout::Size;
 	fn layout_gravity(&self) -> layout::Gravity;
@@ -41,7 +41,7 @@ pub trait UiLayable: UiMember {
 	fn as_member_mut(&mut self) -> &mut UiMember;
 }
 
-pub trait UiControl: UiLayable + development::UiDrawable {
+pub trait UiControl: UiHasLayout + development::UiDrawable {
     fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
     fn is_container(&self) -> Option<&UiContainer>;
 
@@ -52,12 +52,15 @@ pub trait UiControl: UiLayable + development::UiDrawable {
     fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase>;
     fn root(&self) -> Option<&types::UiMemberBase>;
     fn root_mut(&mut self) -> Option<&mut types::UiMemberBase>;
-
-	fn as_layable(&self) -> &UiLayable;
-	fn as_layable_mut(&mut self) -> &mut UiLayable;
 	    
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
+
+	fn as_has_layout(&self) -> &UiHasLayout;
+	fn as_has_layout_mut(&mut self) -> &mut UiHasLayout;    
+
+	/*fn as_drawable(&self) -> &development::UiDrawable;
+	fn as_drawable_mut(&mut self) -> &mut development::UiDrawable;	*/
 }
 
 pub trait UiContainer: UiMember {
@@ -112,19 +115,27 @@ pub trait UiMultiContainer: UiContainer {
     }
 }
 
-pub trait UiWindow: UiSingleContainer {
+pub trait UiHasLabel {
+	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn set_label(&mut self, &str);
+}
+
+pub trait UiClickable {
+	fn on_click(&mut self, Option<callbacks::Click>);    
+}
+
+pub trait UiWindow: UiSingleContainer + UiHasLabel {
 	fn as_single_container(&self) -> &UiSingleContainer;
 	fn as_single_container_mut(&mut self) -> &mut UiSingleContainer;
 }
 
-pub trait UiButton: UiControl {
-    //fn new(label: &str) -> Box<Self>;
-    fn label(&self) -> &str;
-    fn set_label(&mut self, &str);
-    fn on_left_click(&mut self, Option<callbacks::Click>);
-    
-	fn as_control(&self) -> &UiControl;
+pub trait UiButton: UiControl + UiClickable + UiHasLabel {
+    fn as_control(&self) -> &UiControl;
 	fn as_control_mut(&mut self) -> &mut UiControl;
+	fn as_clickable(&self) -> &UiClickable;
+	fn as_clickable_mut(&mut self) -> &mut UiClickable;
+	fn as_has_label(&self) -> &UiHasLabel;
+	fn as_has_label_mut(&mut self) -> &mut UiHasLabel;	
 }
 
 pub trait UiLinearLayout: UiMultiContainer + UiControl {
