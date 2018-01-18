@@ -1,4 +1,6 @@
 //#![cfg_attr(feature = "markup", feature(unboxed_closures))] 
+//#![cfg_attr(test, feature(plugin))]
+//#![cfg_attr(test, plugin(clippy))]
 
 #[cfg(feature = "markup")]
 extern crate serde;

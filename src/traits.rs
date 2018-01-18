@@ -18,8 +18,8 @@ pub trait UiMember {
     fn as_base(&self) -> &types::UiMemberBase;
     fn as_base_mut(&mut self) -> &mut types::UiMemberBase;
     
-	fn is_control(&self) -> Option<&UiControl>;
-    fn is_control_mut(&mut self) -> Option<&mut UiControl>;
+	/*fn is_control(&self) -> Option<&UiControl>;
+    fn is_control_mut(&mut self) -> Option<&mut UiControl>;*/
     
     unsafe fn native_id(&self) -> usize;
 }
@@ -49,13 +49,10 @@ pub trait UiHasLayout: UiMember {
 }
 
 pub trait UiControl: UiHasLayout + development::UiDrawable {
-    fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
-    fn is_container(&self) -> Option<&UiContainer>;
+    /*fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
+    fn is_container(&self) -> Option<&UiContainer>;*/
 
-	fn on_added_to_container(&mut self, &UiContainer, x: i32, y: i32);
-    fn on_removed_from_container(&mut self, &UiContainer);
-    
-    fn parent(&self) -> Option<&types::UiMemberBase>;
+	fn parent(&self) -> Option<&types::UiMemberBase>;
     fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase>;
     fn root(&self) -> Option<&types::UiMemberBase>;
     fn root_mut(&mut self) -> Option<&mut types::UiMemberBase>;
@@ -74,10 +71,10 @@ pub trait UiContainer: UiMember {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&UiControl>;
 
-    fn is_multi_mut(&mut self) -> Option<&mut UiMultiContainer> { None }
+    /*fn is_multi_mut(&mut self) -> Option<&mut UiMultiContainer> { None }
     fn is_multi(&self) -> Option<&UiMultiContainer> { None }
     fn is_single_mut(&mut self) -> Option<&mut UiSingleContainer> { None }
-    fn is_single(&self) -> Option<&UiSingleContainer> { None }
+    fn is_single(&self) -> Option<&UiSingleContainer> { None }*/
     
 	fn as_member(&self) -> &UiMember;
 	fn as_member_mut(&mut self) -> &mut UiMember;
@@ -146,10 +143,7 @@ pub trait UiButton: UiControl + UiClickable + UiHasLabel {
 }
 
 pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
-    fn orientation(&self) -> layout::Orientation;
-    fn set_orientation(&mut self, layout::Orientation);
-    
-	fn as_control(&self) -> &UiControl;
+    fn as_control(&self) -> &UiControl;
 	fn as_control_mut(&mut self) -> &mut UiControl;
 	fn as_multi_container(&self) -> &UiMultiContainer;
 	fn as_multi_container_mut(&mut self) -> &mut UiMultiContainer;
