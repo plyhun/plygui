@@ -50,7 +50,14 @@ pub trait UiMultiContainerExtension: UiContainerExtension {
         }
     }
 }
+pub trait UiHasLabelExtension {
+	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn set_label(&mut self, &str);
+}
 
+pub trait UiClickableExtension {
+	fn on_click(&mut self, Option<callbacks::Click>);    
+}
 
 
 #[repr(C)]
@@ -141,6 +148,14 @@ impl <T: UiMultiContainerExtension + Sized> traits::UiMultiContainer for UiMembe
     fn as_container(&self) -> &traits::UiContainer { self }
 	fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
 }
+impl <T: UiHasLabelExtension + UiMemberExtension + Sized> traits::UiHasLabel for UiMemberBase<T> {
+	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
+    fn set_label(&mut self, label: &str) { self.inner.set_label(label) }
+}
+
+impl <T: UiClickableExtension + UiMemberExtension + Sized> traits::UiClickable for UiMemberBase<T> {
+	fn on_click(&mut self, callback: Option<callbacks::Click>) { self.inner.on_click(callback) }    
+}
 
 
 #[repr(C)]
@@ -178,7 +193,14 @@ impl <T: UiControlExtension + UiMultiContainerExtension + Sized> UiMultiContaine
     fn push_child(&mut self, child: Box<traits::UiControl>) { self.inner.push_child(child) }
     fn pop_child(&mut self) -> Option<Box<traits::UiControl>> { self.inner.pop_child() }
 }
+impl <T: UiControlExtension + UiHasLabelExtension + Sized> UiHasLabelExtension for UiControlBase<T> {
+	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
+    fn set_label(&mut self, label: &str) { self.inner.set_label(label) }
+}
 
+impl <T: UiControlExtension + UiClickableExtension + Sized> UiClickableExtension for UiControlBase<T> {
+	fn on_click(&mut self, callback: Option<callbacks::Click>) { self.inner.on_click(callback) }    
+}
 
 
 
