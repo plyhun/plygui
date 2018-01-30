@@ -4,9 +4,12 @@ pub trait UiMemberExtension {
 	fn size(&self) -> (u16, u16);
     fn on_resize(&mut self, Option<callbacks::Resize>);
     
+    fn set_visibility(&mut self, visibility: types::Visibility);
+    fn visibility(&self) -> types::Visibility;
+    
     unsafe fn native_id(&self) -> usize;
 }
-pub trait UiControlExtension: UiMemberExtension + UiDrawable {
+pub trait UiControlExtension: UiMemberExtension + UiDrawable + UiChild {
 	fn parent(&self) -> Option<&types::UiMemberBase>;
     fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase>;
     fn root(&self) -> Option<&types::UiMemberBase>;
@@ -14,6 +17,21 @@ pub trait UiControlExtension: UiMemberExtension + UiDrawable {
 	    
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
+}
+pub trait UiHasLayoutExtension: UiMemberExtension {
+	fn layout_width(&self) -> layout::Size;
+	fn layout_height(&self) -> layout::Size;
+	fn layout_gravity(&self) -> layout::Gravity;
+	fn layout_alignment(&self) -> layout::Alignment;
+	fn layout_padding(&self) -> layout::BoundarySize;
+	fn layout_margin(&self) -> layout::BoundarySize;
+	
+	fn set_layout_width(&mut self, layout::Size);
+	fn set_layout_height(&mut self, layout::Size);
+	fn set_layout_gravity(&mut self, layout::Gravity);
+	fn set_layout_alignment(&mut self, layout::Alignment);    
+	fn set_layout_padding(&mut self, layout::BoundarySizeArgs);
+	fn set_layout_margin(&mut self, layout::BoundarySizeArgs);
 }
 pub trait UiContainerExtension: UiMemberExtension {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl>;
@@ -54,10 +72,22 @@ pub trait UiHasLabelExtension {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn set_label(&mut self, &str);
 }
-
 pub trait UiClickableExtension {
 	fn on_click(&mut self, Option<callbacks::Click>);    
 }
+pub trait UiHasOrientationExtension {
+	fn layout_orientation(&self) -> layout::Orientation;
+	fn set_layout_orientation(&mut self, layout::Orientation);
+}
+pub trait UiWindowExtension: UiSingleContainerExtension + UiHasLabelExtension {
+}
+
+pub trait UiButtonExtension: UiControlExtension + UiClickableExtension + UiHasLabelExtension {	
+}
+
+pub trait UiLinearLayoutExtension: UiMultiContainerExtension + UiControlExtension + UiHasOrientationExtension {
+}
+
 
 
 #[repr(C)]
@@ -71,6 +101,15 @@ pub struct UiMemberBase<T: UiMemberExtension + Sized> {
 	common: UiMemberCommon,
 	inner: T
 }
+impl Default for UiMemberCommon {
+	fn default() -> UiMemberCommon {
+		UiMemberCommon {
+			id: ids::Id::next(),
+			visibility: types::Visibility::Visible,
+			on_resize: None
+		}
+	}
+}
 impl <T: UiMemberExtension + Sized> traits::UiMember for UiMemberBase<T> {
 	fn size(&self) -> (u16, u16) { self.inner.size() }
     fn on_resize(&mut self, callback: Option<callbacks::Resize>) { self.common.on_resize = callback; }
@@ -83,42 +122,6 @@ impl <T: UiMemberExtension + Sized> traits::UiMember for UiMemberBase<T> {
     
     unsafe fn native_id(&self) -> usize { self.inner.native_id() }
 }
-impl <T: UiControlExtension + Sized> traits::UiHasLayout for UiMemberBase<UiControlBase<T>> {
-	fn layout_width(&self) -> layout::Size { self.inner.common.layout.width }
-	fn layout_height(&self) -> layout::Size { self.inner.common.layout.height }
-	fn layout_gravity(&self) -> layout::Gravity { self.inner.common.layout.gravity }
-	fn layout_alignment(&self) -> layout::Alignment { self.inner.common.layout.alignment }
-	fn layout_padding(&self) -> layout::BoundarySize { self.inner.common.layout.padding }
-	fn layout_margin(&self) -> layout::BoundarySize { self.inner.common.layout.margin }
-	
-	fn set_layout_width(&mut self, width: layout::Size) { self.inner.common.layout.width = width }
-	fn set_layout_height(&mut self, height: layout::Size) { self.inner.common.layout.height = height }
-	fn set_layout_gravity(&mut self, gravity: layout::Gravity) { self.inner.common.layout.gravity = gravity }
-	fn set_layout_alignment(&mut self, alignment: layout::Alignment) { self.inner.common.layout.alignment = alignment }
-	fn set_layout_padding(&mut self, padding: layout::BoundarySizeArgs) { self.inner.common.layout.padding = padding.into() }
-	fn set_layout_margin(&mut self, margin: layout::BoundarySizeArgs) { self.inner.common.layout.margin = margin.into() }
-	
-	fn as_member(&self) -> &traits::UiMember { self }
-	fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
-}
-impl <T: UiControlExtension + Sized> traits::UiControl for UiMemberBase<UiControlBase<T>> {
-	fn parent(&self) -> Option<&types::UiMemberBase> { self.inner.inner.parent() }
-    fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase> { self.inner.inner.parent_mut() }
-    fn root(&self) -> Option<&types::UiMemberBase> { self.inner.inner.root() }
-    fn root_mut(&mut self) -> Option<&mut types::UiMemberBase> { self.inner.inner.root_mut() }
-	    
-    #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { { self.inner.inner.fill_from_markup(markup, registry) } }
-    
-    fn as_has_layout(&self) -> &traits::UiHasLayout { self }
-	fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
-}
-impl <T: UiControlExtension + Sized> UiDrawable for UiMemberBase<UiControlBase<T>> {
-	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.inner.on_added_to_container(parent, x, y) }
-    fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.inner.on_removed_from_container(parent) }
-    fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.inner.draw(coords) }
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.inner.measure(w, h) }
-}
 impl <T: UiContainerExtension + Sized> traits::UiContainer for UiMemberBase<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
@@ -126,6 +129,24 @@ impl <T: UiContainerExtension + Sized> traits::UiContainer for UiMemberBase<T> {
     fn as_member(&self) -> &traits::UiMember { self }
 	fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
 } 
+impl <T: UiHasLayoutExtension + Sized> traits::UiHasLayout for UiMemberBase<T> {
+	fn layout_width(&self) -> layout::Size { self.inner.layout_width() }
+	fn layout_height(&self) -> layout::Size { self.inner.layout_height() }
+	fn layout_gravity(&self) -> layout::Gravity { self.inner.layout_gravity() }
+	fn layout_alignment(&self) -> layout::Alignment { self.inner.layout_alignment() }
+	fn layout_padding(&self) -> layout::BoundarySize { self.inner.layout_padding() }
+	fn layout_margin(&self) -> layout::BoundarySize { self.inner.layout_margin() }
+	
+	fn set_layout_width(&mut self, width: layout::Size) { self.inner.set_layout_width(width) }
+	fn set_layout_height(&mut self, height: layout::Size) { self.inner.set_layout_height(height) }
+	fn set_layout_gravity(&mut self, gravity: layout::Gravity) { self.inner.set_layout_gravity(gravity) }
+	fn set_layout_alignment(&mut self, alignment: layout::Alignment) { self.inner.set_layout_alignment(alignment) }    
+	fn set_layout_padding(&mut self, padding: layout::BoundarySizeArgs) { self.inner.set_layout_padding(padding) }
+	fn set_layout_margin(&mut self, margin: layout::BoundarySizeArgs) { self.inner.set_layout_margin(margin) }
+
+    fn as_member(&self) -> &traits::UiMember { self }
+	fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+}
 impl <T: UiSingleContainerExtension + Sized> traits::UiSingleContainer for UiMemberBase<T> {
 	fn set_child(&mut self, child: Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>> { self.inner.set_child(child) }
     fn child(&self) -> Option<&traits::UiControl> { self.inner.child() }
@@ -152,10 +173,82 @@ impl <T: UiHasLabelExtension + UiMemberExtension + Sized> traits::UiHasLabel for
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.set_label(label) }
 }
-
 impl <T: UiClickableExtension + UiMemberExtension + Sized> traits::UiClickable for UiMemberBase<T> {
 	fn on_click(&mut self, callback: Option<callbacks::Click>) { self.inner.on_click(callback) }    
 }
+impl <T: UiHasOrientationExtension + UiMemberExtension + Sized> traits::UiHasOrientation for UiMemberBase<T> {
+	fn layout_orientation(&self) -> layout::Orientation { self.inner.layout_orientation() }
+	fn set_layout_orientation(&mut self, orientation: layout::Orientation) { self.inner.set_layout_orientation(orientation) }
+}
+impl <T: UiWindowExtension + Sized> traits::UiWindow for UiMemberBase<T> {
+	fn as_has_label(&self) -> &traits::UiHasLabel { self }
+	fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+	fn as_single_container(&self) -> &traits::UiSingleContainer { self }
+	fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
+}
+
+
+
+
+impl <T: UiControlExtension + Sized> traits::UiIsContainer for UiMemberBase<UiControlBase<T>> {
+	fn is_container_mut(&mut self) -> Option<&mut traits::UiContainer> { None }
+    fn is_container(&self) -> Option<&traits::UiContainer> { None }
+}
+impl <T: UiControlExtension + Sized> traits::UiControl for UiMemberBase<UiControlBase<T>> {
+	fn parent(&self) -> Option<&types::UiMemberBase> { self.inner.inner.parent() }
+    fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase> { self.inner.inner.parent_mut() }
+    fn root(&self) -> Option<&types::UiMemberBase> { self.inner.inner.root() }
+    fn root_mut(&mut self) -> Option<&mut types::UiMemberBase> { self.inner.inner.root_mut() }
+	    
+    #[cfg(feature = "markup")]
+    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { { self.inner.inner.fill_from_markup(markup, registry) } }
+    
+    fn as_has_layout(&self) -> &traits::UiHasLayout { self }
+	fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
+}
+impl <T: UiControlExtension + Sized> UiDrawable for UiMemberBase<UiControlBase<T>> {
+	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.inner.draw(coords) }
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.inner.measure(w, h) }
+}
+impl <T: UiControlExtension + Sized> UiChild for UiMemberBase<UiControlBase<T>> {
+	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.inner.on_added_to_container(parent, x, y) }
+    fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.inner.on_removed_from_container(parent) }
+}
+impl <T: UiControlExtension + Sized> traits::UiHasLayout for UiMemberBase<UiControlBase<T>> {
+	fn layout_width(&self) -> layout::Size { self.inner.common.layout.width }
+	fn layout_height(&self) -> layout::Size { self.inner.common.layout.height }
+	fn layout_gravity(&self) -> layout::Gravity { self.inner.common.layout.gravity }
+	fn layout_alignment(&self) -> layout::Alignment { self.inner.common.layout.alignment }
+	fn layout_padding(&self) -> layout::BoundarySize { self.inner.common.layout.padding }
+	fn layout_margin(&self) -> layout::BoundarySize { self.inner.common.layout.margin }
+	
+	fn set_layout_width(&mut self, width: layout::Size) { self.inner.common.layout.width = width }
+	fn set_layout_height(&mut self, height: layout::Size) { self.inner.common.layout.height = height }
+	fn set_layout_gravity(&mut self, gravity: layout::Gravity) { self.inner.common.layout.gravity = gravity }
+	fn set_layout_alignment(&mut self, alignment: layout::Alignment) { self.inner.common.layout.alignment = alignment }
+	fn set_layout_padding(&mut self, padding: layout::BoundarySizeArgs) { self.inner.common.layout.padding = padding.into() }
+	fn set_layout_margin(&mut self, margin: layout::BoundarySizeArgs) { self.inner.common.layout.margin = margin.into() }
+	
+	fn as_member(&self) -> &traits::UiMember { self }
+	fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+}
+impl <T: UiButtonExtension + Sized> traits::UiButton for UiMemberBase<UiControlBase<T>> {
+	fn as_control(&self) -> &traits::UiControl { self }
+	fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+	fn as_clickable(&self) -> &traits::UiClickable { self }
+	fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+	fn as_has_label(&self) -> &traits::UiHasLabel { self }
+	fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+}
+impl <T: UiLinearLayoutExtension + Sized> traits::UiLinearLayout for UiMemberBase<UiControlBase<T>> {
+	fn as_control(&self) -> &traits::UiControl { self }
+	fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+	fn as_multi_container(&self) -> &traits::UiMultiContainer { self }
+	fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
+	fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+	fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+}
+
 
 
 #[repr(C)]
@@ -170,6 +263,8 @@ pub struct UiControlBase<T: UiControlExtension + Sized> {
 impl <T: UiControlExtension + Sized> UiMemberExtension for UiControlBase<T> {
 	fn size(&self) -> (u16, u16) { self.inner.size() }
     fn on_resize(&mut self, callback: Option<callbacks::Resize>) { self.inner.on_resize(callback) }
+    fn set_visibility(&mut self, visibility: types::Visibility) { self.inner.set_visibility(visibility) }
+    fn visibility(&self) -> types::Visibility { self.inner.visibility() }
     
     unsafe fn native_id(&self) -> usize { self.inner.native_id() }
 }
@@ -197,16 +292,21 @@ impl <T: UiControlExtension + UiHasLabelExtension + Sized> UiHasLabelExtension f
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.set_label(label) }
 }
-
 impl <T: UiControlExtension + UiClickableExtension + Sized> UiClickableExtension for UiControlBase<T> {
 	fn on_click(&mut self, callback: Option<callbacks::Click>) { self.inner.on_click(callback) }    
+}
+impl <T: UiControlExtension + UiHasOrientationExtension + Sized> UiHasOrientationExtension for UiControlBase<T> {
+	fn layout_orientation(&self) -> layout::Orientation { self.inner.layout_orientation() }
+	fn set_layout_orientation(&mut self, orientation: layout::Orientation) { self.inner.set_layout_orientation(orientation) }
 }
 
 
 
 pub trait UiDrawable {
+	fn draw(&mut self, coords: Option<(i32, i32)>);
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
+}
+pub trait UiChild {
 	fn on_added_to_container(&mut self, &traits::UiContainer, x: i32, y: i32);
     fn on_removed_from_container(&mut self, &traits::UiContainer);
-    fn draw(&mut self, coords: Option<(i32, i32)>);
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
 }

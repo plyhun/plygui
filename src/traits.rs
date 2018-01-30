@@ -7,7 +7,6 @@ pub trait UiApplication {
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
 }
-
 pub trait UiMember {
     fn size(&self) -> (u16, u16);
     fn on_resize(&mut self, Option<callbacks::Resize>);
@@ -23,12 +22,10 @@ pub trait UiMember {
     
     unsafe fn native_id(&self) -> usize;
 }
-
 pub trait UiHasOrientation {
 	fn layout_orientation(&self) -> layout::Orientation;
 	fn set_layout_orientation(&mut self, layout::Orientation);
 }
-
 pub trait UiHasLayout: UiMember {
 	fn layout_width(&self) -> layout::Size;
 	fn layout_height(&self) -> layout::Size;
@@ -47,8 +44,11 @@ pub trait UiHasLayout: UiMember {
 	fn as_member(&self) -> &UiMember;
 	fn as_member_mut(&mut self) -> &mut UiMember;
 }
-
-pub trait UiControl: UiHasLayout + development::UiDrawable {
+pub trait UiIsContainer {
+	fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
+    fn is_container(&self) -> Option<&UiContainer>;
+}
+pub trait UiControl: UiHasLayout + UiIsContainer + development::UiDrawable + development::UiChild {
     /*fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
     fn is_container(&self) -> Option<&UiContainer>;*/
 
@@ -66,7 +66,6 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
 	/*fn as_drawable(&self) -> &development::UiDrawable;
 	fn as_drawable_mut(&mut self) -> &mut development::UiDrawable;	*/
 }
-
 pub trait UiContainer: UiMember {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&UiControl>;
@@ -79,7 +78,6 @@ pub trait UiContainer: UiMember {
 	fn as_member(&self) -> &UiMember;
 	fn as_member_mut(&mut self) -> &mut UiMember;
 }
-
 pub trait UiSingleContainer: UiContainer {
 	fn set_child(&mut self, Option<Box<UiControl>>) -> Option<Box<UiControl>>;
     fn child(&self) -> Option<&UiControl>;
@@ -88,7 +86,6 @@ pub trait UiSingleContainer: UiContainer {
 	fn as_container(&self) -> &UiContainer;
 	fn as_container_mut(&mut self) -> &mut UiContainer;
 }
-
 pub trait UiMultiContainer: UiContainer {
     fn len(&self) -> usize;
     fn set_child_to(&mut self, index: usize, Box<UiControl>) -> Option<Box<UiControl>>;
@@ -118,21 +115,19 @@ pub trait UiMultiContainer: UiContainer {
         }
     }
 }
-
 pub trait UiHasLabel {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn set_label(&mut self, &str);
 }
-
 pub trait UiClickable {
 	fn on_click(&mut self, Option<callbacks::Click>);    
 }
-
 pub trait UiWindow: UiSingleContainer + UiHasLabel {
+	fn as_has_label(&self) -> &UiHasLabel;
+	fn as_has_label_mut(&mut self) -> &mut UiHasLabel;
 	fn as_single_container(&self) -> &UiSingleContainer;
 	fn as_single_container_mut(&mut self) -> &mut UiSingleContainer;
 }
-
 pub trait UiButton: UiControl + UiClickable + UiHasLabel {
     fn as_control(&self) -> &UiControl;
 	fn as_control_mut(&mut self) -> &mut UiControl;
@@ -141,7 +136,6 @@ pub trait UiButton: UiControl + UiClickable + UiHasLabel {
 	fn as_has_label(&self) -> &UiHasLabel;
 	fn as_has_label_mut(&mut self) -> &mut UiHasLabel;	
 }
-
 pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_control(&self) -> &UiControl;
 	fn as_control_mut(&mut self) -> &mut UiControl;
@@ -150,5 +144,4 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
 	fn as_has_orientation(&self) -> &UiHasOrientation;
 	fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
-
 pub trait UiRelativeLayout: UiMultiContainer + UiControl {}
