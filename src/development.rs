@@ -96,11 +96,6 @@ pub struct UiMemberCommon {
     pub visibility: types::Visibility,
     pub on_resize: Option<callbacks::Resize>,
 }
-#[repr(C)]
-pub struct UiMemberBase<T: UiMemberExtension + Sized> {
-	common: UiMemberCommon,
-	inner: T
-}
 impl Default for UiMemberCommon {
 	fn default() -> UiMemberCommon {
 		UiMemberCommon {
@@ -109,6 +104,15 @@ impl Default for UiMemberCommon {
 			on_resize: None
 		}
 	}
+}
+#[repr(C)]
+pub struct UiMemberBase<T: UiMemberExtension + Sized> {
+	common: UiMemberCommon,
+	inner: T
+}
+impl <T: UiMemberExtension + Sized> traits::UiIsControl for UiMemberBase<T> {
+	default fn is_control(&self) -> Option<&traits::UiControl> { None }
+    default fn is_control_mut(&mut self) -> Option<&mut traits::UiControl> { None }
 }
 impl <T: UiMemberExtension + Sized> traits::UiMember for UiMemberBase<T> {
 	fn size(&self) -> (u16, u16) { self.inner.size() }
@@ -121,6 +125,14 @@ impl <T: UiMemberExtension + Sized> traits::UiMember for UiMemberBase<T> {
     fn as_base_mut(&mut self) -> &mut types::UiMemberBase { &mut self.common }	
     
     unsafe fn native_id(&self) -> usize { self.inner.native_id() }
+}
+impl <T: UiContainerExtension + Sized> traits::UiIsSingleContainer for UiMemberBase<T> {
+	default fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { None }
+    default fn is_single(&self) -> Option<&traits::UiSingleContainer> { None }
+}
+impl <T: UiContainerExtension + Sized> traits::UiIsMultiContainer for UiMemberBase<T> {
+	default fn is_multi_mut(&mut self) -> Option<&mut traits::UiMultiContainer> { None }
+    default fn is_multi(&self) -> Option<&traits::UiMultiContainer> { None }
 }
 impl <T: UiContainerExtension + Sized> traits::UiContainer for UiMemberBase<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
@@ -180,6 +192,10 @@ impl <T: UiHasOrientationExtension + UiMemberExtension + Sized> traits::UiHasOri
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.layout_orientation() }
 	fn set_layout_orientation(&mut self, orientation: layout::Orientation) { self.inner.set_layout_orientation(orientation) }
 }
+impl <T: UiWindowExtension + Sized> traits::UiIsSingleContainer for UiMemberBase<T> {
+	fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { Some(self) }
+    fn is_single(&self) -> Option<&traits::UiSingleContainer> { Some(self) }
+}
 impl <T: UiWindowExtension + Sized> traits::UiWindow for UiMemberBase<T> {
 	fn as_has_label(&self) -> &traits::UiHasLabel { self }
 	fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
@@ -190,9 +206,13 @@ impl <T: UiWindowExtension + Sized> traits::UiWindow for UiMemberBase<T> {
 
 
 
+impl <T: UiControlExtension + Sized> traits::UiIsControl for UiMemberBase<UiControlBase<T>> {
+	default fn is_control(&self) -> Option<&traits::UiControl> { Some(self) }
+    default fn is_control_mut(&mut self) -> Option<&mut traits::UiControl> { Some(self) }
+}
 impl <T: UiControlExtension + Sized> traits::UiIsContainer for UiMemberBase<UiControlBase<T>> {
-	fn is_container_mut(&mut self) -> Option<&mut traits::UiContainer> { None }
-    fn is_container(&self) -> Option<&traits::UiContainer> { None }
+	default fn is_container_mut(&mut self) -> Option<&mut traits::UiContainer> { None }
+    default fn is_container(&self) -> Option<&traits::UiContainer> { None }
 }
 impl <T: UiControlExtension + Sized> traits::UiControl for UiMemberBase<UiControlBase<T>> {
 	fn parent(&self) -> Option<&types::UiMemberBase> { self.inner.inner.parent() }
@@ -240,6 +260,14 @@ impl <T: UiButtonExtension + Sized> traits::UiButton for UiMemberBase<UiControlB
 	fn as_has_label(&self) -> &traits::UiHasLabel { self }
 	fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
 }
+impl <T: UiLinearLayoutExtension + Sized> traits::UiIsContainer for UiMemberBase<UiControlBase<T>> {
+	fn is_container_mut(&mut self) -> Option<&mut traits::UiContainer> { Some(self) }
+    fn is_container(&self) -> Option<&traits::UiContainer> { Some(self) }
+}
+impl <T: UiLinearLayoutExtension + Sized> traits::UiIsMultiContainer for UiMemberBase<UiControlBase<T>> {
+	fn is_multi_mut(&mut self) -> Option<&mut traits::UiMultiContainer> { Some(self) }
+    fn is_multi(&self) -> Option<&traits::UiMultiContainer> { Some(self) }
+}
 impl <T: UiLinearLayoutExtension + Sized> traits::UiLinearLayout for UiMemberBase<UiControlBase<T>> {
 	fn as_control(&self) -> &traits::UiControl { self }
 	fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
@@ -254,6 +282,13 @@ impl <T: UiLinearLayoutExtension + Sized> traits::UiLinearLayout for UiMemberBas
 #[repr(C)]
 pub struct UiControlCommon {
     pub layout: layout::Attributes,
+}
+impl Default for UiControlCommon {
+	fn default() -> UiControlCommon {
+		UiControlCommon {
+			layout: Default::default()
+		}
+	}
 }
 #[repr(C)]
 pub struct UiControlBase<T: UiControlExtension + Sized> {

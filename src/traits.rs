@@ -7,7 +7,11 @@ pub trait UiApplication {
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
 }
-pub trait UiMember {
+pub trait UiIsControl {
+	fn is_control(&self) -> Option<&UiControl>;
+    fn is_control_mut(&mut self) -> Option<&mut UiControl>;
+}
+pub trait UiMember: UiIsControl {
     fn size(&self) -> (u16, u16);
     fn on_resize(&mut self, Option<callbacks::Resize>);
 
@@ -17,10 +21,7 @@ pub trait UiMember {
     fn as_base(&self) -> &types::UiMemberBase;
     fn as_base_mut(&mut self) -> &mut types::UiMemberBase;
     
-	/*fn is_control(&self) -> Option<&UiControl>;
-    fn is_control_mut(&mut self) -> Option<&mut UiControl>;*/
-    
-    unsafe fn native_id(&self) -> usize;
+	unsafe fn native_id(&self) -> usize;
 }
 pub trait UiHasOrientation {
 	fn layout_orientation(&self) -> layout::Orientation;
@@ -49,10 +50,7 @@ pub trait UiIsContainer {
     fn is_container(&self) -> Option<&UiContainer>;
 }
 pub trait UiControl: UiHasLayout + UiIsContainer + development::UiDrawable + development::UiChild {
-    /*fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
-    fn is_container(&self) -> Option<&UiContainer>;*/
-
-	fn parent(&self) -> Option<&types::UiMemberBase>;
+    fn parent(&self) -> Option<&types::UiMemberBase>;
     fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase>;
     fn root(&self) -> Option<&types::UiMemberBase>;
     fn root_mut(&mut self) -> Option<&mut types::UiMemberBase>;
@@ -66,16 +64,19 @@ pub trait UiControl: UiHasLayout + UiIsContainer + development::UiDrawable + dev
 	/*fn as_drawable(&self) -> &development::UiDrawable;
 	fn as_drawable_mut(&mut self) -> &mut development::UiDrawable;	*/
 }
-pub trait UiContainer: UiMember {
+pub trait UiIsSingleContainer {
+	fn is_single_mut(&mut self) -> Option<&mut UiSingleContainer>;
+    fn is_single(&self) -> Option<&UiSingleContainer>;
+}
+pub trait UiIsMultiContainer {
+	fn is_multi_mut(&mut self) -> Option<&mut UiMultiContainer>;
+    fn is_multi(&self) -> Option<&UiMultiContainer>;
+}
+pub trait UiContainer: UiMember + UiIsSingleContainer + UiIsMultiContainer {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&UiControl>;
 
-    /*fn is_multi_mut(&mut self) -> Option<&mut UiMultiContainer> { None }
-    fn is_multi(&self) -> Option<&UiMultiContainer> { None }
-    fn is_single_mut(&mut self) -> Option<&mut UiSingleContainer> { None }
-    fn is_single(&self) -> Option<&UiSingleContainer> { None }*/
-    
-	fn as_member(&self) -> &UiMember;
+    fn as_member(&self) -> &UiMember;
 	fn as_member_mut(&mut self) -> &mut UiMember;
 }
 pub trait UiSingleContainer: UiContainer {
