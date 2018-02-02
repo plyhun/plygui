@@ -1,7 +1,7 @@
-use super::{traits};
+use super::traits;
 
 pub trait Callback {
-	fn id(&self) -> &'static str;
+    fn id(&self) -> &'static str;
 }
 
 #[macro_export]

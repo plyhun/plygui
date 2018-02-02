@@ -1,4 +1,4 @@
-//#![cfg_attr(feature = "markup", feature(unboxed_closures))] 
+//#![cfg_attr(feature = "markup", feature(unboxed_closures))]
 
 #[cfg(feature = "markup")]
 extern crate serde;
