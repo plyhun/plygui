@@ -154,9 +154,6 @@ pub trait UiButton: UiControl + UiClickable + UiHasLabel {
 }
 
 pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
-    fn orientation(&self) -> layout::Orientation;
-    fn set_orientation(&mut self, layout::Orientation);
-
     fn as_control(&self) -> &UiControl;
     fn as_control_mut(&mut self) -> &mut UiControl;
     fn as_multi_container(&self) -> &UiMultiContainer;
