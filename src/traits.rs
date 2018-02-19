@@ -73,6 +73,20 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
 pub trait UiContainer: UiMember {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&UiControl>;
+    
+    fn draw_area_size(&self) -> (u16, u16) {
+    	let mut size = self.size();
+    	if let Some(c) = self.is_control() {
+    		use std::cmp::max;
+    		
+    		let hl = c.as_has_layout();
+    		let (lp,tp,rp,bp) = hl.layout_padding().into();
+    		let (lm,tm,rm,bm) = hl.layout_margin().into();
+    		size.0 = max(0, size.0 as i32 - (lp + rp + lm + rm)) as u16;
+    		size.1 = max(0, size.1 as i32 - (tp + bp + tm + bm)) as u16;
+    	}
+    	size
+    }
 
     fn is_multi_mut(&mut self) -> Option<&mut UiMultiContainer> {
         None
@@ -162,4 +176,3 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
 
-pub trait UiRelativeLayout: UiMultiContainer + UiControl {}
