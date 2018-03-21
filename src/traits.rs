@@ -1,6 +1,27 @@
 use super::{layout, callbacks, types, ids, development};
 
-pub trait UiApplication {
+use std::any::Any;
+
+pub trait AsAny {
+    fn as_any(&self) -> &Any;
+    fn as_any_mut(&mut self) -> &mut Any;
+}
+
+pub trait UiMember: AsAny + development::seal::Sealed {
+    fn size(&self) -> (u16, u16);
+    fn on_resize(&mut self, Option<callbacks::Resize>);
+
+    fn set_visibility(&mut self, visibility: types::Visibility);
+    fn visibility(&self) -> types::Visibility;
+
+    fn id(&self) -> ids::Id;
+    unsafe fn native_id(&self) -> usize;
+    
+    fn is_control(&self) -> Option<&UiControl>;
+    fn is_control_mut(&mut self) -> Option<&mut UiControl>;
+}
+
+pub trait UiApplication: AsAny + development::seal::Sealed {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
     fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn start(&mut self);
@@ -8,23 +29,7 @@ pub trait UiApplication {
     fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
 }
 
-pub trait UiMember {
-    fn size(&self) -> (u16, u16);
-    fn on_resize(&mut self, Option<callbacks::Resize>);
-
-    fn set_visibility(&mut self, visibility: types::Visibility);
-    fn visibility(&self) -> types::Visibility;
-
-    fn as_base(&self) -> &types::UiMemberBase;
-    fn as_base_mut(&mut self) -> &mut types::UiMemberBase;
-
-    fn is_control(&self) -> Option<&UiControl>;
-    fn is_control_mut(&mut self) -> Option<&mut UiControl>;
-
-    unsafe fn native_id(&self) -> usize;
-}
-
-pub trait UiHasOrientation {
+pub trait UiHasOrientation: AsAny + development::seal::Sealed {
     fn layout_orientation(&self) -> layout::Orientation;
     fn set_layout_orientation(&mut self, layout::Orientation);
 }
@@ -55,10 +60,10 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
     fn on_added_to_container(&mut self, &UiContainer, x: i32, y: i32);
     fn on_removed_from_container(&mut self, &UiContainer);
 
-    fn parent(&self) -> Option<&types::UiMemberBase>;
-    fn parent_mut(&mut self) -> Option<&mut types::UiMemberBase>;
-    fn root(&self) -> Option<&types::UiMemberBase>;
-    fn root_mut(&mut self) -> Option<&mut types::UiMemberBase>;
+    fn parent(&self) -> Option<&UiMember>;
+    fn parent_mut(&mut self) -> Option<&mut UiMember>;
+    fn root(&self) -> Option<&UiMember>;
+    fn root_mut(&mut self) -> Option<&mut UiMember>;
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
@@ -144,12 +149,12 @@ pub trait UiMultiContainer: UiContainer {
     }
 }
 
-pub trait UiHasLabel {
+pub trait UiHasLabel: AsAny + development::seal::Sealed {
     fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn set_label(&mut self, &str);
 }
 
-pub trait UiClickable {
+pub trait UiClickable: AsAny + development::seal::Sealed {
     fn on_click(&mut self, Option<callbacks::Click>);
 }
 
@@ -175,4 +180,3 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_has_orientation(&self) -> &UiHasOrientation;
     fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
-

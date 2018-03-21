@@ -1,4 +1,5 @@
 //#![cfg_attr(feature = "markup", feature(unboxed_closures))]
+#![feature(specialization)]
 
 #[cfg(feature = "markup")]
 extern crate serde;
@@ -13,9 +14,12 @@ pub mod members;
 pub mod layout;
 pub mod ids;
 pub mod traits;
-pub mod utils;
 #[macro_use]
 pub mod callbacks;
 
 #[cfg(feature = "markup")]
 pub mod markup;
+
+
+#[cfg(test)]
+mod tests;
