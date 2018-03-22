@@ -155,7 +155,6 @@ pub trait ContainerInner: MemberInner {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl>;
 }
-
 impl <T: ContainerInner + Sized + 'static> traits::UiContainer for Member<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
@@ -409,15 +408,6 @@ impl <T: ClickableInner + ControlInner + MultiContainerInner + Sized + 'static> 
 
 // ===============================================================================================================
 
-pub trait WindowInner: HasLabelInner + SingleContainerInner {}
-
-impl <T: WindowInner + Sized + 'static> traits::UiWindow for Member<SingleContainer<T>> {
-	fn as_single_container(&self) -> &traits::UiSingleContainer { self }
-    fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
-}
-
-// ===============================================================================================================
-
 pub trait ApplicationInner {
 	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<traits::UiWindow>;
     fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
@@ -474,6 +464,41 @@ impl <T: HasOrientationInner + SingleContainerInner + ControlInner + Sized + 'st
 impl <T: HasOrientationInner + MultiContainerInner + ControlInner + Sized + 'static> traits::UiHasOrientation for Member<Control<MultiContainer<T>>> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.inner.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.inner.inner.set_layout_orientation(value) }
+}
+
+// ===============================================================================================================
+
+pub trait WindowInner: HasLabelInner + SingleContainerInner {}
+
+impl <T: WindowInner + Sized + 'static> traits::UiWindow for Member<SingleContainer<T>> {
+	fn as_single_container(&self) -> &traits::UiSingleContainer { self }
+    fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
+}
+
+// ===============================================================================================================
+
+pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {}
+
+impl <T: ButtonInner + Sized + 'static> traits::UiButton for Member<Control<T>> {
+	fn as_control(&self) -> &traits::UiControl { self }
+    fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+    fn as_clickable(&self) -> &traits::UiClickable { self }
+    fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+}
+
+// ===============================================================================================================
+
+pub trait LinearLayoutInner: ControlInner + MultiContainerInner + HasOrientationInner {}
+
+impl <T: LinearLayoutInner + Sized + 'static> traits::UiLinearLayout for Member<Control<MultiContainer<T>>> {
+	fn as_control(&self) -> &traits::UiControl { self }
+    fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+    fn as_multi_container(&self) -> &traits::UiMultiContainer { self }
+    fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
 }
 
 // ===============================================================================================================
