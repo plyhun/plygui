@@ -4,7 +4,7 @@ pub struct MemberMock {
 	
 }
 
-impl development::MemberInternal for MemberMock {
+impl development::MemberInner for MemberMock {
 	type Id = MockId;
 	
     fn size(&self) -> (u16, u16);
