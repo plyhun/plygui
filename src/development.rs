@@ -347,12 +347,12 @@ impl <T: MultiContainerInner + ControlInner + Sized + 'static> traits::UiMultiCo
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
 }
 impl <T: MultiContainerInner + Sized + 'static> Member<MultiContainer<T>> {
-	fn new(inner: T) -> Member<MultiContainer<T>> {
+	pub fn new(inner: T) -> Member<MultiContainer<T>> {
 		Member { inner: MultiContainer { inner: inner } }
 	}
 }
 impl <T: MultiContainerInner + ControlInner + Sized + 'static> Member<Control<MultiContainer<T>>> {
-	fn new(inner: T) -> Member<Control<MultiContainer<T>>> {
+	pub fn new(inner: T) -> Member<Control<MultiContainer<T>>> {
 		Member { inner: Control { inner: MultiContainer { inner: inner } } }
 	}
 }
