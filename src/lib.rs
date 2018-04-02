@@ -1,4 +1,8 @@
 //#![cfg_attr(feature = "markup", feature(unboxed_closures))]
+#![cfg_attr(feature = "cargo-clippy", allow(wrong_self_convention))]
+#![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
+#![cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
+#![cfg_attr(feature = "cargo-clippy", allow(borrowed_box))]
 
 #[cfg(feature = "markup")]
 extern crate serde;

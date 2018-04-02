@@ -14,8 +14,7 @@ struct CallbackKeyWrapper<T>(PhantomData<T>);
 struct CallbackWrapper<T: callbacks::Callback>(T);
 
 impl<T: 'static> Key for CallbackKeyWrapper<T>
-where
-    T: callbacks::Callback,
+    where T: callbacks::Callback
 {
     type Value = CallbackWrapper<T>;
 }
@@ -60,14 +59,13 @@ impl MarkupRegistry {
         }
     }
     pub fn member(&self, member_type: &MemberType) -> Result<&MemberSpawner, MarkupError> {
-        self.spawners.get(member_type).ok_or(
-            MarkupError::MemberNotFound,
-        )
+        self.spawners
+            .get(member_type)
+            .ok_or(MarkupError::MemberNotFound)
     }
 
     pub fn push_callback<CallbackFn>(&mut self, name: &str, callback: CallbackFn) -> Result<(), MarkupError>
-    where
-        CallbackFn: callbacks::Callback + 'static,
+        where CallbackFn: callbacks::Callback + 'static
     {
         if self.bindings.get(name).is_none() {
             let mut tm = TypeMap::new();
@@ -79,21 +77,21 @@ impl MarkupRegistry {
         }
     }
     pub fn peek_callback<CallbackFn>(&self, name: &str) -> Result<&CallbackFn, MarkupError>
-    where
-        CallbackFn: callbacks::Callback + 'static,
+        where CallbackFn: callbacks::Callback + 'static
     {
-        let tm = self.bindings.get(name).ok_or(MarkupError::CallbackNotFound)?;
+        let tm = self.bindings
+            .get(name)
+            .ok_or(MarkupError::CallbackNotFound)?;
         tm.get::<CallbackKeyWrapper<CallbackFn>>()
             .ok_or(MarkupError::CallbackNotFound)
             .map(|wrapper| &wrapper.0)
     }
     pub fn pop_callback<CallbackFn>(&mut self, name: &str) -> Result<CallbackFn, MarkupError>
-    where
-        CallbackFn: callbacks::Callback + 'static,
+        where CallbackFn: callbacks::Callback + 'static
     {
-        let tm = self.bindings.get_mut(name).ok_or(
-            MarkupError::CallbackNotFound,
-        )?;
+        let tm = self.bindings
+            .get_mut(name)
+            .ok_or(MarkupError::CallbackNotFound)?;
         tm.remove::<CallbackKeyWrapper<CallbackFn>>()
             .ok_or(MarkupError::CallbackNotFound)
             .map(|wrapper| wrapper.0)
@@ -166,8 +164,7 @@ impl MarkupNode {
 
 impl<'de> Deserialize<'de> for Markup {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
+        where D: Deserializer<'de>
     {
         deserializer.deserialize_struct("Markup", FIELDS, MarkupVisitor)
     }
@@ -183,8 +180,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
     }
 
     fn visit_map<V>(self, mut map: V) -> Result<Markup, V::Error>
-    where
-        V: MapAccess<'de>,
+        where V: MapAccess<'de>
     {
         let mut id = None;
         let mut member_type = None;
@@ -220,26 +216,23 @@ impl<'de> Visitor<'de> for MarkupVisitor {
                     if child_found {
                         return Err(de::Error::duplicate_field("child / children"));
                     } else {
-                        attributes.insert(
-                            key.into(),
-                            MarkupNode::Children(map.next_value::<Vec<Markup>>()?),
-                        );
+                        attributes.insert(key.into(),
+                                          MarkupNode::Children(map.next_value::<Vec<Markup>>()?));
                         child_found = true;
                     }
                 }
                 _ => {
-                    attributes.insert(
-                        key.into(),
-                        MarkupNode::Attribute(map.next_value::<String>()?),
-                    );
+                    attributes.insert(key.into(),
+                                      MarkupNode::Attribute(map.next_value::<String>()?));
                 }
             }
         }
         Ok(Markup {
-            id: id,
-            member_type: member_type.ok_or_else(|| de::Error::missing_field(TYPE))?,
-            attributes: attributes,
-        })
+               id: id,
+               member_type: member_type
+                   .ok_or_else(|| de::Error::missing_field(TYPE))?,
+               attributes: attributes,
+           })
     }
 }
 

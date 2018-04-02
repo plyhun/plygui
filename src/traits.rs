@@ -2,7 +2,7 @@ use super::{layout, callbacks, types, ids, development};
 
 pub trait UiApplication {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
-    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn name(&self) -> ::std::borrow::Cow<str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
@@ -73,19 +73,19 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
 pub trait UiContainer: UiMember {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&UiControl>;
-    
+
     fn draw_area_size(&self) -> (u16, u16) {
-    	let mut size = self.size();
-    	if let Some(c) = self.is_control() {
-    		use std::cmp::max;
-    		
-    		let hl = c.as_has_layout();
-    		let (lp,tp,rp,bp) = hl.layout_padding().into();
-    		let (lm,tm,rm,bm) = hl.layout_margin().into();
-    		size.0 = max(0, size.0 as i32 - (lp + rp + lm + rm)) as u16;
-    		size.1 = max(0, size.1 as i32 - (tp + bp + tm + bm)) as u16;
-    	}
-    	size
+        let mut size = self.size();
+        if let Some(c) = self.is_control() {
+            use std::cmp::max;
+
+            let hl = c.as_has_layout();
+            let (lp, tp, rp, bp) = hl.layout_padding().into();
+            let (lm, tm, rm, bm) = hl.layout_margin().into();
+            size.0 = max(0, size.0 as i32 - (lp + rp + lm + rm)) as u16;
+            size.1 = max(0, size.1 as i32 - (tp + bp + tm + bm)) as u16;
+        }
+        size
     }
 
     fn is_multi_mut(&mut self) -> Option<&mut UiMultiContainer> {
@@ -124,6 +124,9 @@ pub trait UiMultiContainer: UiContainer {
     fn as_container(&self) -> &UiContainer;
     fn as_container_mut(&mut self) -> &mut UiContainer;
 
+    fn is_empty(&self) -> bool {
+        self.len() < 1
+    }
     fn clear(&mut self) {
         let len = self.len();
         for index in (0..len).rev() {
@@ -145,7 +148,7 @@ pub trait UiMultiContainer: UiContainer {
 }
 
 pub trait UiHasLabel {
-    fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn label(&self) -> ::std::borrow::Cow<str>;
     fn set_label(&mut self, &str);
 }
 
@@ -175,4 +178,3 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_has_orientation(&self) -> &UiHasOrientation;
     fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
-

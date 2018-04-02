@@ -162,7 +162,7 @@ impl From<BoundarySizeArgs> for BoundarySize {
     fn from(a: BoundarySizeArgs) -> BoundarySize {
         match a {
             BoundarySizeArgs::Param(param) => param.into(),
-            BoundarySizeArgs::Set(set) => set.into(),
+            BoundarySizeArgs::Set(set) => set,
         }
     }
 }
@@ -177,7 +177,7 @@ pub enum Orientation {
 pub type Gravity = u8;
 pub mod gravity {
     pub const CENTER: super::Gravity = 0;
-    pub const TOP: super::Gravity = 1 << 0;
+    pub const TOP: super::Gravity = 1;
     pub const BOTTOM: super::Gravity = 1 << 1;
     pub const LEFT: super::Gravity = 1 << 2;
     pub const RIGHT: super::Gravity = 1 << 3;
