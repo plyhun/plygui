@@ -20,6 +20,8 @@ pub mod traits;
 pub mod utils;
 #[macro_use]
 pub mod callbacks;
+#[macro_use]
+pub mod macros;
 
 #[cfg(feature = "markup")]
 pub mod markup;
