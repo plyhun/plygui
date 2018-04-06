@@ -12,4 +12,9 @@ pub enum WindowStartSize {
     Fullscreen,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WindowMenu {
+	None,
+}
+
 pub type Dbox<T> = Box<Box<T>>;

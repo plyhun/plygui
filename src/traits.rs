@@ -22,14 +22,6 @@ pub trait UiMember: AsAny + development::seal::Sealed {
     fn is_control_mut(&mut self) -> Option<&mut UiControl>;
 }
 
-pub trait UiApplication: AsAny + development::seal::Sealed {
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> types::Dbox<UiWindow>;
-    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
-    fn start(&mut self);
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
-}
-
 pub trait UiHasOrientation: AsAny + development::seal::Sealed {
     fn layout_orientation(&self) -> layout::Orientation;
     fn set_layout_orientation(&mut self, layout::Orientation);
@@ -54,7 +46,7 @@ pub trait UiHasLayout: UiMember {
     fn as_member_mut(&mut self) -> &mut UiMember;
 }
 
-pub trait UiControl: UiHasLayout + development::UiDrawable {
+pub trait UiControl: UiHasLayout + development::OuterDrawable {
     fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
     fn is_container(&self) -> Option<&UiContainer>;
 
@@ -71,9 +63,6 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
 
     fn as_has_layout(&self) -> &UiHasLayout;
     fn as_has_layout_mut(&mut self) -> &mut UiHasLayout;
-
-    /*fn as_drawable(&self) -> &development::UiDrawable;
-	fn as_drawable_mut(&mut self) -> &mut development::UiDrawable;	*/
 }
 
 pub trait UiContainer: UiMember {
@@ -159,10 +148,20 @@ pub trait UiClickable: AsAny + development::seal::Sealed {
     fn on_click(&mut self, Option<callbacks::Click>);
 }
 
+pub trait UiApplication: AsAny + development::seal::Sealed {
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> types::Dbox<UiWindow>;
+    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn start(&mut self);
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
+}
+impl development::Final for UiApplication {}
+
 pub trait UiWindow: UiSingleContainer + UiHasLabel {
     fn as_single_container(&self) -> &UiSingleContainer;
     fn as_single_container_mut(&mut self) -> &mut UiSingleContainer;
 }
+impl development::Final for UiWindow {}
 
 pub trait UiButton: UiControl + UiClickable + UiHasLabel {
     fn as_control(&self) -> &UiControl;
@@ -172,6 +171,7 @@ pub trait UiButton: UiControl + UiClickable + UiHasLabel {
     fn as_has_label(&self) -> &UiHasLabel;
     fn as_has_label_mut(&mut self) -> &mut UiHasLabel;
 }
+impl development::Final for UiButton {}
 
 pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_control(&self) -> &UiControl;
@@ -181,3 +181,4 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_has_orientation(&self) -> &UiHasOrientation;
     fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
+impl development::Final for UiLinearLayout {}

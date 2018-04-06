@@ -90,13 +90,22 @@ impl <T: HasLayoutInner + Sized + 'static> traits::UiHasLayout for Member<T> {
     fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
 }
 
+
+// ===============================================================================================================
+
+pub trait Drawable {
+    fn draw(&mut self, coords: Option<(i32, i32)>);
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
+    fn invalidate(&mut self);
+}
+
 // ===============================================================================================================
 
 pub struct Control<T: ControlInner + Sized> {
 	inner: T
 }
 
-pub trait ControlInner: HasLayoutInner {
+pub trait ControlInner: HasLayoutInner + Drawable {
 	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32);
     fn on_removed_from_container(&mut self, parent: &traits::UiContainer);
 
@@ -130,6 +139,10 @@ impl <T: ControlInner + Sized> HasLayoutInner for Control<T> {
     fn set_layout_padding(&mut self, value: layout::BoundarySizeArgs) { self.inner.set_layout_padding(value) }
     fn set_layout_margin(&mut self, value: layout::BoundarySizeArgs) { self.inner.set_layout_margin(value) }
 }
+impl <T: ControlInner + Sized + 'static> OuterDrawable for Member<Control<T>> {
+	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.inner.draw(coords) }
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.inner.measure(w, h) }
+}
 impl <T: ControlInner + Sized + 'static> traits::UiControl for Member<Control<T>> {
 	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.inner.on_added_to_container(parent, x, y) }
     fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.inner.on_removed_from_container(parent) }
@@ -147,10 +160,6 @@ impl <T: ControlInner + Sized + 'static> traits::UiControl for Member<Control<T>
 
     fn as_has_layout(&self) -> &traits::UiHasLayout { self }
     fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
-}
-impl <T: ControlInner + Sized> UiDrawable for Member<Control<T>> {
-	default fn draw(&mut self, _coords: Option<(i32, i32)>) { unimplemented!() }
-    default fn measure(&mut self, _w: u16, _h: u16) -> (u16, u16, bool) { unimplemented!() }
 }
 impl <T: ControlInner + Sized + 'static> traits::UiMember for Member<Control<T>> {
     fn is_control(&self) -> Option<&traits::UiControl> { Some(self) }
@@ -213,6 +222,11 @@ impl <T: SingleContainerInner + HasLayoutInner + Sized + 'static> HasLayoutInner
     fn set_layout_alignment(&mut self, value: layout::Alignment) { self.inner.set_layout_alignment(value) }
     fn set_layout_padding(&mut self, value: layout::BoundarySizeArgs) { self.inner.set_layout_padding(value) }
     fn set_layout_margin(&mut self, value: layout::BoundarySizeArgs) { self.inner.set_layout_margin(value) }
+}
+impl <T: SingleContainerInner + ControlInner + Drawable + Sized + 'static> Drawable for SingleContainer<T> {
+	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.draw(coords) }
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(w, h) }
+    fn invalidate(&mut self) { self.inner.invalidate() }
 }
 impl <T: SingleContainerInner + ControlInner + Sized + 'static> ControlInner for SingleContainer<T> {
 	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.on_added_to_container(parent, x, y) }
@@ -298,6 +312,11 @@ impl <T: MultiContainerInner + HasLayoutInner + Sized + 'static> HasLayoutInner 
     fn set_layout_padding(&mut self, value: layout::BoundarySizeArgs) { self.inner.set_layout_padding(value) }
     fn set_layout_margin(&mut self, value: layout::BoundarySizeArgs) { self.inner.set_layout_margin(value) }
 }
+impl <T: MultiContainerInner + ControlInner + Drawable + Sized + 'static> Drawable for MultiContainer<T> {
+	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.draw(coords) }
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(w, h) }
+    fn invalidate(&mut self) { self.inner.invalidate() }
+}
 impl <T: MultiContainerInner + ControlInner + Sized + 'static> ControlInner for MultiContainer<T> {
 	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.on_added_to_container(parent, x, y) }
     fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.on_removed_from_container(parent) }
@@ -355,7 +374,7 @@ impl <T: MultiContainerInner + ControlInner + Sized + 'static> Member<Control<Mu
 
 pub trait HasLabelInner {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
-    fn set_label(&mut self, &str);
+    fn set_label(&mut self, label: &str);
 }
 impl <T: HasLabelInner + MemberInner + Sized + 'static> traits::UiHasLabel for Member<T> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
@@ -402,44 +421,6 @@ impl <T: ClickableInner + ControlInner + MultiContainerInner + Sized + 'static> 
 
 // ===============================================================================================================
 
-pub trait ApplicationInner {
-	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> types::Dbox<traits::UiWindow>;
-    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
-    fn start(&mut self);
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiMember>;
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&traits::UiMember>;
-}
-pub struct Application<T: ApplicationInner + Sized + 'static> {
-	inner: T
-}
-impl <T: ApplicationInner + Sized + 'static> traits::UiApplication for Application<T> {
-	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> types::Dbox<traits::UiWindow> {
-		self.inner.new_window(title, size, has_menu)
-	}
-    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str> {
-	    self.inner.name()
-    }
-    fn start(&mut self) { self.inner.start() }
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiMember> { self.inner.find_member_by_id_mut(id) }
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&traits::UiMember> { self.inner.find_member_by_id(id) }
-}
-impl <T: ApplicationInner + Sized + 'static> traits::AsAny for Application<T> {
-    fn as_any(&self) -> &Any { self }
-    fn as_any_mut(&mut self) -> &mut Any { self }
-    fn into_any(self: Box<Self>) -> types::Dbox<Any> { Box::new(self) }
-}
-
-impl <T: ApplicationInner + Sized> HasInner for Application<T> {
-	type Inner = T;
-	
-	fn with_inner(inner: Self::Inner) -> Self { Application { inner } }
-	fn as_inner(&self) -> &Self::Inner { &self.inner }
-	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
-}
-impl <T: ApplicationInner + Sized + 'static> seal::Sealed for Application<T> {}
-
-// ===============================================================================================================
-
 pub trait HasOrientationInner {
 	fn layout_orientation(&self) -> layout::Orientation;
     fn set_layout_orientation(&mut self, layout::Orientation);
@@ -471,7 +452,53 @@ impl <T: HasOrientationInner + MultiContainerInner + ControlInner + Sized + 'sta
 
 // ===============================================================================================================
 
-pub trait WindowInner: HasLabelInner + SingleContainerInner {}
+pub trait ApplicationInner {
+	fn with_name(name: &str) -> types::Dbox<traits::UiApplication>;
+	fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> types::Dbox<traits::UiWindow>;
+    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn start(&mut self);
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiMember>;
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&traits::UiMember>;
+}
+pub struct Application<T: ApplicationInner + Sized + 'static> {
+	inner: T
+}
+impl <T: ApplicationInner + Sized + 'static> traits::UiApplication for Application<T> {
+	fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> types::Dbox<traits::UiWindow> {
+		self.inner.new_window(title, size, menu)
+	}
+    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str> {
+	    self.inner.name()
+    }
+    fn start(&mut self) { self.inner.start() }
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiMember> { self.inner.find_member_by_id_mut(id) }
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&traits::UiMember> { self.inner.find_member_by_id(id) }
+}
+impl <T: ApplicationInner + Sized + 'static> traits::AsAny for Application<T> {
+    fn as_any(&self) -> &Any { self }
+    fn as_any_mut(&mut self) -> &mut Any { self }
+    fn into_any(self: Box<Self>) -> types::Dbox<Any> { Box::new(self) }
+}
+
+impl <T: ApplicationInner + Sized> HasInner for Application<T> {
+	type Inner = T;
+	
+	fn with_inner(inner: Self::Inner) -> Self { Application { inner } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
+}
+impl <T: ApplicationInner + Sized> Application<T> {
+	pub fn with_name(name: &str) -> types::Dbox<traits::UiApplication> {
+		T::with_name(name)
+	}
+}
+impl <T: ApplicationInner + Sized + 'static> seal::Sealed for Application<T> {}
+
+// ===============================================================================================================
+
+pub trait WindowInner: HasLabelInner + SingleContainerInner {
+	fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> types::Dbox<traits::UiWindow>;
+}
 
 impl <T: WindowInner + Sized + 'static> traits::UiWindow for Member<SingleContainer<T>> {
 	fn as_single_container(&self) -> &traits::UiSingleContainer { self }
@@ -484,10 +511,17 @@ impl <T: WindowInner + Sized> HasInner for Member<SingleContainer<T>> {
 	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
 }
+impl <T: WindowInner + Sized> Member<SingleContainer<T>> {
+	pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> types::Dbox<traits::UiWindow> {
+		T::with_params(title, window_size, menu)
+	}
+}
 
 // ===============================================================================================================
 
-pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {}
+pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {
+	fn with_label(label: &str) -> types::Dbox<traits::UiButton>;
+}
 
 impl <T: ButtonInner + Sized + 'static> traits::UiButton for Member<Control<T>> {
 	fn as_control(&self) -> &traits::UiControl { self }
@@ -503,6 +537,11 @@ impl <T: ButtonInner + Sized> HasInner for Member<Control<T>> {
 	fn with_inner(inner: Self::Inner) -> Self { Member { inner: Control { inner } } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
+}
+impl <T: ButtonInner + Sized> Member<Control<T>> {
+	pub fn with_label(label: &str) -> types::Dbox<traits::UiButton> {
+		T::with_label(label)
+	}
 }
 
 // ===============================================================================================================
@@ -527,7 +566,9 @@ impl <T: LinearLayoutInner + Sized> HasInner for Member<Control<MultiContainer<T
 
 // ===============================================================================================================
 
-pub trait UiDrawable {
+pub trait Final {}
+
+pub trait OuterDrawable {
     fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
 }
