@@ -1,13 +1,5 @@
 use super::{layout, callbacks, types, ids, development};
 
-pub trait UiApplication {
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
-    fn name(&self) -> ::std::borrow::Cow<str>;
-    fn start(&mut self);
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
-}
-
 pub trait UiMember {
     fn size(&self) -> (u16, u16);
     fn on_resize(&mut self, Option<callbacks::Resize>);
@@ -154,6 +146,14 @@ pub trait UiHasLabel {
 
 pub trait UiClickable {
     fn on_click(&mut self, Option<callbacks::Click>);
+}
+
+pub trait UiApplication {
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<UiWindow>;
+    fn name(&self) -> ::std::borrow::Cow<str>;
+    fn start(&mut self);
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&UiMember>;
 }
 
 pub trait UiWindow: UiSingleContainer + UiHasLabel {

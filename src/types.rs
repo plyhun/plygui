@@ -14,6 +14,11 @@ pub enum WindowStartSize {
     Fullscreen,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WindowMenu {
+    None,
+}
+
 #[repr(C)]
 pub struct UiMemberBase(pub(crate) development::UiMemberCommon);
 
