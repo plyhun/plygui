@@ -5,6 +5,7 @@ use std::any::Any;
 pub trait AsAny {
     fn as_any(&self) -> &Any;
     fn as_any_mut(&mut self) -> &mut Any;
+    fn into_any(self: Box<Self>) -> types::Dbox<Any>; 
 }
 
 pub trait UiMember: AsAny + development::seal::Sealed {
@@ -22,7 +23,7 @@ pub trait UiMember: AsAny + development::seal::Sealed {
 }
 
 pub trait UiApplication: AsAny + development::seal::Sealed {
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<UiWindow>;
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> types::Dbox<UiWindow>;
     fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiMember>;
@@ -111,7 +112,7 @@ pub trait UiContainer: UiMember {
 }
 
 pub trait UiSingleContainer: UiContainer {
-    fn set_child(&mut self, Option<Box<UiControl>>) -> Option<Box<UiControl>>;
+    fn set_child(&mut self, Option<types::Dbox<UiControl>>) -> Option<types::Dbox<UiControl>>;
     fn child(&self) -> Option<&UiControl>;
     fn child_mut(&mut self) -> Option<&mut UiControl>;
 
@@ -121,10 +122,10 @@ pub trait UiSingleContainer: UiContainer {
 
 pub trait UiMultiContainer: UiContainer {
     fn len(&self) -> usize;
-    fn set_child_to(&mut self, index: usize, Box<UiControl>) -> Option<Box<UiControl>>;
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<UiControl>>;
-    fn child_at(&self, index: usize) -> Option<&Box<UiControl>>;
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut Box<UiControl>>;
+    fn set_child_to(&mut self, index: usize, types::Dbox<UiControl>) -> Option<types::Dbox<UiControl>>;
+    fn remove_child_from(&mut self, index: usize) -> Option<types::Dbox<UiControl>>;
+    fn child_at(&self, index: usize) -> Option<&UiControl>;
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut UiControl>;
 
     fn as_container(&self) -> &UiContainer;
     fn as_container_mut(&mut self) -> &mut UiContainer;
@@ -135,11 +136,11 @@ pub trait UiMultiContainer: UiContainer {
             self.remove_child_from(index);
         }
     }
-    fn push_child(&mut self, child: Box<UiControl>) {
+    fn push_child(&mut self, child: types::Dbox<UiControl>) {
         let len = self.len();
         self.set_child_to(len, child);
     }
-    fn pop_child(&mut self) -> Option<Box<UiControl>> {
+    fn pop_child(&mut self) -> Option<types::Dbox<UiControl>> {
         let len = self.len();
         if len > 0 {
             self.remove_child_from(len - 1)

@@ -1,5 +1,3 @@
-use super::{development, ids};
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Visibility {
@@ -14,3 +12,4 @@ pub enum WindowStartSize {
     Fullscreen,
 }
 
+pub type Dbox<T> = Box<Box<T>>;

@@ -10,10 +10,17 @@ pub trait NativeId: Debug + Clone + Copy + PartialEq + Eq + PartialOrd + Ord + H
 
 // ==========================================================================================================
 
+pub trait HasInner {
+	type Inner: Sized;
+	
+	fn with_inner(inner: Self::Inner) -> Self;
+	fn as_inner(&self) -> &Self::Inner;
+	fn as_inner_mut(&mut self) -> &mut Self::Inner;
+}
+
 pub struct Member<T: MemberInner + Sized> {
     inner: T,
 }
-
 pub trait MemberInner {
 	type Id: NativeId + Sized;
 	
@@ -42,6 +49,7 @@ impl <T: MemberInner + Sized + 'static> traits::UiMember for Member<T> {
 impl <T: MemberInner + Sized + 'static> traits::AsAny for Member<T> {
     fn as_any(&self) -> &Any { self }
     fn as_any_mut(&mut self) -> &mut Any { self }
+    fn into_any(self: Box<Self>) -> types::Dbox<Any> { Box::new(self) }
 }
 impl <T: MemberInner + Sized + 'static> seal::Sealed for Member<T> {}
 
@@ -166,7 +174,7 @@ impl <T: ContainerInner + Sized + 'static> traits::UiContainer for Member<T> {
 // ===============================================================================================================
 
 pub trait SingleContainerInner: ContainerInner {
-	fn set_child(&mut self, Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>>;
+	fn set_child(&mut self, Option<types::Dbox<traits::UiControl>>) -> Option<types::Dbox<traits::UiControl>>;
     fn child(&self) -> Option<&traits::UiControl>;
     fn child_mut(&mut self) -> Option<&mut traits::UiControl>;
 }
@@ -213,23 +221,20 @@ impl <T: SingleContainerInner + ControlInner + Sized + 'static> ControlInner for
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(markup, registry) }
 }
-
 impl <T: SingleContainerInner + Sized + 'static> traits::UiSingleContainer for Member<SingleContainer<T>> {
-	fn set_child(&mut self, child: Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>> { self.inner.inner.set_child(child) }
+	fn set_child(&mut self, child: Option<types::Dbox<traits::UiControl>>) -> Option<types::Dbox<traits::UiControl>> { self.inner.inner.set_child(child) }
     fn child(&self) -> Option<&traits::UiControl> { self.inner.inner.child() }
     fn child_mut(&mut self) -> Option<&mut traits::UiControl> { self.inner.inner.child_mut() }
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
 }
-
 impl <T: SingleContainerInner + Sized + 'static> traits::UiContainer for Member<SingleContainer<T>> {
 	fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { Some(self) }
     fn is_single(&self) -> Option<&traits::UiSingleContainer> { Some(self) }
 }
-
 impl <T: SingleContainerInner + ControlInner + Sized + 'static> traits::UiSingleContainer for Member<Control<SingleContainer<T>>> {
-	fn set_child(&mut self, child: Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>> { self.inner.inner.inner.set_child(child) }
+	fn set_child(&mut self, child: Option<types::Dbox<traits::UiControl>>) -> Option<types::Dbox<traits::UiControl>> { self.inner.inner.inner.set_child(child) }
     fn child(&self) -> Option<&traits::UiControl> { self.inner.inner.inner.child() }
     fn child_mut(&mut self) -> Option<&mut traits::UiControl> { self.inner.inner.inner.child_mut() }
 
@@ -247,25 +252,15 @@ impl <T: SingleContainerInner + ControlInner + Sized + 'static> traits::UiContai
     fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { Some(self) }
     fn is_single(&self) -> Option<&traits::UiSingleContainer> { Some(self) }
 }
-impl <T: SingleContainerInner + Sized + 'static> Member<SingleContainer<T>> {
-	fn new(inner: T) -> Member<SingleContainer<T>> {
-		Member { inner: SingleContainer { inner: inner } }
-	}
-}
-impl <T: SingleContainerInner + ControlInner + Sized + 'static> Member<Control<SingleContainer<T>>> {
-	fn new(inner: T) -> Member<Control<SingleContainer<T>>> {
-		Member { inner: Control { inner: SingleContainer { inner: inner } } }
-	}
-}
 
 // ===============================================================================================================
 
 pub trait MultiContainerInner: ContainerInner {
 	fn len(&self) -> usize;
-    fn set_child_to(&mut self, index: usize, Box<traits::UiControl>) -> Option<Box<traits::UiControl>>;
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<traits::UiControl>>;
-    fn child_at(&self, index: usize) -> Option<&Box<traits::UiControl>>;
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut Box<traits::UiControl>>;
+    fn set_child_to(&mut self, index: usize, types::Dbox<traits::UiControl>) -> Option<types::Dbox<traits::UiControl>>;
+    fn remove_child_from(&mut self, index: usize) -> Option<types::Dbox<traits::UiControl>>;
+    fn child_at(&self, index: usize) -> Option<&traits::UiControl>;
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut traits::UiControl>;
 }
 
 pub struct MultiContainer<T: MultiContainerInner + Sized + 'static> {
@@ -310,13 +305,12 @@ impl <T: MultiContainerInner + ControlInner + Sized + 'static> ControlInner for 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(markup, registry) }
 }
-
 impl <T: MultiContainerInner + Sized + 'static> traits::UiMultiContainer for Member<MultiContainer<T>> {
 	fn len(&self) -> usize { self.inner.inner.len() }
-    fn set_child_to(&mut self, index: usize, child: Box<traits::UiControl>) -> Option<Box<traits::UiControl>> { self.inner.inner.set_child_to(index, child) }
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<traits::UiControl>> { self.inner.inner.remove_child_from(index) }
-    fn child_at(&self, index: usize) -> Option<&Box<traits::UiControl>> { self.inner.inner.child_at(index) }
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut Box<traits::UiControl>> { self.inner.inner.child_at_mut(index) }
+    fn set_child_to(&mut self, index: usize, child: types::Dbox<traits::UiControl>) -> Option<types::Dbox<traits::UiControl>> { self.inner.inner.set_child_to(index, child) }
+    fn remove_child_from(&mut self, index: usize) -> Option<types::Dbox<traits::UiControl>> { self.inner.inner.remove_child_from(index) }
+    fn child_at(&self, index: usize) -> Option<&traits::UiControl> { self.inner.inner.child_at(index) }
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut traits::UiControl> { self.inner.inner.child_at_mut(index) }
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
@@ -338,10 +332,10 @@ impl <T: MultiContainerInner + ControlInner + Sized + 'static> traits::UiContain
 }
 impl <T: MultiContainerInner + ControlInner + Sized + 'static> traits::UiMultiContainer for Member<Control<MultiContainer<T>>> {
 	fn len(&self) -> usize { self.inner.inner.inner.len() }
-    fn set_child_to(&mut self, index: usize, child: Box<traits::UiControl>) -> Option<Box<traits::UiControl>> { self.inner.inner.inner.set_child_to(index, child) }
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<traits::UiControl>> { self.inner.inner.inner.remove_child_from(index) }
-    fn child_at(&self, index: usize) -> Option<&Box<traits::UiControl>> { self.inner.inner.inner.child_at(index) }
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut Box<traits::UiControl>> { self.inner.inner.inner.child_at_mut(index) }
+    fn set_child_to(&mut self, index: usize, child: types::Dbox<traits::UiControl>) -> Option<types::Dbox<traits::UiControl>> { self.inner.inner.inner.set_child_to(index, child) }
+    fn remove_child_from(&mut self, index: usize) -> Option<types::Dbox<traits::UiControl>> { self.inner.inner.inner.remove_child_from(index) }
+    fn child_at(&self, index: usize) -> Option<&traits::UiControl> { self.inner.inner.inner.child_at(index) }
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut traits::UiControl> { self.inner.inner.inner.child_at_mut(index) }
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
@@ -409,7 +403,7 @@ impl <T: ClickableInner + ControlInner + MultiContainerInner + Sized + 'static> 
 // ===============================================================================================================
 
 pub trait ApplicationInner {
-	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<traits::UiWindow>;
+	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> types::Dbox<traits::UiWindow>;
     fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiMember>;
@@ -419,7 +413,7 @@ pub struct Application<T: ApplicationInner + Sized + 'static> {
 	inner: T
 }
 impl <T: ApplicationInner + Sized + 'static> traits::UiApplication for Application<T> {
-	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> Box<traits::UiWindow> {
+	fn new_window(&mut self, title: &str, size: types::WindowStartSize, has_menu: bool) -> types::Dbox<traits::UiWindow> {
 		self.inner.new_window(title, size, has_menu)
 	}
     fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str> {
@@ -432,6 +426,15 @@ impl <T: ApplicationInner + Sized + 'static> traits::UiApplication for Applicati
 impl <T: ApplicationInner + Sized + 'static> traits::AsAny for Application<T> {
     fn as_any(&self) -> &Any { self }
     fn as_any_mut(&mut self) -> &mut Any { self }
+    fn into_any(self: Box<Self>) -> types::Dbox<Any> { Box::new(self) }
+}
+
+impl <T: ApplicationInner + Sized> HasInner for Application<T> {
+	type Inner = T;
+	
+	fn with_inner(inner: Self::Inner) -> Self { Application { inner } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
 impl <T: ApplicationInner + Sized + 'static> seal::Sealed for Application<T> {}
 
@@ -474,6 +477,13 @@ impl <T: WindowInner + Sized + 'static> traits::UiWindow for Member<SingleContai
 	fn as_single_container(&self) -> &traits::UiSingleContainer { self }
     fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
 }
+impl <T: WindowInner + Sized> HasInner for Member<SingleContainer<T>> {
+	type Inner = T;
+	
+	fn with_inner(inner: Self::Inner) -> Self { Member { inner: SingleContainer { inner } } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
+}
 
 // ===============================================================================================================
 
@@ -487,6 +497,13 @@ impl <T: ButtonInner + Sized + 'static> traits::UiButton for Member<Control<T>> 
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
     fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
 }
+impl <T: ButtonInner + Sized> HasInner for Member<Control<T>> {
+	type Inner = T;
+	
+	fn with_inner(inner: Self::Inner) -> Self { Member { inner: Control { inner } } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
+}
 
 // ===============================================================================================================
 
@@ -499,6 +516,13 @@ impl <T: LinearLayoutInner + Sized + 'static> traits::UiLinearLayout for Member<
     fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
     fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
     fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+}
+impl <T: LinearLayoutInner + Sized> HasInner for Member<Control<MultiContainer<T>>> {
+	type Inner = T;
+	
+	fn with_inner(inner: Self::Inner) -> Self { Member { inner: Control { inner: MultiContainer { inner } } } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner.inner.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner.inner }
 }
 
 // ===============================================================================================================
