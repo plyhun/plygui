@@ -178,3 +178,12 @@ pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_has_orientation(&self) -> &UiHasOrientation;
     fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
 }
+
+pub trait UiFrame: UiSingleContainer + UiControl + UiHasLabel {
+	fn as_control(&self) -> &UiControl;
+    fn as_control_mut(&mut self) -> &mut UiControl;
+    fn as_single_container(&self) -> &UiSingleContainer;
+    fn as_single_container_mut(&mut self) -> &mut UiSingleContainer;
+    fn as_has_label(&self) -> &UiHasLabel;
+    fn as_has_label_mut(&mut self) -> &mut UiHasLabel;
+}

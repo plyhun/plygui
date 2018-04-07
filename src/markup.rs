@@ -26,6 +26,7 @@ pub const CHILDREN: &str = "children";
 
 const FIELDS: &[&str] = &[ID, TYPE];
 
+pub const MEMBER_TYPE_FRAME: &str = "Frame";
 pub const MEMBER_TYPE_LINEAR_LAYOUT: &str = "LinearLayout";
 pub const MEMBER_TYPE_BUTTON: &str = "Button";
 
