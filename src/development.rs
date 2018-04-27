@@ -160,6 +160,9 @@ impl <T: ControlInner + Sized + 'static> traits::UiControl for Member<Control<T>
 
     fn as_has_layout(&self) -> &traits::UiHasLayout { self }
     fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
+    
+    fn as_drawable(&self) -> &OuterDrawable { self }
+    fn as_drawable_mut(&mut self) -> &mut OuterDrawable { self }
 }
 impl <T: ControlInner + Sized + 'static> traits::UiMember for Member<Control<T>> {
     fn is_control(&self) -> Option<&traits::UiControl> { Some(self) }

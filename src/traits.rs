@@ -63,6 +63,9 @@ pub trait UiControl: UiHasLayout + development::OuterDrawable {
 
     fn as_has_layout(&self) -> &UiHasLayout;
     fn as_has_layout_mut(&mut self) -> &mut UiHasLayout;
+    
+    fn as_drawable(&self) -> &development::OuterDrawable;
+    fn as_drawable_mut(&mut self) -> &mut development::OuterDrawable;
 }
 
 pub trait UiContainer: UiMember {
