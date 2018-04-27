@@ -88,6 +88,7 @@ impl <T: HasLayoutInner + Sized + 'static> traits::UiHasLayout for Member<T> {
 
     fn as_member(&self) -> &traits::UiMember { self }
     fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+    fn into_member(self: Box<Self>) -> types::Dbox<traits::UiMember> { Box::new(self) }
 }
 
 
@@ -160,9 +161,11 @@ impl <T: ControlInner + Sized + 'static> traits::UiControl for Member<Control<T>
 
     fn as_has_layout(&self) -> &traits::UiHasLayout { self }
     fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
+    fn into_has_layout(self: Box<Self>) -> types::Dbox<traits::UiHasLayout> { Box::new(self) }
     
     fn as_drawable(&self) -> &OuterDrawable { self }
     fn as_drawable_mut(&mut self) -> &mut OuterDrawable { self }
+    fn into_drawable(self: Box<Self>) -> types::Dbox<OuterDrawable> { Box::new(self) }
 }
 impl <T: ControlInner + Sized + 'static> traits::UiMember for Member<Control<T>> {
     fn is_control(&self) -> Option<&traits::UiControl> { Some(self) }
@@ -181,6 +184,7 @@ impl <T: ContainerInner + Sized + 'static> traits::UiContainer for Member<T> {
     
     fn as_member(&self) -> &traits::UiMember { self }
     fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+    fn into_member(self: Box<Self>) -> types::Dbox<traits::UiMember> { Box::new(self) }
 }
 
 // ===============================================================================================================
@@ -245,6 +249,7 @@ impl <T: SingleContainerInner + Sized + 'static> traits::UiSingleContainer for M
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> types::Dbox<traits::UiContainer> { Box::new(self) }
 }
 impl <T: SingleContainerInner + Sized + 'static> traits::UiContainer for Member<SingleContainer<T>> {
 	fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { Some(self) }
@@ -257,6 +262,7 @@ impl <T: SingleContainerInner + ControlInner + Sized + 'static> traits::UiSingle
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> types::Dbox<traits::UiContainer> { Box::new(self) }
 }
 
 impl <T: SingleContainerInner + ControlInner + Sized + 'static> traits::UiContainer for Member<Control<SingleContainer<T>>> {
@@ -265,6 +271,7 @@ impl <T: SingleContainerInner + ControlInner + Sized + 'static> traits::UiContai
     
     fn as_member(&self) -> &traits::UiMember { self }
     fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+    fn into_member(self: Box<Self>) -> types::Dbox<traits::UiMember> { Box::new(self) }
     
     fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { Some(self) }
     fn is_single(&self) -> Option<&traits::UiSingleContainer> { Some(self) }
@@ -336,6 +343,7 @@ impl <T: MultiContainerInner + Sized + 'static> traits::UiMultiContainer for Mem
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> types::Dbox<traits::UiContainer> { Box::new(self) }
 }
 
 impl <T: MultiContainerInner + Sized + 'static> traits::UiContainer for Member<MultiContainer<T>> {
@@ -348,6 +356,7 @@ impl <T: MultiContainerInner + ControlInner + Sized + 'static> traits::UiContain
     
     fn as_member(&self) -> &traits::UiMember { self }
     fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+    fn into_member(self: Box<Self>) -> types::Dbox<traits::UiMember> { Box::new(self) }
     
     fn is_multi_mut(&mut self) -> Option<&mut traits::UiMultiContainer> { Some(self) }
     fn is_multi(&self) -> Option<&traits::UiMultiContainer> { Some(self) }
@@ -361,6 +370,7 @@ impl <T: MultiContainerInner + ControlInner + Sized + 'static> traits::UiMultiCo
 
     fn as_container(&self) -> &traits::UiContainer { self }
     fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> types::Dbox<traits::UiContainer> { Box::new(self) }
 }
 impl <T: MultiContainerInner + Sized + 'static> Member<MultiContainer<T>> {
 	pub fn new(inner: T) -> Member<MultiContainer<T>> {
@@ -529,10 +539,15 @@ pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {
 impl <T: ButtonInner + Sized + 'static> traits::UiButton for Member<Control<T>> {
 	fn as_control(&self) -> &traits::UiControl { self }
     fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+    fn into_control(self: Box<Self>) -> types::Dbox<traits::UiControl> { Box::new(self) }
+    
     fn as_clickable(&self) -> &traits::UiClickable { self }
     fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+    fn into_clickable(self: Box<Self>) -> types::Dbox<traits::UiClickable> { Box::new(self) }
+    
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
     fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> types::Dbox<traits::UiHasLabel> { Box::new(self) }
 }
 impl <T: ButtonInner + Sized> HasInner for Member<Control<T>> {
 	type Inner = T;
@@ -554,10 +569,15 @@ pub trait LinearLayoutInner: ControlInner + MultiContainerInner + HasOrientation
 impl <T: LinearLayoutInner + Sized + 'static> traits::UiLinearLayout for Member<Control<MultiContainer<T>>> {
 	fn as_control(&self) -> &traits::UiControl { self }
     fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+    fn into_control(self: Box<Self>) -> types::Dbox<traits::UiControl> { Box::new(self) }
+    
     fn as_multi_container(&self) -> &traits::UiMultiContainer { self }
     fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
+    fn into_multi_container(self: Box<Self>) -> types::Dbox<traits::UiMultiContainer> { Box::new(self) }
+    
     fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
     fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> types::Dbox<traits::UiHasOrientation> { Box::new(self) }
 }
 impl <T: LinearLayoutInner + Sized> HasInner for Member<Control<MultiContainer<T>>> {
 	type Inner = T;

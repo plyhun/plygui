@@ -44,6 +44,7 @@ pub trait UiHasLayout: UiMember {
 
     fn as_member(&self) -> &UiMember;
     fn as_member_mut(&mut self) -> &mut UiMember;
+    fn into_member(self: Box<Self>) -> types::Dbox<UiMember>;
 }
 
 pub trait UiControl: UiHasLayout + development::OuterDrawable {
@@ -63,9 +64,11 @@ pub trait UiControl: UiHasLayout + development::OuterDrawable {
 
     fn as_has_layout(&self) -> &UiHasLayout;
     fn as_has_layout_mut(&mut self) -> &mut UiHasLayout;
+    fn into_has_layout(self: Box<Self>) -> types::Dbox<UiHasLayout>;
     
     fn as_drawable(&self) -> &development::OuterDrawable;
     fn as_drawable_mut(&mut self) -> &mut development::OuterDrawable;
+    fn into_drawable(self: Box<Self>) -> types::Dbox<development::OuterDrawable>;
 }
 
 pub trait UiContainer: UiMember {
@@ -101,6 +104,7 @@ pub trait UiContainer: UiMember {
 
     fn as_member(&self) -> &UiMember;
     fn as_member_mut(&mut self) -> &mut UiMember;
+    fn into_member(self: Box<Self>) -> types::Dbox<UiMember>;
 }
 
 pub trait UiSingleContainer: UiContainer {
@@ -110,6 +114,7 @@ pub trait UiSingleContainer: UiContainer {
 
     fn as_container(&self) -> &UiContainer;
     fn as_container_mut(&mut self) -> &mut UiContainer;
+    fn into_container(self: Box<Self>) -> types::Dbox<UiContainer>;
 }
 
 pub trait UiMultiContainer: UiContainer {
@@ -121,6 +126,7 @@ pub trait UiMultiContainer: UiContainer {
 
     fn as_container(&self) -> &UiContainer;
     fn as_container_mut(&mut self) -> &mut UiContainer;
+    fn into_container(self: Box<Self>) -> types::Dbox<UiContainer>;
 
     fn clear(&mut self) {
         let len = self.len();
@@ -169,19 +175,29 @@ impl development::Final for UiWindow {}
 pub trait UiButton: UiControl + UiClickable + UiHasLabel {
     fn as_control(&self) -> &UiControl;
     fn as_control_mut(&mut self) -> &mut UiControl;
+    fn into_control(self: Box<Self>) -> types::Dbox<UiControl>;
+    
     fn as_clickable(&self) -> &UiClickable;
     fn as_clickable_mut(&mut self) -> &mut UiClickable;
+    fn into_clickable(self: Box<Self>) -> types::Dbox<UiClickable>;
+    
     fn as_has_label(&self) -> &UiHasLabel;
     fn as_has_label_mut(&mut self) -> &mut UiHasLabel;
+    fn into_has_label(self: Box<Self>) -> types::Dbox<UiHasLabel>;
 }
 impl development::Final for UiButton {}
 
 pub trait UiLinearLayout: UiMultiContainer + UiControl + UiHasOrientation {
     fn as_control(&self) -> &UiControl;
     fn as_control_mut(&mut self) -> &mut UiControl;
+    fn into_control(self: Box<Self>) -> types::Dbox<UiControl>;
+    
     fn as_multi_container(&self) -> &UiMultiContainer;
     fn as_multi_container_mut(&mut self) -> &mut UiMultiContainer;
+    fn into_multi_container(self: Box<Self>) -> types::Dbox<UiMultiContainer>;
+    
     fn as_has_orientation(&self) -> &UiHasOrientation;
     fn as_has_orientation_mut(&mut self) -> &mut UiHasOrientation;
+    fn into_has_orientation(self: Box<Self>) -> types::Dbox<UiHasOrientation>;
 }
 impl development::Final for UiLinearLayout {}
