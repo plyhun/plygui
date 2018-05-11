@@ -24,14 +24,12 @@ pub trait UiHasOrientation {
 pub trait UiHasLayout: UiMember {
     fn layout_width(&self) -> layout::Size;
     fn layout_height(&self) -> layout::Size;
-    fn layout_gravity(&self) -> layout::Gravity;
     fn layout_alignment(&self) -> layout::Alignment;
     fn layout_padding(&self) -> layout::BoundarySize;
     fn layout_margin(&self) -> layout::BoundarySize;
 
     fn set_layout_width(&mut self, layout::Size);
     fn set_layout_height(&mut self, layout::Size);
-    fn set_layout_gravity(&mut self, layout::Gravity);
     fn set_layout_alignment(&mut self, layout::Alignment);
     fn set_layout_padding(&mut self, layout::BoundarySizeArgs);
     fn set_layout_margin(&mut self, layout::BoundarySizeArgs);
@@ -65,6 +63,9 @@ pub trait UiControl: UiHasLayout + development::UiDrawable {
 pub trait UiContainer: UiMember {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&UiControl>;
+    
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity);
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity);
 
     fn draw_area_size(&self) -> (u16, u16) {
         let mut size = self.size();
