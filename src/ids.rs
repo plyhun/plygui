@@ -6,7 +6,7 @@ static GLOBAL_THREAD_COUNT: AtomicUsize = ATOMIC_USIZE_INIT;
 pub struct Id(usize);
 
 impl Id {
-    pub fn next() -> Id {
+    pub(crate) fn next() -> Id {
         Id(atomic_next())
     }
 }

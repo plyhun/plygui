@@ -174,7 +174,7 @@ pub enum Orientation {
     Vertical,
 }
 
-pub type Gravity = u8;
+/*pub type Gravity = u8;
 pub mod gravity {
     pub const CENTER: super::Gravity = 0;
     pub const TOP: super::Gravity = 1 << 0;
@@ -185,13 +185,20 @@ pub mod gravity {
     pub const CENTER_VERTICAL: super::Gravity = 1 << 5;
     pub const START: super::Gravity = 1 << 6;
     pub const END: super::Gravity = 1 << 7;
+}*/
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum Gravity {
+    Center,
+    Start,
+    End,
 }
 
 #[derive(Debug, Clone)]
 pub struct Attributes {
     pub width: Size,
     pub height: Size,
-    pub gravity: Gravity,
     pub alignment: Alignment,
     pub padding: BoundarySize,
     pub margin: BoundarySize,
@@ -202,7 +209,6 @@ impl Default for Attributes {
         Attributes {
             width: Size::WrapContent,
             height: Size::WrapContent,
-            gravity: gravity::TOP | gravity::LEFT,
             alignment: Alignment::None,
             padding: BoundarySize::AllTheSame(0),
             margin: BoundarySize::AllTheSame(0),

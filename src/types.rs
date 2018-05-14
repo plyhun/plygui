@@ -16,5 +16,3 @@ pub enum WindowStartSize {
 pub enum WindowMenu {
 	None,
 }
-
-pub type Dbox<T> = Box<Box<T>>;
