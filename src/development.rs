@@ -1,6 +1,6 @@
 //pub mod layout;
 
-use super::{types, ids, layout, callbacks, traits};
+use super::{types, ids, layout, callbacks, traits, utils};
 
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -12,8 +12,9 @@ pub trait NativeId: Debug + Clone + Copy + PartialEq + Eq + PartialOrd + Ord + H
 
 pub trait HasInner {
 	type Inner: Sized;
+	type Params: Sized;
 	
-	//fn with_inner(inner: Self::Inner) -> Self;
+	fn new(inner: Self::Inner, params: Self::Params) -> Self;
 	fn as_inner(&self) -> &Self::Inner;
 	fn as_inner_mut(&mut self) -> &mut Self::Inner;
 }
@@ -124,19 +125,25 @@ impl <T: ControlInner + Sized + 'static> traits::UiHasLayout for Member<Control<
 // ===============================================================================================================
 
 pub trait Drawable {
-    fn draw(&mut self, coords: Option<(i32, i32)>);
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
+    fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>);
+    fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self);
 }
 
 // ===============================================================================================================
 
 pub trait ControlInner: HasLayoutInner + Drawable {
-	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32);
-    fn on_removed_from_container(&mut self, parent: &traits::UiContainer);
+	fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &traits::UiContainer, x: i32, y: i32);
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &traits::UiContainer);
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
+}
+
+#[repr(C)]
+pub struct MemberControlBase {
+    pub member: MemberBase,
+    pub control: ControlBase,
 }
 
 #[repr(C)]
@@ -175,12 +182,33 @@ impl <T: ControlInner + Sized> HasLayoutInner for Control<T> {
 	fn on_layout_changed(&mut self, base: &mut layout::Attributes) { self.inner.on_layout_changed(base) }
 }
 impl <T: ControlInner + Sized + 'static> OuterDrawable for Member<Control<T>> {
-	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.inner.draw(coords) }
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.inner.measure(w, h) }
+	fn draw(&mut self, coords: Option<(i32, i32)>) { 
+		self.inner.inner.draw(
+			unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+			coords
+		) 
+	}
+    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { 
+    	self.inner.inner.measure(
+    		unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+			w, h
+    	) 
+    }
 }
 impl <T: ControlInner + Sized + 'static> traits::UiControl for Member<Control<T>> {
-	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.inner.on_added_to_container(parent, x, y) }
-    fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.inner.on_removed_from_container(parent) }
+	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { 
+		self.inner.inner.on_added_to_container(
+			unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }, 
+			parent, 
+			x, y
+		) 
+	}
+    fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { 
+    	self.inner.inner.on_removed_from_container(
+    		unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }, 
+    		parent
+    	) 
+    }
 
     default fn is_container_mut(&mut self) -> Option<&mut traits::UiContainer> { None }
     default fn is_container(&self) -> Option<&traits::UiContainer> { None }
@@ -248,16 +276,16 @@ impl <T: SingleContainerInner + ContainerInner + Sized + 'static> ContainerInner
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
 }
 impl <T: SingleContainerInner + ControlInner + Drawable + Sized + 'static> Drawable for SingleContainer<T> {
-	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.draw(coords) }
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(w, h) }
+	fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) { self.inner.draw(base, coords) }
+    fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(base, w, h) }
     fn invalidate(&mut self) { self.inner.invalidate() }
 }
 impl <T: SingleContainerInner + ControlInner + Sized + 'static> HasLayoutInner for SingleContainer<T> {
 	fn on_layout_changed(&mut self, base: &mut layout::Attributes) { self.inner.on_layout_changed(base) }
 }
 impl <T: SingleContainerInner + ControlInner + Sized + 'static> ControlInner for SingleContainer<T> {
-	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.on_added_to_container(parent, x, y) }
-    fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.on_removed_from_container(parent) }
+	fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.on_added_to_container(base, parent, x, y) }
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &traits::UiContainer) { self.inner.on_removed_from_container(base, parent) }
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(markup, registry) }
@@ -326,16 +354,16 @@ impl <T: MultiContainerInner + ContainerInner + Sized + 'static> ContainerInner 
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
 }
 impl <T: MultiContainerInner + ControlInner + Drawable + Sized + 'static> Drawable for MultiContainer<T> {
-	fn draw(&mut self, coords: Option<(i32, i32)>) { self.inner.draw(coords) }
-    fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(w, h) }
+	fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) { self.inner.draw(base, coords) }
+    fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(base, w, h) }
     fn invalidate(&mut self) { self.inner.invalidate() }
 }
 impl <T: MultiContainerInner + ControlInner + Sized + 'static> HasLayoutInner for MultiContainer<T> {
 	fn on_layout_changed(&mut self, base: &mut layout::Attributes) { self.inner.on_layout_changed(base) }
 }
 impl <T: MultiContainerInner + ControlInner + Sized + 'static> ControlInner for MultiContainer<T> {
-	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.on_added_to_container(parent, x, y) }
-    fn on_removed_from_container(&mut self, parent: &traits::UiContainer) { self.inner.on_removed_from_container(parent) }
+	fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &traits::UiContainer, x: i32, y: i32) { self.inner.on_added_to_container(base, parent, x, y) }
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &traits::UiContainer) { self.inner.on_removed_from_container(base, parent) }
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(markup, registry) }
@@ -501,8 +529,9 @@ impl <T: ApplicationInner + Sized + 'static> traits::AsAny for Application<T> {
 
 impl <T: ApplicationInner + Sized> HasInner for Application<T> {
 	type Inner = T;
+	type Params = ();
 	
-	//fn with_inner(inner: Self::Inner) -> Self { Application { inner } }
+	fn new(inner: Self::Inner, _: Self::Params) -> Self { Application { inner } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
@@ -525,8 +554,9 @@ impl <T: WindowInner + Sized + 'static> traits::UiWindow for Member<SingleContai
 }
 impl <T: WindowInner + Sized> HasInner for Member<SingleContainer<T>> {
 	type Inner = T;
+	type Params = MemberFunctions;
 	
-	//fn with_inner(inner: Self::Inner) -> Self { Member { inner: SingleContainer { inner }, base: Default::default() } }
+	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: SingleContainer { inner }, base: MemberBase::with_functions(params) } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
 }
@@ -557,8 +587,9 @@ impl <T: ButtonInner + Sized + 'static> traits::UiButton for Member<Control<T>> 
 }
 impl <T: ButtonInner + Sized> HasInner for Member<Control<T>> {
 	type Inner = T;
+	type Params = MemberFunctions;
 	
-	//fn with_inner(inner: Self::Inner) -> Self { Member { inner: Control { inner, base: Default::default() }, base: Default::default() } }
+	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: Control { inner, base: Default::default() }, base: MemberBase::with_functions(params) } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
 }
@@ -587,8 +618,9 @@ impl <T: LinearLayoutInner + Sized + 'static> traits::UiLinearLayout for Member<
 }
 impl <T: LinearLayoutInner + Sized> HasInner for Member<Control<MultiContainer<T>>> {
 	type Inner = T;
+	type Params = MemberFunctions;
 	
-	//fn with_inner(inner: Self::Inner) -> Self { Member { inner: Control { inner: MultiContainer { inner }, base: Default::default() }, base: Default::default() } }
+	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: Control { inner: MultiContainer { inner }, base: Default::default() }, base: MemberBase::with_functions(params) } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner.inner.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner.inner }
 }

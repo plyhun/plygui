@@ -207,7 +207,7 @@ pub struct Attributes {
 impl Default for Attributes {
     fn default() -> Attributes {
         Attributes {
-            width: Size::WrapContent,
+            width: Size::MatchParent,
             height: Size::WrapContent,
             alignment: Alignment::None,
             padding: BoundarySize::AllTheSame(0),
