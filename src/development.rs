@@ -1,5 +1,3 @@
-//pub mod layout;
-
 use super::{types, ids, layout, callbacks, traits, utils};
 
 use std::fmt::Debug;
@@ -127,7 +125,7 @@ impl <T: ControlInner + Sized + 'static> traits::UiHasLayout for Member<Control<
 pub trait Drawable {
     fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>);
     fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool);
-    fn invalidate(&mut self);
+    fn invalidate(&mut self, base: &mut MemberControlBase);
 }
 
 // ===============================================================================================================
@@ -233,6 +231,10 @@ impl <T: ControlInner + Sized + 'static> traits::UiMember for Member<Control<T>>
     fn is_control(&self) -> Option<&traits::UiControl> { Some(self) }
     fn is_control_mut(&mut self) -> Option<&mut traits::UiControl> { Some(self) }
 }
+impl <T: ControlInner + Sized> Member<Control<T>> {
+	pub fn control(&self) -> &Control<T> { &self.inner }
+	pub fn control_mut(&mut self) -> &mut Control<T> { &mut self.inner }
+}
 
 // ===============================================================================================================
 
@@ -278,7 +280,7 @@ impl <T: SingleContainerInner + ContainerInner + Sized + 'static> ContainerInner
 impl <T: SingleContainerInner + ControlInner + Drawable + Sized + 'static> Drawable for SingleContainer<T> {
 	fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) { self.inner.draw(base, coords) }
     fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(base, w, h) }
-    fn invalidate(&mut self) { self.inner.invalidate() }
+    fn invalidate(&mut self, base: &mut MemberControlBase) { self.inner.invalidate(base) }
 }
 impl <T: SingleContainerInner + ControlInner + Sized + 'static> HasLayoutInner for SingleContainer<T> {
 	fn on_layout_changed(&mut self, base: &mut layout::Attributes) { self.inner.on_layout_changed(base) }
@@ -356,7 +358,7 @@ impl <T: MultiContainerInner + ContainerInner + Sized + 'static> ContainerInner 
 impl <T: MultiContainerInner + ControlInner + Drawable + Sized + 'static> Drawable for MultiContainer<T> {
 	fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) { self.inner.draw(base, coords) }
     fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(base, w, h) }
-    fn invalidate(&mut self) { self.inner.invalidate() }
+    fn invalidate(&mut self, base: &mut MemberControlBase) { self.inner.invalidate(base) }
 }
 impl <T: MultiContainerInner + ControlInner + Sized + 'static> HasLayoutInner for MultiContainer<T> {
 	fn on_layout_changed(&mut self, base: &mut layout::Attributes) { self.inner.on_layout_changed(base) }
