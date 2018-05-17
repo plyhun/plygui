@@ -20,6 +20,8 @@ pub trait UiMember: AsAny + development::seal::Sealed {
     
     fn is_control(&self) -> Option<&UiControl>;
     fn is_control_mut(&mut self) -> Option<&mut UiControl>;
+    fn is_container(&self) -> Option<&UiContainer>;
+    fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
 }
 
 pub trait UiHasOrientation: AsAny + development::seal::Sealed {
@@ -46,9 +48,6 @@ pub trait UiHasLayout: UiMember {
 }
 
 pub trait UiControl: UiHasLayout + development::OuterDrawable {
-    fn is_container_mut(&mut self) -> Option<&mut UiContainer>;
-    fn is_container(&self) -> Option<&UiContainer>;
-
     fn on_added_to_container(&mut self, &UiContainer, x: i32, y: i32);
     fn on_removed_from_container(&mut self, &UiContainer);
 
