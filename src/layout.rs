@@ -194,6 +194,11 @@ pub enum Gravity {
     Start,
     End,
 }
+impl Default for Gravity {
+	fn default() -> Self {
+		Gravity::Center
+	}
+}
 
 #[derive(Debug, Clone)]
 pub struct Attributes {

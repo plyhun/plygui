@@ -98,6 +98,10 @@ impl <T: MemberInner> traits::UiMember for Member<T> {
     default fn is_control_mut(&mut self) -> Option<&mut traits::UiControl> { None }
     default fn is_container(&self) -> Option<&traits::UiContainer> { None }
     default fn is_container_mut(&mut self) -> Option<&mut traits::UiContainer> { None }
+    
+    fn as_member(&self) -> &traits::UiMember { self }
+    fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
+    fn into_member(self: Box<Self>) -> Box<traits::UiMember> { self }
 }
 impl <T: MemberInner> traits::AsAny for Member<T> {
     fn as_any(&self) -> &Any { self }
@@ -124,10 +128,10 @@ impl <T: ControlInner> traits::UiHasLayout for Member<Control<T>> {
     fn set_layout_alignment(&mut self, value: layout::Alignment) { self.inner.base.layout.alignment = value; self.inner.inner.on_layout_changed(&mut self.inner.base.layout); }
     fn set_layout_padding(&mut self, value: layout::BoundarySizeArgs) { self.inner.base.layout.padding = value.into(); self.inner.inner.on_layout_changed(&mut self.inner.base.layout); }
     fn set_layout_margin(&mut self, value: layout::BoundarySizeArgs) { self.inner.base.layout.margin = value.into(); self.inner.inner.on_layout_changed(&mut self.inner.base.layout); }
-
-    fn as_member(&self) -> &traits::UiMember { self }
-    fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
-    fn into_member(self: Box<Self>) -> Box<traits::UiMember> { self }
+    
+    fn as_has_layout(&self) -> &traits::UiHasLayout { self }
+    fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
+    fn into_has_layout(self: Box<Self>) -> Box<traits::UiHasLayout> { self }
 }
 
 // ===============================================================================================================
@@ -210,7 +214,10 @@ impl <T: ControlInner> OuterDrawable for Member<Control<T>> {
     	self.inner.inner.invalidate(
 			unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }
 		) 
-    }
+    }    
+    fn as_drawable(&self) -> &OuterDrawable { self }
+    fn as_drawable_mut(&mut self) -> &mut OuterDrawable { self }
+    fn into_drawable(self: Box<Self>) -> Box<OuterDrawable> { self }
 }
 impl <T: ControlInner> traits::UiControl for Member<Control<T>> {
 	fn on_added_to_container(&mut self, parent: &traits::UiContainer, x: i32, y: i32) { 
@@ -234,14 +241,10 @@ impl <T: ControlInner> traits::UiControl for Member<Control<T>> {
 
     #[cfg(feature = "markup")]
     default fn fill_from_markup(&mut self, _markup: &super::markup::Markup, _registry: &mut super::markup::MarkupRegistry) { unimplemented!() } 
-
-    fn as_has_layout(&self) -> &traits::UiHasLayout { self }
-    fn as_has_layout_mut(&mut self) -> &mut traits::UiHasLayout { self }
-    fn into_has_layout(self: Box<Self>) -> Box<traits::UiHasLayout> { self }
     
-    fn as_drawable(&self) -> &OuterDrawable { self }
-    fn as_drawable_mut(&mut self) -> &mut OuterDrawable { self }
-    fn into_drawable(self: Box<Self>) -> Box<OuterDrawable> { self }
+    fn as_control(&self) -> &traits::UiControl { self }
+    fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
+    fn into_control(self: Box<Self>) -> Box<traits::UiControl> { self }
 }
 impl <T: ControlInner> traits::UiMember for Member<Control<T>> {
     fn is_control(&self) -> Option<&traits::UiControl> { Some(self) }
@@ -257,14 +260,20 @@ impl <T: ControlInner> Member<Control<T>> {
 pub trait ContainerInner: MemberInner {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl>;
+    
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity);
+    fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity);
 }
 impl <T: ContainerInner> traits::UiContainer for Member<T> {
 	default fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
     default fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
     
-    fn as_member(&self) -> &traits::UiMember { self }
-    fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
-    fn into_member(self: Box<Self>) -> Box<traits::UiMember> { self }
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) { self.inner.gravity() }
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity) { self.inner.set_gravity(&mut self.base, w, h) }
+    
+    fn as_container(&self) -> &traits::UiContainer { self }
+    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
 }
 
 // ===============================================================================================================
@@ -291,6 +300,9 @@ impl <T: SingleContainerInner> MemberInner for SingleContainer<T> {
 impl <T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
+    
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) { self.inner.gravity() }
+    fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity) { self.inner.set_gravity(base, w, h) }
 }
 impl <T: SingleContainerInner + ControlInner + Drawable> Drawable for SingleContainer<T> {
 	fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) { self.inner.draw(base, coords) }
@@ -316,10 +328,10 @@ impl <T: SingleContainerInner> traits::UiSingleContainer for Member<SingleContai
 	fn set_child(&mut self, child: Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>> { self.inner.inner.set_child(child) }
     fn child(&self) -> Option<&traits::UiControl> { self.inner.inner.child() }
     fn child_mut(&mut self) -> Option<&mut traits::UiControl> { self.inner.inner.child_mut() }
-
-    fn as_container(&self) -> &traits::UiContainer { self }
-    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
-    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
+    
+    fn as_single_container(&self) -> &traits::UiSingleContainer { self }
+    fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
+    fn into_single_container(self: Box<Self>) -> Box<traits::UiSingleContainer> { self }
 }
 impl <T: SingleContainerInner> traits::UiMember for Member<SingleContainer<T>> {
     fn is_container(&self) -> Option<&traits::UiContainer> { Some(self) }
@@ -333,10 +345,10 @@ impl <T: SingleContainerInner + ControlInner> traits::UiSingleContainer for Memb
 	fn set_child(&mut self, child: Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>> { self.inner.inner.inner.set_child(child) }
     fn child(&self) -> Option<&traits::UiControl> { self.inner.inner.inner.child() }
     fn child_mut(&mut self) -> Option<&mut traits::UiControl> { self.inner.inner.inner.child_mut() }
-
-    fn as_container(&self) -> &traits::UiContainer { self }
-    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
-    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
+    
+    fn as_single_container(&self) -> &traits::UiSingleContainer { self }
+    fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
+    fn into_single_container(self: Box<Self>) -> Box<traits::UiSingleContainer> { self }
 }
 impl <T: SingleContainerInner + ControlInner> traits::UiMember for Member<Control<SingleContainer<T>>> {
     fn is_container(&self) -> Option<&traits::UiContainer> { Some(self) }
@@ -358,12 +370,15 @@ impl <T: SingleContainerInner + ControlInner> traits::UiContainer for Member<Con
 		}
     }
     
-    fn as_member(&self) -> &traits::UiMember { self }
-    fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
-    fn into_member(self: Box<Self>) -> Box<traits::UiMember> { self }
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) { self.inner.inner.gravity() }
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity) { self.inner.inner.set_gravity(&mut self.base, w, h) }
     
     fn is_single_mut(&mut self) -> Option<&mut traits::UiSingleContainer> { Some(self) }
     fn is_single(&self) -> Option<&traits::UiSingleContainer> { Some(self) }
+    
+    fn as_container(&self) -> &traits::UiContainer { self }
+    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
 }  
 
 // ===============================================================================================================
@@ -392,6 +407,9 @@ impl <T: MultiContainerInner> MemberInner for MultiContainer<T> {
 impl <T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
+    
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) { self.inner.gravity() }
+    fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity) { self.inner.set_gravity(base, w, h) }
 }
 impl <T: MultiContainerInner + ControlInner + Drawable> Drawable for MultiContainer<T> {
 	fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) { self.inner.draw(base, coords) }
@@ -419,10 +437,10 @@ impl <T: MultiContainerInner> traits::UiMultiContainer for Member<MultiContainer
     fn remove_child_from(&mut self, index: usize) -> Option<Box<traits::UiControl>> { self.inner.inner.remove_child_from(index) }
     fn child_at(&self, index: usize) -> Option<&traits::UiControl> { self.inner.inner.child_at(index) }
     fn child_at_mut(&mut self, index: usize) -> Option<&mut traits::UiControl> { self.inner.inner.child_at_mut(index) }
-
-    fn as_container(&self) -> &traits::UiContainer { self }
-    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
-    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
+    
+    fn as_multi_container(&self) -> &traits::UiMultiContainer { self }
+    fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
+    fn into_multi_container(self: Box<Self>) -> Box<traits::UiMultiContainer> { self }
 }
 impl <T: MultiContainerInner> traits::UiMember for Member<MultiContainer<T>> {
     fn is_container(&self) -> Option<&traits::UiContainer> { Some(self) }
@@ -447,12 +465,16 @@ impl <T: MultiContainerInner + ControlInner> traits::UiContainer for Member<Cont
 			self.inner.inner.find_control_by_id(id) 
 		}
     }
-    fn as_member(&self) -> &traits::UiMember { self }
-    fn as_member_mut(&mut self) -> &mut traits::UiMember { self }
-    fn into_member(self: Box<Self>) -> Box<traits::UiMember> { self }
+    
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) { self.inner.inner.gravity() }
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity) { self.inner.inner.set_gravity(&mut self.base, w, h) }
     
     fn is_multi_mut(&mut self) -> Option<&mut traits::UiMultiContainer> { Some(self) }
     fn is_multi(&self) -> Option<&traits::UiMultiContainer> { Some(self) }
+    
+    fn as_container(&self) -> &traits::UiContainer { self }
+    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
+    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
 }
 impl <T: MultiContainerInner + ControlInner> traits::UiMember for Member<Control<MultiContainer<T>>> {
     fn is_container(&self) -> Option<&traits::UiContainer> { Some(self) }
@@ -464,10 +486,10 @@ impl <T: MultiContainerInner + ControlInner> traits::UiMultiContainer for Member
     fn remove_child_from(&mut self, index: usize) -> Option<Box<traits::UiControl>> { self.inner.inner.inner.remove_child_from(index) }
     fn child_at(&self, index: usize) -> Option<&traits::UiControl> { self.inner.inner.inner.child_at(index) }
     fn child_at_mut(&mut self, index: usize) -> Option<&mut traits::UiControl> { self.inner.inner.inner.child_at_mut(index) }
-
-    fn as_container(&self) -> &traits::UiContainer { self }
-    fn as_container_mut(&mut self) -> &mut traits::UiContainer { self }
-    fn into_container(self: Box<Self>) -> Box<traits::UiContainer> { self }
+    
+    fn as_multi_container(&self) -> &traits::UiMultiContainer { self }
+    fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
+    fn into_multi_container(self: Box<Self>) -> Box<traits::UiMultiContainer> { self }
 } 
 
 // ===============================================================================================================
@@ -479,26 +501,50 @@ pub trait HasLabelInner {
 impl <T: HasLabelInner + MemberInner> traits::UiHasLabel for Member<T> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.set_label(label) }
+    
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + ControlInner> traits::UiHasLabel for Member<Control<T>> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.set_label(label) }
+    
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + SingleContainerInner> traits::UiHasLabel for Member<SingleContainer<T>> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.set_label(label) }
+    
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + MultiContainerInner> traits::UiHasLabel for Member<MultiContainer<T>> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.set_label(label) }
+    
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + ControlInner + SingleContainerInner> traits::UiHasLabel for Member<Control<SingleContainer<T>>> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.inner.set_label(label) }
+    
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + ControlInner + MultiContainerInner> traits::UiHasLabel for Member<Control<MultiContainer<T>>> {
 	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.inner.set_label(label) }
+    
+    fn as_has_label(&self) -> &traits::UiHasLabel { self }
+    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
+    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 
 // ===============================================================================================================
@@ -508,15 +554,31 @@ pub trait ClickableInner {
 }
 impl <T: ClickableInner + MemberInner> traits::UiClickable for Member<T> {
 	fn on_click(&mut self, cb: Option<callbacks::Click>) {  self.inner.on_click(cb) }
+	
+	fn as_clickable(&self) -> &traits::UiClickable { self }
+    fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+    fn into_clickable(self: Box<Self>) -> Box<traits::UiClickable> { self }
 }
 impl <T: ClickableInner + ControlInner> traits::UiClickable for Member<Control<T>> {
 	fn on_click(&mut self, cb: Option<callbacks::Click>) {  self.inner.inner.on_click(cb) }
+	
+	fn as_clickable(&self) -> &traits::UiClickable { self }
+    fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+    fn into_clickable(self: Box<Self>) -> Box<traits::UiClickable> { self }
 }
 impl <T: ClickableInner + ControlInner + SingleContainerInner> traits::UiClickable for Member<Control<SingleContainer<T>>> {
 	fn on_click(&mut self, cb: Option<callbacks::Click>) {  self.inner.inner.inner.on_click(cb) }
+	
+	fn as_clickable(&self) -> &traits::UiClickable { self }
+    fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+    fn into_clickable(self: Box<Self>) -> Box<traits::UiClickable> { self }
 }
 impl <T: ClickableInner + ControlInner + MultiContainerInner> traits::UiClickable for Member<Control<MultiContainer<T>>> {
 	fn on_click(&mut self, cb: Option<callbacks::Click>) {  self.inner.inner.inner.on_click(cb) }
+	
+	fn as_clickable(&self) -> &traits::UiClickable { self }
+    fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
+    fn into_clickable(self: Box<Self>) -> Box<traits::UiClickable> { self }
 }
 
 // ===============================================================================================================
@@ -528,26 +590,50 @@ pub trait HasOrientationInner {
 impl <T: HasOrientationInner + MemberInner> traits::UiHasOrientation for Member<T> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.set_layout_orientation(value) }
+    
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
 }
 impl <T: HasOrientationInner + ControlInner> traits::UiHasOrientation for Member<Control<T>> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.inner.set_layout_orientation(value) }
+    
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
 }
 impl <T: HasOrientationInner + SingleContainerInner> traits::UiHasOrientation for Member<SingleContainer<T>> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.inner.set_layout_orientation(value) }
+    
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
 }
 impl <T: HasOrientationInner + MultiContainerInner> traits::UiHasOrientation for Member<MultiContainer<T>> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.inner.set_layout_orientation(value) }
+    
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
 }
 impl <T: HasOrientationInner + SingleContainerInner + ControlInner> traits::UiHasOrientation for Member<Control<SingleContainer<T>>> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.inner.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.inner.inner.set_layout_orientation(value) }
+    
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
 }
 impl <T: HasOrientationInner + MultiContainerInner + ControlInner> traits::UiHasOrientation for Member<Control<MultiContainer<T>>> {
 	fn layout_orientation(&self) -> layout::Orientation { self.inner.inner.inner.layout_orientation() }
     fn set_layout_orientation(&mut self, value: layout::Orientation) { self.inner.inner.inner.set_layout_orientation(value) }
+    
+    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
+    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
+    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
 }
 
 // ===============================================================================================================
@@ -601,10 +687,8 @@ pub trait WindowInner: HasLabelInner + SingleContainerInner {
 	fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<traits::UiWindow>;
 }
 
-impl <T: WindowInner> traits::UiWindow for Member<SingleContainer<T>> {
-	fn as_single_container(&self) -> &traits::UiSingleContainer { self }
-    fn as_single_container_mut(&mut self) -> &mut traits::UiSingleContainer { self }
-}
+impl <T: WindowInner> traits::UiWindow for Member<SingleContainer<T>> {}
+
 impl <T: WindowInner> HasInner for Member<SingleContainer<T>> {
 	type Inner = T;
 	type Params = MemberFunctions;
@@ -625,19 +709,8 @@ pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {
 	fn with_label(label: &str) -> Box<traits::UiButton>;
 }
 
-impl <T: ButtonInner> traits::UiButton for Member<Control<T>> {
-	fn as_control(&self) -> &traits::UiControl { self }
-    fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
-    fn into_control(self: Box<Self>) -> Box<traits::UiControl> { self }
-    
-    fn as_clickable(&self) -> &traits::UiClickable { self }
-    fn as_clickable_mut(&mut self) -> &mut traits::UiClickable { self }
-    fn into_clickable(self: Box<Self>) -> Box<traits::UiClickable> { self }
-    
-    fn as_has_label(&self) -> &traits::UiHasLabel { self }
-    fn as_has_label_mut(&mut self) -> &mut traits::UiHasLabel { self }
-    fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
-}
+impl <T: ButtonInner> traits::UiButton for Member<Control<T>> {}
+
 impl <T: ButtonInner> HasInner for Member<Control<T>> {
 	type Inner = T;
 	type Params = MemberFunctions;
@@ -658,19 +731,8 @@ pub trait LinearLayoutInner: ControlInner + MultiContainerInner + HasOrientation
 	fn with_orientation(orientation: layout::Orientation) -> Box<traits::UiLinearLayout>;
 }
 
-impl <T: LinearLayoutInner> traits::UiLinearLayout for Member<Control<MultiContainer<T>>> {
-	fn as_control(&self) -> &traits::UiControl { self }
-    fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
-    fn into_control(self: Box<Self>) -> Box<traits::UiControl> { self }
-    
-    fn as_multi_container(&self) -> &traits::UiMultiContainer { self }
-    fn as_multi_container_mut(&mut self) -> &mut traits::UiMultiContainer { self }
-    fn into_multi_container(self: Box<Self>) -> Box<traits::UiMultiContainer> { self }
-    
-    fn as_has_orientation(&self) -> &traits::UiHasOrientation { self }
-    fn as_has_orientation_mut(&mut self) -> &mut traits::UiHasOrientation { self }
-    fn into_has_orientation(self: Box<Self>) -> Box<traits::UiHasOrientation> { self }
-}
+impl <T: LinearLayoutInner> traits::UiLinearLayout for Member<Control<MultiContainer<T>>> {}
+
 impl <T: LinearLayoutInner> HasInner for Member<Control<MultiContainer<T>>> {
 	type Inner = T;
 	type Params = MemberFunctions;
@@ -687,12 +749,38 @@ impl <T: LinearLayoutInner> Member<Control<MultiContainer<T>>> {
 
 // ===============================================================================================================
 
+pub trait FrameInner: ControlInner + SingleContainerInner + HasLabelInner {
+	fn with_label(label: &str) -> Box<traits::UiFrame>;
+}
+
+impl <T: FrameInner> traits::UiFrame for Member<Control<SingleContainer<T>>> {}
+
+impl <T: FrameInner> HasInner for Member<Control<SingleContainer<T>>> {
+	type Inner = T;
+	type Params = MemberFunctions;
+	
+	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: Control { inner: SingleContainer { inner }, base: Default::default() }, base: MemberBase::with_functions(params) } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner.inner.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner.inner }
+}
+impl <T: FrameInner> Member<Control<SingleContainer<T>>> {
+	pub fn with_label(label: &str) -> Box<traits::UiFrame> {
+		T::with_label(label)
+	}
+}
+
+// ===============================================================================================================
+
 pub trait Final {}
 
 pub trait OuterDrawable {
     fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self);
+        
+    fn as_drawable(&self) -> &OuterDrawable;
+    fn as_drawable_mut(&mut self) -> &mut OuterDrawable;
+    fn into_drawable(self: Box<Self>) -> Box<OuterDrawable>;
 }
 
 pub(crate) mod seal {
