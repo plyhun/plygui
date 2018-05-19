@@ -162,7 +162,7 @@ impl From<BoundarySizeArgs> for BoundarySize {
     fn from(a: BoundarySizeArgs) -> BoundarySize {
         match a {
             BoundarySizeArgs::Param(param) => param.into(),
-            BoundarySizeArgs::Set(set) => set,
+            BoundarySizeArgs::Set(set) => set.into(),
         }
     }
 }
@@ -174,12 +174,30 @@ pub enum Orientation {
     Vertical,
 }
 
+/*pub type Gravity = u8;
+pub mod gravity {
+    pub const CENTER: super::Gravity = 0;
+    pub const TOP: super::Gravity = 1 << 0;
+    pub const BOTTOM: super::Gravity = 1 << 1;
+    pub const LEFT: super::Gravity = 1 << 2;
+    pub const RIGHT: super::Gravity = 1 << 3;
+    pub const CENTER_HORIZONTAL: super::Gravity = 1 << 4;
+    pub const CENTER_VERTICAL: super::Gravity = 1 << 5;
+    pub const START: super::Gravity = 1 << 6;
+    pub const END: super::Gravity = 1 << 7;
+}*/
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Gravity {
-	Start,
-	Center,
-	End
+    Center,
+    Start,
+    End,
+}
+impl Default for Gravity {
+	fn default() -> Self {
+		Gravity::Center
+	}
 }
 
 #[derive(Debug, Clone)]
@@ -194,7 +212,7 @@ pub struct Attributes {
 impl Default for Attributes {
     fn default() -> Attributes {
         Attributes {
-            width: Size::WrapContent,
+            width: Size::MatchParent,
             height: Size::WrapContent,
             alignment: Alignment::None,
             padding: BoundarySize::AllTheSame(0),
