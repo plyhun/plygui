@@ -108,6 +108,14 @@ impl <T: MemberInner> traits::AsAny for Member<T> {
     fn as_any_mut(&mut self) -> &mut Any { self }
     fn into_any(self: Box<Self>) -> Box<Any> { self }
 }
+impl <T: MemberInner> HasInner for Member<T> {
+	type Inner = T;
+	type Params = MemberFunctions;
+	
+	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: inner, base: MemberBase::with_functions(params) } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
+}
 impl <T: MemberInner> seal::Sealed for Member<T> {}
 
 // ===============================================================================================================
@@ -193,6 +201,14 @@ impl <T: ControlInner> MemberInner for Control<T> {
     fn on_set_visibility(&mut self, base: &mut MemberBase) { self.inner.on_set_visibility(base) }
     
     unsafe fn native_id(&self) -> Self::Id { self.inner.native_id() }
+}
+impl <T: ControlInner> HasInner for Control<T> {
+	type Inner = T;
+	type Params = ();
+	
+	fn new(inner: Self::Inner, _: Self::Params) -> Self { Control { inner: inner, base: Default::default() } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
 impl <T: ControlInner> HasLayoutInner for Control<T> {
 	fn on_layout_changed(&mut self, base: &mut layout::Attributes) { self.inner.on_layout_changed(base) }
@@ -296,6 +312,14 @@ impl <T: SingleContainerInner> MemberInner for SingleContainer<T> {
     fn on_set_visibility(&mut self, base: &mut MemberBase) { self.inner.on_set_visibility(base) }
     
     unsafe fn native_id(&self) -> Self::Id { self.inner.native_id() }
+}
+impl <T: SingleContainerInner> HasInner for SingleContainer<T> {
+	type Inner = T;
+	type Params = ();
+	
+	fn new(inner: Self::Inner, _: Self::Params) -> Self { SingleContainer { inner: inner } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
 impl <T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
@@ -404,6 +428,14 @@ impl <T: MultiContainerInner> MemberInner for MultiContainer<T> {
     
     unsafe fn native_id(&self) -> Self::Id { self.inner.native_id() }
 }
+impl <T: MultiContainerInner> HasInner for MultiContainer<T> {
+	type Inner = T;
+	type Params = ();
+	
+	fn new(inner: Self::Inner, _: Self::Params) -> Self { MultiContainer { inner: inner } }
+	fn as_inner(&self) -> &Self::Inner { &self.inner }
+	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
+}
 impl <T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<T> {
 	fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiControl> { self.inner.find_control_by_id_mut(id) }
     fn find_control_by_id(&self, id: ids::Id) -> Option<&traits::UiControl> { self.inner.find_control_by_id(id) }
@@ -495,11 +527,11 @@ impl <T: MultiContainerInner + ControlInner> traits::UiMultiContainer for Member
 // ===============================================================================================================
 
 pub trait HasLabelInner {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+	fn label(&self) -> ::std::borrow::Cow<str>;
     fn set_label(&mut self, label: &str);
 }
 impl <T: HasLabelInner + MemberInner> traits::UiHasLabel for Member<T> {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.label() }
+	fn label(&self) -> ::std::borrow::Cow<str> { self.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.set_label(label) }
     
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
@@ -507,7 +539,7 @@ impl <T: HasLabelInner + MemberInner> traits::UiHasLabel for Member<T> {
     fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + ControlInner> traits::UiHasLabel for Member<Control<T>> {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.label() }
+	fn label(&self) -> ::std::borrow::Cow<str> { self.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.set_label(label) }
     
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
@@ -515,7 +547,7 @@ impl <T: HasLabelInner + ControlInner> traits::UiHasLabel for Member<Control<T>>
     fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + SingleContainerInner> traits::UiHasLabel for Member<SingleContainer<T>> {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.label() }
+	fn label(&self) -> ::std::borrow::Cow<str> { self.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.set_label(label) }
     
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
@@ -523,7 +555,7 @@ impl <T: HasLabelInner + SingleContainerInner> traits::UiHasLabel for Member<Sin
     fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + MultiContainerInner> traits::UiHasLabel for Member<MultiContainer<T>> {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.label() }
+	fn label(&self) -> ::std::borrow::Cow<str> { self.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.set_label(label) }
     
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
@@ -531,7 +563,7 @@ impl <T: HasLabelInner + MultiContainerInner> traits::UiHasLabel for Member<Mult
     fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + ControlInner + SingleContainerInner> traits::UiHasLabel for Member<Control<SingleContainer<T>>> {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.inner.label() }
+	fn label(&self) -> ::std::borrow::Cow<str> { self.inner.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.inner.set_label(label) }
     
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
@@ -539,7 +571,7 @@ impl <T: HasLabelInner + ControlInner + SingleContainerInner> traits::UiHasLabel
     fn into_has_label(self: Box<Self>) -> Box<traits::UiHasLabel> { self }
 }
 impl <T: HasLabelInner + ControlInner + MultiContainerInner> traits::UiHasLabel for Member<Control<MultiContainer<T>>> {
-	fn label<'a>(&'a self) -> ::std::borrow::Cow<'a, str> { self.inner.inner.inner.label() }
+	fn label(&self) -> ::std::borrow::Cow<str> { self.inner.inner.inner.label() }
     fn set_label(&mut self, label: &str) { self.inner.inner.inner.set_label(label) }
     
     fn as_has_label(&self) -> &traits::UiHasLabel { self }
@@ -641,7 +673,7 @@ impl <T: HasOrientationInner + MultiContainerInner + ControlInner> traits::UiHas
 pub trait ApplicationInner: Sized + 'static {
 	fn with_name(name: &str) -> Box<traits::UiApplication>;
 	fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<traits::UiWindow>;
-    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str>;
+    fn name(&self) -> ::std::borrow::Cow<str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut traits::UiMember>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&traits::UiMember>;
@@ -653,7 +685,7 @@ impl <T: ApplicationInner> traits::UiApplication for Application<T> {
 	fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<traits::UiWindow> {
 		self.inner.new_window(title, size, menu)
 	}
-    fn name<'a>(&'a self) -> ::std::borrow::Cow<'a, str> {
+    fn name(&self) -> ::std::borrow::Cow<str> {
 	    self.inner.name()
     }
     fn start(&mut self) { self.inner.start() }
@@ -689,14 +721,6 @@ pub trait WindowInner: HasLabelInner + SingleContainerInner {
 
 impl <T: WindowInner> traits::UiWindow for Member<SingleContainer<T>> {}
 
-impl <T: WindowInner> HasInner for Member<SingleContainer<T>> {
-	type Inner = T;
-	type Params = MemberFunctions;
-	
-	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: SingleContainer { inner }, base: MemberBase::with_functions(params) } }
-	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
-	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
-}
 impl <T: WindowInner> Member<SingleContainer<T>> {
 	pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<traits::UiWindow> {
 		T::with_params(title, window_size, menu)
@@ -711,14 +735,6 @@ pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {
 
 impl <T: ButtonInner> traits::UiButton for Member<Control<T>> {}
 
-impl <T: ButtonInner> HasInner for Member<Control<T>> {
-	type Inner = T;
-	type Params = MemberFunctions;
-	
-	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: Control { inner, base: Default::default() }, base: MemberBase::with_functions(params) } }
-	fn as_inner(&self) -> &Self::Inner { &self.inner.inner }
-	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner }
-}
 impl <T: ButtonInner> Member<Control<T>> {
 	pub fn with_label(label: &str) -> Box<traits::UiButton> {
 		T::with_label(label)
@@ -733,14 +749,6 @@ pub trait LinearLayoutInner: ControlInner + MultiContainerInner + HasOrientation
 
 impl <T: LinearLayoutInner> traits::UiLinearLayout for Member<Control<MultiContainer<T>>> {}
 
-impl <T: LinearLayoutInner> HasInner for Member<Control<MultiContainer<T>>> {
-	type Inner = T;
-	type Params = MemberFunctions;
-	
-	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: Control { inner: MultiContainer { inner }, base: Default::default() }, base: MemberBase::with_functions(params) } }
-	fn as_inner(&self) -> &Self::Inner { &self.inner.inner.inner }
-	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner.inner }
-}
 impl <T: LinearLayoutInner> Member<Control<MultiContainer<T>>> {
 	pub fn with_orientation(orientation: layout::Orientation) -> Box<traits::UiLinearLayout> {
 		T::with_orientation(orientation)
@@ -755,14 +763,6 @@ pub trait FrameInner: ControlInner + SingleContainerInner + HasLabelInner {
 
 impl <T: FrameInner> traits::UiFrame for Member<Control<SingleContainer<T>>> {}
 
-impl <T: FrameInner> HasInner for Member<Control<SingleContainer<T>>> {
-	type Inner = T;
-	type Params = MemberFunctions;
-	
-	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: Control { inner: SingleContainer { inner }, base: Default::default() }, base: MemberBase::with_functions(params) } }
-	fn as_inner(&self) -> &Self::Inner { &self.inner.inner.inner }
-	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner.inner.inner }
-}
 impl <T: FrameInner> Member<Control<SingleContainer<T>>> {
 	pub fn with_label(label: &str) -> Box<traits::UiFrame> {
 		T::with_label(label)
