@@ -65,7 +65,7 @@ pub trait UiControl: UiHasLayout + development::OuterDrawable {
     fn root_mut(&mut self) -> Option<&mut UiMember>;
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, &super::markup::Markup, &mut super::markup::MarkupRegistry);
+    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
     
     fn as_control(&self) -> &UiControl;
     fn as_control_mut(&mut self) -> &mut UiControl;

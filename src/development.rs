@@ -162,7 +162,7 @@ pub trait ControlInner: HasLayoutInner + Drawable {
     fn root_mut(&mut self) -> Option<&mut traits::UiMember>;
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, base: &mut MemberControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, mberarkup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
 }
 
 #[repr(C)]
@@ -256,7 +256,13 @@ impl <T: ControlInner> traits::UiControl for Member<Control<T>> {
     fn root_mut(&mut self) -> Option<&mut traits::UiMember> { self.inner.inner.root_mut() }
 
     #[cfg(feature = "markup")]
-    default fn fill_from_markup(&mut self, _markup: &super::markup::Markup, _registry: &mut super::markup::MarkupRegistry) { unimplemented!() } 
+    default fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { 
+	    self.inner.inner.fill_from_markup(
+		    unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }, 
+			markup,
+			registry
+	    )
+    } 
     
     fn as_control(&self) -> &traits::UiControl { self }
     fn as_control_mut(&mut self) -> &mut traits::UiControl { self }
@@ -346,7 +352,7 @@ impl <T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T
     fn root_mut(&mut self) -> Option<&mut traits::UiMember> { self.inner.root_mut() }
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(markup, registry) }
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(base, markup, registry) }
 }
 impl <T: SingleContainerInner> traits::UiSingleContainer for Member<SingleContainer<T>> {
 	fn set_child(&mut self, child: Option<Box<traits::UiControl>>) -> Option<Box<traits::UiControl>> { self.inner.inner.set_child(child) }
@@ -413,6 +419,28 @@ pub trait MultiContainerInner: ContainerInner {
     fn remove_child_from(&mut self, index: usize) -> Option<Box<traits::UiControl>>;
     fn child_at(&self, index: usize) -> Option<&traits::UiControl>;
     fn child_at_mut(&mut self, index: usize) -> Option<&mut traits::UiControl>;
+    
+    fn is_empty(&self) -> bool {
+        self.len() < 1
+    }
+    fn clear(&mut self) {
+        let len = self.len();
+        for index in (0..len).rev() {
+            self.remove_child_from(index);
+        }
+    }
+    fn push_child(&mut self, child: Box<traits::UiControl>) {
+        let len = self.len();
+        self.set_child_to(len, child);
+    }
+    fn pop_child(&mut self) -> Option<Box<traits::UiControl>> {
+        let len = self.len();
+        if len > 0 {
+            self.remove_child_from(len - 1)
+        } else {
+            None
+        }
+    }
 }
 
 pub struct MultiContainer<T: MultiContainerInner> {
@@ -461,7 +489,7 @@ impl <T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> 
     fn root_mut(&mut self) -> Option<&mut traits::UiMember> { self.inner.root_mut() }
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(markup, registry) }
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) { self.inner.fill_from_markup(base, markup, registry) }
 }
 impl <T: MultiContainerInner> traits::UiMultiContainer for Member<MultiContainer<T>> {
 	fn len(&self) -> usize { self.inner.inner.len() }
