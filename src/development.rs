@@ -12,7 +12,7 @@ pub trait HasInner: Sized + 'static {
 	type Inner: Sized;
 	type Params: Sized;
 	
-	fn new(inner: Self::Inner, params: Self::Params) -> Self;
+	fn with_inner(inner: Self::Inner, params: Self::Params) -> Self;
 	fn as_inner(&self) -> &Self::Inner;
 	fn as_inner_mut(&mut self) -> &mut Self::Inner;
 }
@@ -112,7 +112,7 @@ impl <T: MemberInner> HasInner for Member<T> {
 	type Inner = T;
 	type Params = MemberFunctions;
 	
-	fn new(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: inner, base: MemberBase::with_functions(params) } }
+	fn with_inner(inner: Self::Inner, params: Self::Params) -> Self { Member { inner: inner, base: MemberBase::with_functions(params) } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
@@ -206,7 +206,7 @@ impl <T: ControlInner> HasInner for Control<T> {
 	type Inner = T;
 	type Params = ();
 	
-	fn new(inner: Self::Inner, _: Self::Params) -> Self { Control { inner: inner, base: Default::default() } }
+	fn with_inner(inner: Self::Inner, _: Self::Params) -> Self { Control { inner: inner, base: Default::default() } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
@@ -317,7 +317,7 @@ impl <T: SingleContainerInner> HasInner for SingleContainer<T> {
 	type Inner = T;
 	type Params = ();
 	
-	fn new(inner: Self::Inner, _: Self::Params) -> Self { SingleContainer { inner: inner } }
+	fn with_inner(inner: Self::Inner, _: Self::Params) -> Self { SingleContainer { inner: inner } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
@@ -432,7 +432,7 @@ impl <T: MultiContainerInner> HasInner for MultiContainer<T> {
 	type Inner = T;
 	type Params = ();
 	
-	fn new(inner: Self::Inner, _: Self::Params) -> Self { MultiContainer { inner: inner } }
+	fn with_inner(inner: Self::Inner, _: Self::Params) -> Self { MultiContainer { inner: inner } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
@@ -702,7 +702,7 @@ impl <T: ApplicationInner> HasInner for Application<T> {
 	type Inner = T;
 	type Params = ();
 	
-	fn new(inner: Self::Inner, _: Self::Params) -> Self { Application { inner } }
+	fn with_inner(inner: Self::Inner, _: Self::Params) -> Self { Application { inner } }
 	fn as_inner(&self) -> &Self::Inner { &self.inner }
 	fn as_inner_mut(&mut self) -> &mut Self::Inner { &mut self.inner }
 }
