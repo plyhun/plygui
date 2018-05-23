@@ -274,13 +274,10 @@ macro_rules! fill_from_markup_label {
 }
 #[macro_export]
 macro_rules! fill_from_markup_callbacks {
-	($this: expr, $mrk: ident, $reg: ident, [$($cbname:expr => $cbtyp:ty),+]) => {
-		$(if let Some(callback) = $mrk.attributes.get($cbname) {
-    		let callback = $reg.callback(callback.as_attribute()).unwrap();
-    		$this.on_left_click(Some(unsafe { 
-    			let callback: *mut Box<$cbtyp> = mem::transmute(*callback);
-    			*Box::from_raw(callback)  
-    		}));
+	($this: expr, $mrk: ident, $reg: ident, [$($cbname:ident => $cbtyp:ty),+]) => {
+		$(if let Some(callback) = $mrk.attributes.get(stringify!($cbname)) {
+    		let callback: $cbtyp = $reg.pop_callback(callback.as_attribute()).unwrap();
+    		$this.$cbname(Some(callback));
     	})+
 	}
 }
@@ -299,7 +296,7 @@ macro_rules! fill_from_markup_children {
 #[macro_export]
 macro_rules! fill_from_markup_child {
 	($this: expr, $mrk: ident, $reg: ident) => {
-		if let Some(child_markup) = $mrk.attributes.get(::plygui_api::markup::CHILDREN).map(|m| m.as_child()) {
+		if let Some(child_markup) = $mrk.attributes.get(::plygui_api::markup::CHILD).map(|m| m.as_child()) {
 			use plygui_api::development::SingleContainerInner;
 			
     		let mut child = $reg.member(&child_markup.member_type).unwrap()();
