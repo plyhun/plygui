@@ -15,11 +15,11 @@ pub unsafe fn base_to_impl_mut<T>(this: &mut development::MemberBase) -> &mut T
 }
 
 #[inline]
-pub fn member_control_base<T: development::MemberInner + development::ControlInner>(this: &development::Member<development::Control<T>>) -> &development::MemberControlBase {
+pub fn member_control_base<T: development::ControlInner>(this: &development::Member<development::Control<T>>) -> &development::MemberControlBase {
 	unsafe { mem::transmute(this) }
 }
 #[inline]
-pub fn member_control_base_mut<T: development::MemberInner + development::ControlInner>(this: &mut development::Member<development::Control<T>>) -> &mut development::MemberControlBase {
+pub fn member_control_base_mut<T: development::ControlInner>(this: &mut development::Member<development::Control<T>>) -> &mut development::MemberControlBase {
 	unsafe { mem::transmute(this) }
 }
 

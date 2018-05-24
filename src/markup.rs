@@ -267,9 +267,9 @@ macro_rules! fill_from_markup_base {
 }
 #[macro_export]
 macro_rules! fill_from_markup_label {
-	($this: expr, $mrk: ident) => {
+	($this: expr, $base: expr, $mrk: ident) => {
 		use plygui_api::development::HasLabelInner;
-		$this.set_label(&$mrk.attributes.get("label").unwrap().as_attribute());
+		$this.set_label($base, &$mrk.attributes.get("label").unwrap().as_attribute());
 	}
 }
 #[macro_export]
@@ -283,25 +283,25 @@ macro_rules! fill_from_markup_callbacks {
 }
 #[macro_export]
 macro_rules! fill_from_markup_children {
-	($this: expr, $mrk: ident, $reg: ident) => {
+	($this: expr, $base: expr, $mrk: ident, $reg: ident) => {
 		for child_markup in $mrk.attributes.get(::plygui_api::markup::CHILDREN).unwrap_or(&::plygui_api::markup::MarkupNode::Children(vec![])).as_children() {
 			use plygui_api::development::MultiContainerInner;
 			
     		let mut child = $reg.member(&child_markup.member_type).unwrap()();
     		child.fill_from_markup(child_markup, $reg);
-			$this.push_child(child);
+			$this.push_child($base, child);
 		}	
 	}
 }
 #[macro_export]
 macro_rules! fill_from_markup_child {
-	($this: expr, $mrk: ident, $reg: ident) => {
+	($this: expr, $base: expr, $mrk: ident, $reg: ident) => {
 		if let Some(child_markup) = $mrk.attributes.get(::plygui_api::markup::CHILD).map(|m| m.as_child()) {
 			use plygui_api::development::SingleContainerInner;
 			
     		let mut child = $reg.member(&child_markup.member_type).unwrap()();
     		child.fill_from_markup(child_markup, $reg);
-			$this.set_child(Some(child));
+			$this.set_child($base, Some(child));
 		}	
 	}
 }
