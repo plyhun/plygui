@@ -1,4 +1,4 @@
-use super::traits;
+use super::controls;
 
 pub trait Callback {
     fn id(&self) -> &'static str;
@@ -33,5 +33,5 @@ macro_rules! callback {
 	}
 }
 
-callback!(Resize, FnMut(&mut traits::UiMember, u16, u16));
-callback!(Click, FnMut(&mut traits::UiButton));
+callback!(Resize, FnMut(&mut controls::Member, u16, u16));
+callback!(Click, FnMut(&mut controls::Button));

@@ -1,4 +1,4 @@
-use super::{ids, callbacks, traits};
+use super::{ids, callbacks, controls};
 
 use std::fmt;
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess};
 use typemap::{Key, TypeMap};
 
 pub type MemberType = String;
-pub type MemberSpawner = fn() -> Box<traits::UiControl>;
+pub type MemberSpawner = fn() -> Box<controls::Control>;
 
 struct CallbackKeyWrapper<T>(PhantomData<T>);
 struct CallbackWrapper<T: callbacks::Callback>(T);
@@ -237,7 +237,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
     }
 }
 
-pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<super::traits::UiControl> {
+pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<super::controls::Control> {
     let markup: Markup = super::serde_json::from_str(json).unwrap();
 
     let mut control = registry.member(&markup.member_type).unwrap()();

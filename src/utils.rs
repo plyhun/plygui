@@ -3,13 +3,13 @@ use std::mem;
 
 #[inline]
 pub unsafe fn base_to_impl<T>(this: &development::MemberBase) -> &T
-    where T: traits::UiMember + Sized
+    where T: controls::Member + Sized
 {
     mem::transmute(this)
 }
 #[inline]
 pub unsafe fn base_to_impl_mut<T>(this: &mut development::MemberBase) -> &mut T
-    where T: traits::UiMember + Sized
+    where T: controls::Member + Sized
 {
     mem::transmute(this)
 }
