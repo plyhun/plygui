@@ -192,3 +192,14 @@ impl development::Final for LinearLayout {}
 
 pub trait Frame: SingleContainer + Control + HasLabel {}
 impl development::Final for Frame {}
+
+pub trait Splitted: MultiContainer + Control + HasOrientation {
+	fn first(&self) -> &Control;
+	fn second(&self) -> &Control;
+	fn first_mut(&mut self) -> &mut Control;
+	fn second_mut(&mut self) -> &mut Control;
+	
+	fn set_splitter(&mut self, pos: f32);
+	fn splitter(&self) -> f32;
+}
+impl development::Final for Splitted {}
