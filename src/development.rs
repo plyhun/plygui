@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::any::Any;
 
-pub trait NativeId: Debug + Clone + Copy + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
+pub trait NativeId: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
 
 // ==========================================================================================================
 
