@@ -221,6 +221,7 @@ pub struct MemberControlBase {
 #[repr(C)]
 pub struct ControlBase {
     pub layout: layout::Attributes,
+    pub skip_draw: bool,
 }
 #[repr(C)]
 pub struct Control<T: ControlInner> {
@@ -232,6 +233,7 @@ impl Default for ControlBase {
 	fn default() -> Self {
 		ControlBase {
 			layout: layout::Attributes::default(),
+			skip_draw: false,
 		}
 	}
 }
@@ -270,10 +272,12 @@ impl <T: ControlInner> HasLayoutInner for Control<T> {
 impl <T: ControlInner> OuterDrawable for Member<Control<T>> {
 	#[inline]
 	fn draw(&mut self, coords: Option<(i32, i32)>) { 
-		self.inner.inner.draw(
-			unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
-			coords
-		) 
+		if !self.is_skip_draw() {
+			self.inner.inner.draw(
+				unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+				coords
+			) 
+		}
 	}
 	#[inline]
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) { 
@@ -287,7 +291,15 @@ impl <T: ControlInner> OuterDrawable for Member<Control<T>> {
     	self.inner.inner.invalidate(
 			unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }
 		) 
-    }    
+    }  
+    #[inline]
+    fn set_skip_draw(&mut self, skip: bool) {
+    	self.inner.base.skip_draw = skip;
+    }
+    #[inline]
+    fn is_skip_draw(&self) -> bool {
+    	self.inner.base.skip_draw
+    }  
     #[inline]
     fn as_drawable(&self) -> &OuterDrawable { self }
     #[inline]
@@ -429,6 +441,7 @@ impl <T: SingleContainerInner + ControlInner + Drawable> Drawable for SingleCont
     fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(base, w, h) }
     #[inline]
     fn invalidate(&mut self, base: &mut MemberControlBase) { self.inner.invalidate(base) }
+    
 }
 impl <T: SingleContainerInner + ControlInner> HasLayoutInner for SingleContainer<T> {
 	#[inline]
@@ -614,6 +627,7 @@ impl <T: MultiContainerInner + ControlInner + Drawable> Drawable for MultiContai
     fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) { self.inner.measure(base, w, h) }
     #[inline]
     fn invalidate(&mut self, base: &mut MemberControlBase) { self.inner.invalidate(base) }
+    
 }
 impl <T: MultiContainerInner + ControlInner> HasLayoutInner for MultiContainer<T> {
 	#[inline]
@@ -1064,12 +1078,50 @@ impl <T: FrameInner> Member<Control<SingleContainer<T>>> {
 
 // ===============================================================================================================
 
+pub trait SplittedInner: MultiContainerInner + ControlInner + HasOrientationInner {
+	fn with_content(first: Box<controls::Control>, second: Box<controls::Control>, orientation: layout::Orientation) -> Box<controls::Splitted>;
+	fn set_splitter(&mut self, base: &mut MemberControlBase, pos: f32);
+	fn splitter(&self) -> f32;
+	
+	fn first(&self) -> &controls::Control;
+	fn second(&self) -> &controls::Control;
+	fn first_mut(&mut self) -> &mut controls::Control;
+	fn second_mut(&mut self) -> &mut controls::Control;
+}
+
+impl <T: SplittedInner> controls::Splitted for Member<Control<MultiContainer<T>>> {
+	fn set_splitter(&mut self, pos: f32) {
+		self.inner.inner.inner.set_splitter(
+			unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }, 
+			pos
+		)
+	}
+	fn splitter(&self) -> f32 {
+		self.inner.inner.inner.splitter()
+	}
+	fn first(&self) -> &controls::Control { self.inner.inner.inner.first() }
+	fn second(&self) -> &controls::Control { self.inner.inner.inner.second() }
+	fn first_mut(&mut self) -> &mut controls::Control { self.inner.inner.inner.first_mut() }
+	fn second_mut(&mut self) -> &mut controls::Control { self.inner.inner.inner.second_mut() }
+}
+
+impl <T: SplittedInner> Member<Control<MultiContainer<T>>> {
+	#[inline]
+	pub fn with_content(first: Box<controls::Control>, second: Box<controls::Control>, orientation: layout::Orientation) -> Box<controls::Splitted> {
+		T::with_content(first, second, orientation)
+	}
+}
+
+// ===============================================================================================================
+
 pub trait Final {}
 
 pub trait OuterDrawable {
     fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self);
+    fn set_skip_draw(&mut self, skip: bool);
+    fn is_skip_draw(&self) -> bool;
         
     fn as_drawable(&self) -> &OuterDrawable;
     fn as_drawable_mut(&mut self) -> &mut OuterDrawable;
