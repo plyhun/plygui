@@ -24,10 +24,10 @@ pub fn member_control_base_mut<T: development::ControlInner>(this: &mut developm
 }
 
 #[inline]
-pub(crate) unsafe fn member_control_base_unchecked(this: &development::MemberBase) -> &development::MemberControlBase {
+pub unsafe fn member_control_base_unchecked(this: &development::MemberBase) -> &development::MemberControlBase {
 	mem::transmute(this)
 }
 #[inline]
-pub(crate) unsafe fn member_control_base_mut_unchecked(this: &mut development::MemberBase) -> &mut development::MemberControlBase {
+pub unsafe fn member_control_base_mut_unchecked(this: &mut development::MemberBase) -> &mut development::MemberControlBase {
 	mem::transmute(this)
 }
