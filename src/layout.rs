@@ -162,7 +162,7 @@ impl From<BoundarySizeArgs> for BoundarySize {
     fn from(a: BoundarySizeArgs) -> BoundarySize {
         match a {
             BoundarySizeArgs::Param(param) => param.into(),
-            BoundarySizeArgs::Set(set) => set.into(),
+            BoundarySizeArgs::Set(set) => set,
         }
     }
 }
@@ -195,9 +195,9 @@ pub enum Gravity {
     End,
 }
 impl Default for Gravity {
-	fn default() -> Self {
-		Gravity::Center
-	}
+    fn default() -> Self {
+        Gravity::Center
+    }
 }
 
 #[derive(Debug, Clone)]

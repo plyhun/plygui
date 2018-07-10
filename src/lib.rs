@@ -1,4 +1,9 @@
+//#![warn(bare_trait_objects)]
 //#![cfg_attr(feature = "markup", feature(unboxed_closures))]
+#![allow(cast_lossless)]
+#![allow(redundant_field_names)]
+#![allow(many_single_char_names)]
+
 #![feature(specialization)]
 
 #[cfg(feature = "markup")]

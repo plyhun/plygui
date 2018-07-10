@@ -14,5 +14,5 @@ pub enum WindowStartSize {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WindowMenu {
-	None,
+    None,
 }
