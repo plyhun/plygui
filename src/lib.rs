@@ -4,6 +4,7 @@
 #![cfg_attr(feature = "cargo-clippy", allow(redundant_field_names))]
 #![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
 
+#![cfg_attr(feature = "type_check", feature(get_type_id))]
 #![feature(specialization)]
 
 #[cfg(feature = "markup")]

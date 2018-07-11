@@ -2,10 +2,10 @@ use super::{types, ids, layout, callbacks, controls, utils};
 
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::any::Any;
+use std::any::{Any, TypeId};
 
 pub trait NativeId
-    : Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {
+    : Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {
 }
 
 // ==========================================================================================================
@@ -17,6 +17,7 @@ pub trait HasInner: Sized + 'static {
     fn with_inner(inner: Self::Inner, params: Self::Params) -> Self;
     fn as_inner(&self) -> &Self::Inner;
     fn as_inner_mut(&mut self) -> &mut Self::Inner;
+    fn into_inner(self) -> Self::Inner;
 }
 
 #[repr(C)]
@@ -129,6 +130,11 @@ impl<T: MemberInner> controls::Member for Member<T> {
     unsafe fn native_id(&self) -> usize {
         self.inner.native_id().into()
     }
+    
+    #[cfg(feature = "type_check")]
+    unsafe fn type_id(&self) -> TypeId {
+    	self.inner.native_id().get_type_id()
+    }
 
     #[inline]
     default fn is_control(&self) -> Option<&controls::Control> {
@@ -192,6 +198,10 @@ impl<T: MemberInner> HasInner for Member<T> {
     #[inline]
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
         &mut self.inner
+    }
+    #[inline]
+    fn into_inner(self) -> Self::Inner {
+    	self.inner
     }
 }
 impl<T: MemberInner> seal::Sealed for Member<T> {}
@@ -365,6 +375,10 @@ impl<T: ControlInner> HasInner for Control<T> {
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
         &mut self.inner
     }
+    #[inline]
+    fn into_inner(self) -> Self::Inner {
+    	self.inner
+    }
 }
 impl<T: ControlInner> HasLayoutInner for Control<T> {
     #[inline]
@@ -420,6 +434,12 @@ impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
 impl<T: ControlInner> controls::Control for Member<Control<T>> {
     #[inline]
     fn on_added_to_container(&mut self, parent: &controls::Container, x: i32, y: i32) {
+        #[cfg(feature = "type_check")]
+        unsafe { 
+    		if self.inner.inner.native_id().get_type_id() != parent.type_id() { 
+    			panic!("Attempt to use the control from an incompatible backend!") 
+    		} 
+    	}
         self.inner
             .inner
             .on_added_to_container(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
@@ -580,6 +600,10 @@ impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
     #[inline]
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
         &mut self.inner
+    }
+    #[inline]
+    fn into_inner(self) -> Self::Inner {
+    	self.inner
     }
 }
 impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
@@ -857,6 +881,10 @@ impl<T: MultiContainerInner> HasInner for MultiContainer<T> {
     #[inline]
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
         &mut self.inner
+    }
+    #[inline]
+    fn into_inner(self) -> Self::Inner {
+    	self.inner
     }
 }
 impl<T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<T> {
@@ -1477,7 +1505,7 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 // ===============================================================================================================
 
 pub trait ApplicationInner: Sized + 'static {
-    fn with_name(name: &str) -> Box<controls::Application>;
+    fn with_name(name: &str) -> Box<Application<Self>>;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<controls::Window>;
     fn name(&self) -> ::std::borrow::Cow<str>;
     fn start(&mut self);
@@ -1540,6 +1568,10 @@ impl<T: ApplicationInner> HasInner for Application<T> {
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
         &mut self.inner
     }
+    #[inline]
+    fn into_inner(self) -> Self::Inner {
+    	self.inner
+    }
 }
 impl<T: ApplicationInner> Application<T> {
     #[inline]
@@ -1552,7 +1584,7 @@ impl<T: ApplicationInner> seal::Sealed for Application<T> {}
 // ===============================================================================================================
 
 pub trait WindowInner: HasLabelInner + SingleContainerInner {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<controls::Window>;
+    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<Member<SingleContainer<Self>>>;
 }
 
 impl<T: WindowInner> controls::Window for Member<SingleContainer<T>> {}
@@ -1567,7 +1599,7 @@ impl<T: WindowInner> Member<SingleContainer<T>> {
 // ===============================================================================================================
 
 pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {
-    fn with_label(label: &str) -> Box<controls::Button>;
+    fn with_label(label: &str) -> Box<Member<Control<Self>>>;
 }
 
 impl<T: ButtonInner> controls::Button for Member<Control<T>> {}
@@ -1583,7 +1615,7 @@ impl<T: ButtonInner> Member<Control<T>> {
 
 pub trait LinearLayoutInner
     : ControlInner + MultiContainerInner + HasOrientationInner {
-    fn with_orientation(orientation: layout::Orientation) -> Box<controls::LinearLayout>;
+    fn with_orientation(orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
 }
 
 impl<T: LinearLayoutInner> controls::LinearLayout for Member<Control<MultiContainer<T>>> {}
@@ -1598,7 +1630,7 @@ impl<T: LinearLayoutInner> Member<Control<MultiContainer<T>>> {
 // ===============================================================================================================
 
 pub trait FrameInner: ControlInner + SingleContainerInner + HasLabelInner {
-    fn with_label(label: &str) -> Box<controls::Frame>;
+    fn with_label(label: &str) -> Box<Member<Control<SingleContainer<Self>>>>;
 }
 
 impl<T: FrameInner> controls::Frame for Member<Control<SingleContainer<T>>> {}
@@ -1614,7 +1646,7 @@ impl<T: FrameInner> Member<Control<SingleContainer<T>>> {
 
 pub trait SplittedInner
     : MultiContainerInner + ControlInner + HasOrientationInner {
-    fn with_content(first: Box<controls::Control>, second: Box<controls::Control>, orientation: layout::Orientation) -> Box<controls::Splitted>;
+    fn with_content(first: Box<controls::Control>, second: Box<controls::Control>, orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
     fn set_splitter(&mut self, base: &mut MemberControlBase, pos: f32);
     fn splitter(&self) -> f32;
 

@@ -1,6 +1,8 @@
 use super::{layout, callbacks, types, ids, development};
 
 use std::any::Any;
+#[cfg(feature = "type_check")]
+use std::any::TypeId;
 
 pub trait AsAny {
     fn as_any(&self) -> &Any;
@@ -17,6 +19,8 @@ pub trait Member: AsAny + development::seal::Sealed {
 
     fn id(&self) -> ids::Id;
     unsafe fn native_id(&self) -> usize;
+    #[cfg(feature = "type_check")]
+    unsafe fn type_id(&self) -> TypeId;
 
     fn is_control(&self) -> Option<&Control>;
     fn is_control_mut(&mut self) -> Option<&mut Control>;
