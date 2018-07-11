@@ -14,3 +14,4 @@ typemap = { version = "^0.3", optional = true }
 
 [features]
 markup = ["serde", "serde_json", "typemap"]
+type_check = []
