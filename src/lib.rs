@@ -6,6 +6,8 @@
 
 #![cfg_attr(feature = "type_check", feature(get_type_id))]
 #![feature(specialization)]
+//#![feature(generic_associated_types)]
+//#![feature(associated_type_defaults)]
 
 #[cfg(feature = "markup")]
 extern crate serde;

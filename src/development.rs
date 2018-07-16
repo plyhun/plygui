@@ -2,7 +2,10 @@ use super::{types, ids, layout, callbacks, controls, utils};
 
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::any::{Any, TypeId};
+use std::any::Any;
+
+#[cfg(feature = "type_check")]
+use std::any::TypeId;
 
 pub trait NativeId
     : Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {
@@ -89,16 +92,33 @@ impl<T: MemberInner> Member<T> {
     pub fn base_mut(&mut self) -> &mut MemberBase {
         &mut self.base
     }
+    pub fn call_on_resize(&mut self, w: u16, h: u16) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.base_mut().handler_resize {
+            let self2: &mut Self = unsafe { 
+                ::std::mem::transmute(self2.clone())
+            };
+            (cb.as_mut())(self2, w, h);
+        }
+    }
 }
 
 pub trait MemberInner: Sized + 'static {
-    type Id: NativeId + Sized;
+    type Outer: controls::Member + Sized + 'static;
+    type Id: NativeId + Into<&'static Self::Outer> + Into<&'static mut Self::Outer> + Into<usize>; // this latter should be taken from NativeId's definition but it isnt :(
 
     fn size(&self) -> (u16, u16);
 
     fn on_set_visibility(&mut self, base: &mut MemberBase);
 
     unsafe fn native_id(&self) -> Self::Id;
+    
+    unsafe fn outer(&self) -> &Self::Outer {
+        self.native_id().into()
+    }
+    unsafe fn outer_mut(&self) -> &mut Self::Outer {
+        self.native_id().into()
+    }
 }
 impl<T: MemberInner> controls::Member for Member<T> {
     #[inline]
@@ -342,6 +362,7 @@ impl<T: ControlInner> Control<T> {
 
 impl<T: ControlInner> MemberInner for Control<T> {
     type Id = T::Id;
+    type Outer = T::Outer;
 
     #[inline]
     fn size(&self) -> (u16, u16) {
@@ -571,6 +592,7 @@ pub struct SingleContainer<T: SingleContainerInner> {
 
 impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {
     type Id = T::Id;
+    type Outer = T::Outer;
 
     #[inline]
     fn size(&self) -> (u16, u16) {
@@ -853,6 +875,7 @@ pub struct MultiContainer<T: MultiContainerInner> {
 
 impl<T: MultiContainerInner> MemberInner for MultiContainer<T> {
     type Id = T::Id;
+    type Outer = T::Outer;
 
     fn size(&self) -> (u16, u16) {
         self.inner.size()
