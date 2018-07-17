@@ -2,7 +2,10 @@ use super::{types, ids, layout, callbacks, controls, utils};
 
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::any::{Any, TypeId};
+use std::any::Any;
+
+#[cfg(feature = "type_check")]
+use std::any::TypeId;
 
 pub trait NativeId
     : Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {
@@ -88,6 +91,15 @@ impl<T: MemberInner> Member<T> {
     #[inline]
     pub fn base_mut(&mut self) -> &mut MemberBase {
         &mut self.base
+    }
+    pub fn call_on_resize(&mut self, w: u16, h: u16) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.base_mut().handler_resize {
+            let self2: &mut Self = unsafe { 
+                ::std::mem::transmute(self2.clone())
+            };
+            (cb.as_mut())(self2, w, h);
+        }
     }
 }
 
