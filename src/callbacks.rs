@@ -7,7 +7,7 @@ pub trait Callback {
 #[macro_export]
 macro_rules! callback {
 	($id: ident, $($typ:tt)+) => {
-		pub struct $id(Box<$($typ)+>);
+		pub struct $id(Box<dyn $($typ)+>);
 		
 		impl Callback for $id {
 			fn id(&self) -> &'static str {
@@ -20,18 +20,18 @@ macro_rules! callback {
 				$id(Box::new(t))
 			}
 		}
-		impl AsRef<$($typ)+> for $id {
-			fn as_ref(&self) -> &($($typ)+ + 'static) {
+		impl AsRef<dyn $($typ)+> for $id {
+			fn as_ref(&self) -> &(dyn $($typ)+  + 'static) {
 				self.0.as_ref()
 			}
 		}
-		impl AsMut<$($typ)+> for $id {
-			fn as_mut(&mut self) -> &mut ($($typ)+ + 'static) {
+		impl AsMut<dyn $($typ)+> for $id {
+			fn as_mut(&mut self) -> &mut (dyn $($typ)+ + 'static) {
 				self.0.as_mut()
 			}
 		}
 	}
 }
 
-callback!(Resize, FnMut(&mut controls::Member, u16, u16));
-callback!(Click, FnMut(&mut controls::Button));
+callback!(Resize, FnMut(&mut dyn controls::Member, u16, u16));
+callback!(Click, FnMut(&mut dyn controls::Button));

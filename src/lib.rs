@@ -1,4 +1,4 @@
-//#![warn(bare_trait_objects)]
+#![warn(bare_trait_objects)]
 //#![cfg_attr(feature = "markup", feature(unboxed_closures))]
 #![cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
 #![cfg_attr(feature = "cargo-clippy", allow(redundant_field_names))]

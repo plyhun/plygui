@@ -38,14 +38,14 @@ pub struct Member<T: MemberInner> {
 }
 #[repr(C)]
 pub struct MemberFunctions {
-    _as_any: unsafe fn(&MemberBase) -> &Any,
-    _as_any_mut: unsafe fn(&mut MemberBase) -> &mut Any,
-    _as_member: unsafe fn(&MemberBase) -> &controls::Member,
-    _as_member_mut: unsafe fn(&mut MemberBase) -> &mut controls::Member,
+    _as_any: unsafe fn(&MemberBase) -> &dyn Any,
+    _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any,
+    _as_member: unsafe fn(&MemberBase) -> &dyn controls::Member,
+    _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn controls::Member,
 }
 impl MemberFunctions {
     #[inline]
-    pub fn new(_as_any: unsafe fn(&MemberBase) -> &Any, _as_any_mut: unsafe fn(&mut MemberBase) -> &mut Any, _as_member: unsafe fn(&MemberBase) -> &controls::Member, _as_member_mut: unsafe fn(&mut MemberBase) -> &mut controls::Member) -> Self {
+    pub fn new(_as_any: unsafe fn(&MemberBase) -> &dyn Any, _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any, _as_member: unsafe fn(&MemberBase) -> &dyn controls::Member, _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn controls::Member) -> Self {
         MemberFunctions {
             _as_any,
             _as_any_mut,
@@ -67,19 +67,19 @@ impl MemberBase {
         }
     }
     #[inline]
-    pub fn as_any(&self) -> &Any {
+    pub fn as_any(&self) -> &dyn Any {
         unsafe { (self.functions._as_any)(self) }
     }
     #[inline]
-    pub fn as_any_mut(&mut self) -> &mut Any {
+    pub fn as_any_mut(&mut self) -> &mut dyn Any {
         unsafe { (self.functions._as_any_mut)(self) }
     }
     #[inline]
-    pub fn as_member(&self) -> &controls::Member {
+    pub fn as_member(&self) -> &dyn controls::Member {
         unsafe { (self.functions._as_member)(self) }
     }
     #[inline]
-    pub fn as_member_mut(&mut self) -> &mut controls::Member {
+    pub fn as_member_mut(&mut self) -> &mut dyn controls::Member {
         unsafe { (self.functions._as_member_mut)(self) }
     }
 }
@@ -149,46 +149,46 @@ impl<T: MemberInner> controls::Member for Member<T> {
     }
 
     #[inline]
-    default fn is_control(&self) -> Option<&controls::Control> {
+    default fn is_control(&self) -> Option<&dyn controls::Control> {
         None
     }
     #[inline]
-    default fn is_control_mut(&mut self) -> Option<&mut controls::Control> {
+    default fn is_control_mut(&mut self) -> Option<&mut dyn controls::Control> {
         None
     }
     #[inline]
-    default fn is_container(&self) -> Option<&controls::Container> {
+    default fn is_container(&self) -> Option<&dyn controls::Container> {
         None
     }
     #[inline]
-    default fn is_container_mut(&mut self) -> Option<&mut controls::Container> {
+    default fn is_container_mut(&mut self) -> Option<&mut dyn controls::Container> {
         None
     }
 
     #[inline]
-    fn as_member(&self) -> &controls::Member {
+    fn as_member(&self) -> &dyn controls::Member {
         self
     }
     #[inline]
-    fn as_member_mut(&mut self) -> &mut controls::Member {
+    fn as_member_mut(&mut self) -> &mut dyn controls::Member {
         self
     }
     #[inline]
-    fn into_member(self: Box<Self>) -> Box<controls::Member> {
+    fn into_member(self: Box<Self>) -> Box<dyn controls::Member> {
         self
     }
 }
 impl<T: MemberInner> controls::AsAny for Member<T> {
     #[inline]
-    fn as_any(&self) -> &Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
     #[inline]
-    fn as_any_mut(&mut self) -> &mut Any {
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
     #[inline]
-    fn into_any(self: Box<Self>) -> Box<Any> {
+    fn into_any(self: Box<Self>) -> Box<dyn Any> {
         self
     }
 }
@@ -273,15 +273,15 @@ impl<T: ControlInner> controls::HasLayout for Member<Control<T>> {
     }
 
     #[inline]
-    fn as_has_layout(&self) -> &controls::HasLayout {
+    fn as_has_layout(&self) -> &dyn controls::HasLayout {
         self
     }
     #[inline]
-    fn as_has_layout_mut(&mut self) -> &mut controls::HasLayout {
+    fn as_has_layout_mut(&mut self) -> &mut dyn controls::HasLayout {
         self
     }
     #[inline]
-    fn into_has_layout(self: Box<Self>) -> Box<controls::HasLayout> {
+    fn into_has_layout(self: Box<Self>) -> Box<dyn controls::HasLayout> {
         self
     }
 }
@@ -297,13 +297,13 @@ pub trait Drawable: Sized + 'static {
 // ===============================================================================================================
 
 pub trait ControlInner: HasLayoutInner + Drawable {
-    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &controls::Container, x: i32, y: i32);
-    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &controls::Container);
+    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container, x: i32, y: i32);
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container);
 
-    fn parent(&self) -> Option<&controls::Member>;
-    fn parent_mut(&mut self) -> Option<&mut controls::Member>;
-    fn root(&self) -> Option<&controls::Member>;
-    fn root_mut(&mut self) -> Option<&mut controls::Member>;
+    fn parent(&self) -> Option<&dyn controls::Member>;
+    fn parent_mut(&mut self) -> Option<&mut dyn controls::Member>;
+    fn root(&self) -> Option<&dyn controls::Member>;
+    fn root_mut(&mut self) -> Option<&mut dyn controls::Member>;
 
     fn cast_base_mut<'this, 'a: 'this>(&'this self, base: &'a mut MemberBase) -> &'a mut MemberControlBase {
         unsafe { utils::member_control_base_mut_unchecked(base) }
@@ -431,21 +431,21 @@ impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
         self.inner.base.skip_draw
     }
     #[inline]
-    fn as_drawable(&self) -> &OuterDrawable {
+    fn as_drawable(&self) -> &dyn OuterDrawable {
         self
     }
     #[inline]
-    fn as_drawable_mut(&mut self) -> &mut OuterDrawable {
+    fn as_drawable_mut(&mut self) -> &mut dyn OuterDrawable {
         self
     }
     #[inline]
-    fn into_drawable(self: Box<Self>) -> Box<OuterDrawable> {
+    fn into_drawable(self: Box<Self>) -> Box<dyn OuterDrawable> {
         self
     }
 }
 impl<T: ControlInner> controls::Control for Member<Control<T>> {
     #[inline]
-    fn on_added_to_container(&mut self, parent: &controls::Container, x: i32, y: i32) {
+    fn on_added_to_container(&mut self, parent: &dyn controls::Container, x: i32, y: i32) {
         #[cfg(feature = "type_check")]
         unsafe { 
     		if self.inner.inner.native_id().get_type_id() != parent.type_id() { 
@@ -460,7 +460,7 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
                                    y)
     }
     #[inline]
-    fn on_removed_from_container(&mut self, parent: &controls::Container) {
+    fn on_removed_from_container(&mut self, parent: &dyn controls::Container) {
         self.inner
             .inner
             .on_removed_from_container(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
@@ -468,19 +468,19 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
     }
 
     #[inline]
-    fn parent(&self) -> Option<&controls::Member> {
+    fn parent(&self) -> Option<&dyn controls::Member> {
         self.inner.inner.parent()
     }
     #[inline]
-    fn parent_mut(&mut self) -> Option<&mut controls::Member> {
+    fn parent_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.inner.inner.parent_mut()
     }
     #[inline]
-    fn root(&self) -> Option<&controls::Member> {
+    fn root(&self) -> Option<&dyn controls::Member> {
         self.inner.inner.root()
     }
     #[inline]
-    fn root_mut(&mut self) -> Option<&mut controls::Member> {
+    fn root_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.inner.inner.root_mut()
     }
 
@@ -494,25 +494,25 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
     }
 
     #[inline]
-    fn as_control(&self) -> &controls::Control {
+    fn as_control(&self) -> &dyn controls::Control {
         self
     }
     #[inline]
-    fn as_control_mut(&mut self) -> &mut controls::Control {
+    fn as_control_mut(&mut self) -> &mut dyn controls::Control {
         self
     }
     #[inline]
-    fn into_control(self: Box<Self>) -> Box<controls::Control> {
+    fn into_control(self: Box<Self>) -> Box<dyn controls::Control> {
         self
     }
 }
 impl<T: ControlInner> controls::Member for Member<Control<T>> {
     #[inline]
-    fn is_control(&self) -> Option<&controls::Control> {
+    fn is_control(&self) -> Option<&dyn controls::Control> {
         Some(self)
     }
     #[inline]
-    fn is_control_mut(&mut self) -> Option<&mut controls::Control> {
+    fn is_control_mut(&mut self) -> Option<&mut dyn controls::Control> {
         Some(self)
     }
 }
@@ -530,19 +530,19 @@ impl<T: ControlInner> Member<Control<T>> {
 // ===============================================================================================================
 
 pub trait ContainerInner: MemberInner {
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Control>;
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&controls::Control>;
+    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control>;
+    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control>;
 
     fn gravity(&self) -> (layout::Gravity, layout::Gravity);
     fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity);
 }
 impl<T: ContainerInner> controls::Container for Member<T> {
     #[inline]
-    default fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Control> {
+    default fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
         self.inner.find_control_by_id_mut(id)
     }
     #[inline]
-    default fn find_control_by_id(&self, id: ids::Id) -> Option<&controls::Control> {
+    default fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         self.inner.find_control_by_id(id)
     }
 
@@ -556,15 +556,15 @@ impl<T: ContainerInner> controls::Container for Member<T> {
     }
 
     #[inline]
-    fn as_container(&self) -> &controls::Container {
+    fn as_container(&self) -> &dyn controls::Container {
         self
     }
     #[inline]
-    fn as_container_mut(&mut self) -> &mut controls::Container {
+    fn as_container_mut(&mut self) -> &mut dyn controls::Container {
         self
     }
     #[inline]
-    fn into_container(self: Box<Self>) -> Box<controls::Container> {
+    fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
         self
     }
 }
@@ -572,9 +572,9 @@ impl<T: ContainerInner> controls::Container for Member<T> {
 // ===============================================================================================================
 
 pub trait SingleContainerInner: ContainerInner {
-    fn set_child(&mut self, base: &mut MemberBase, Option<Box<controls::Control>>) -> Option<Box<controls::Control>>;
-    fn child(&self) -> Option<&controls::Control>;
-    fn child_mut(&mut self) -> Option<&mut controls::Control>;
+    fn set_child(&mut self, base: &mut MemberBase, Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>>;
+    fn child(&self) -> Option<&dyn controls::Control>;
+    fn child_mut(&mut self) -> Option<&mut dyn controls::Control>;
 }
 
 pub struct SingleContainer<T: SingleContainerInner> {
@@ -620,11 +620,11 @@ impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
 }
 impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Control> {
+    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
         self.inner.find_control_by_id_mut(id)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&controls::Control> {
+    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         self.inner.find_control_by_id(id)
     }
 
@@ -659,28 +659,28 @@ impl<T: SingleContainerInner + ControlInner> HasLayoutInner for SingleContainer<
 }
 impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T> {
     #[inline]
-    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &controls::Container, x: i32, y: i32) {
+    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
         self.inner.on_added_to_container(base, parent, x, y)
     }
     #[inline]
-    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &controls::Container) {
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container) {
         self.inner.on_removed_from_container(base, parent)
     }
 
     #[inline]
-    fn parent(&self) -> Option<&controls::Member> {
+    fn parent(&self) -> Option<&dyn controls::Member> {
         self.inner.parent()
     }
     #[inline]
-    fn parent_mut(&mut self) -> Option<&mut controls::Member> {
+    fn parent_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.inner.parent_mut()
     }
     #[inline]
-    fn root(&self) -> Option<&controls::Member> {
+    fn root(&self) -> Option<&dyn controls::Member> {
         self.inner.root()
     }
     #[inline]
-    fn root_mut(&mut self) -> Option<&mut controls::Member> {
+    fn root_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.inner.root_mut()
     }
 
@@ -691,91 +691,91 @@ impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T>
 }
 impl<T: SingleContainerInner> controls::SingleContainer for Member<SingleContainer<T>> {
     #[inline]
-    fn set_child(&mut self, child: Option<Box<controls::Control>>) -> Option<Box<controls::Control>> {
+    fn set_child(&mut self, child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>> {
         self.inner.inner.set_child(&mut self.base, child)
     }
     #[inline]
-    fn child(&self) -> Option<&controls::Control> {
+    fn child(&self) -> Option<&dyn controls::Control> {
         self.inner.inner.child()
     }
     #[inline]
-    fn child_mut(&mut self) -> Option<&mut controls::Control> {
+    fn child_mut(&mut self) -> Option<&mut dyn controls::Control> {
         self.inner.inner.child_mut()
     }
 
     #[inline]
-    fn as_single_container(&self) -> &controls::SingleContainer {
+    fn as_single_container(&self) -> &dyn controls::SingleContainer {
         self
     }
     #[inline]
-    fn as_single_container_mut(&mut self) -> &mut controls::SingleContainer {
+    fn as_single_container_mut(&mut self) -> &mut dyn controls::SingleContainer {
         self
     }
     #[inline]
-    fn into_single_container(self: Box<Self>) -> Box<controls::SingleContainer> {
+    fn into_single_container(self: Box<Self>) -> Box<dyn controls::SingleContainer> {
         self
     }
 }
 impl<T: SingleContainerInner> controls::Member for Member<SingleContainer<T>> {
     #[inline]
-    fn is_container(&self) -> Option<&controls::Container> {
+    fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
     }
     #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut controls::Container> {
+    fn is_container_mut(&mut self) -> Option<&mut dyn controls::Container> {
         Some(self)
     }
 }
 impl<T: SingleContainerInner> controls::Container for Member<SingleContainer<T>> {
     #[inline]
-    fn is_single_mut(&mut self) -> Option<&mut controls::SingleContainer> {
+    fn is_single_mut(&mut self) -> Option<&mut dyn controls::SingleContainer> {
         Some(self)
     }
     #[inline]
-    fn is_single(&self) -> Option<&controls::SingleContainer> {
+    fn is_single(&self) -> Option<&dyn controls::SingleContainer> {
         Some(self)
     }
 }
 impl<T: SingleContainerInner + ControlInner> controls::SingleContainer for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn set_child(&mut self, child: Option<Box<controls::Control>>) -> Option<Box<controls::Control>> {
+    fn set_child(&mut self, child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>> {
         self.inner.inner.inner.set_child(&mut self.base, child)
     }
     #[inline]
-    fn child(&self) -> Option<&controls::Control> {
+    fn child(&self) -> Option<&dyn controls::Control> {
         self.inner.inner.inner.child()
     }
     #[inline]
-    fn child_mut(&mut self) -> Option<&mut controls::Control> {
+    fn child_mut(&mut self) -> Option<&mut dyn controls::Control> {
         self.inner.inner.inner.child_mut()
     }
 
     #[inline]
-    fn as_single_container(&self) -> &controls::SingleContainer {
+    fn as_single_container(&self) -> &dyn controls::SingleContainer {
         self
     }
     #[inline]
-    fn as_single_container_mut(&mut self) -> &mut controls::SingleContainer {
+    fn as_single_container_mut(&mut self) -> &mut dyn controls::SingleContainer {
         self
     }
     #[inline]
-    fn into_single_container(self: Box<Self>) -> Box<controls::SingleContainer> {
+    fn into_single_container(self: Box<Self>) -> Box<dyn controls::SingleContainer> {
         self
     }
 }
 impl<T: SingleContainerInner + ControlInner> controls::Member for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn is_container(&self) -> Option<&controls::Container> {
+    fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
     }
     #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut controls::Container> {
+    fn is_container_mut(&mut self) -> Option<&mut dyn controls::Container> {
         Some(self)
     }
 }
 impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Control> {
+    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
         if self.base.id == id {
             Some(self)
         } else {
@@ -783,7 +783,7 @@ impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Cont
         }
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&controls::Control> {
+    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         if self.base.id == id {
             Some(self)
         } else {
@@ -801,24 +801,24 @@ impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Cont
     }
 
     #[inline]
-    fn is_single_mut(&mut self) -> Option<&mut controls::SingleContainer> {
+    fn is_single_mut(&mut self) -> Option<&mut dyn controls::SingleContainer> {
         Some(self)
     }
     #[inline]
-    fn is_single(&self) -> Option<&controls::SingleContainer> {
+    fn is_single(&self) -> Option<&dyn controls::SingleContainer> {
         Some(self)
     }
 
     #[inline]
-    fn as_container(&self) -> &controls::Container {
+    fn as_container(&self) -> &dyn controls::Container {
         self
     }
     #[inline]
-    fn as_container_mut(&mut self) -> &mut controls::Container {
+    fn as_container_mut(&mut self) -> &mut dyn controls::Container {
         self
     }
     #[inline]
-    fn into_container(self: Box<Self>) -> Box<controls::Container> {
+    fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
         self
     }
 }
@@ -827,10 +827,10 @@ impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Cont
 
 pub trait MultiContainerInner: ContainerInner {
     fn len(&self) -> usize;
-    fn set_child_to(&mut self, base: &mut MemberBase, index: usize, Box<controls::Control>) -> Option<Box<controls::Control>>;
-    fn remove_child_from(&mut self, base: &mut MemberBase, index: usize) -> Option<Box<controls::Control>>;
-    fn child_at(&self, index: usize) -> Option<&controls::Control>;
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut controls::Control>;
+    fn set_child_to(&mut self, base: &mut MemberBase, index: usize, Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>>;
+    fn remove_child_from(&mut self, base: &mut MemberBase, index: usize) -> Option<Box<dyn controls::Control>>;
+    fn child_at(&self, index: usize) -> Option<&dyn controls::Control>;
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn controls::Control>;
 
     #[inline]
     fn is_empty(&self) -> bool {
@@ -844,12 +844,12 @@ pub trait MultiContainerInner: ContainerInner {
         }
     }
     #[inline]
-    fn push_child(&mut self, base: &mut MemberBase, child: Box<controls::Control>) {
+    fn push_child(&mut self, base: &mut MemberBase, child: Box<dyn controls::Control>) {
         let len = self.len();
         self.set_child_to(base, len, child);
     }
     #[inline]
-    fn pop_child(&mut self, base: &mut MemberBase) -> Option<Box<controls::Control>> {
+    fn pop_child(&mut self, base: &mut MemberBase) -> Option<Box<dyn controls::Control>> {
         let len = self.len();
         if len > 0 {
             self.remove_child_from(base, len - 1)
@@ -901,11 +901,11 @@ impl<T: MultiContainerInner> HasInner for MultiContainer<T> {
 }
 impl<T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<T> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Control> {
+    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
         self.inner.find_control_by_id_mut(id)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&controls::Control> {
+    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         self.inner.find_control_by_id(id)
     }
 
@@ -940,28 +940,28 @@ impl<T: MultiContainerInner + ControlInner> HasLayoutInner for MultiContainer<T>
 }
 impl<T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> {
     #[inline]
-    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &controls::Container, x: i32, y: i32) {
+    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
         self.inner.on_added_to_container(base, parent, x, y)
     }
     #[inline]
-    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &controls::Container) {
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container) {
         self.inner.on_removed_from_container(base, parent)
     }
 
     #[inline]
-    fn parent(&self) -> Option<&controls::Member> {
+    fn parent(&self) -> Option<&dyn controls::Member> {
         self.inner.parent()
     }
     #[inline]
-    fn parent_mut(&mut self) -> Option<&mut controls::Member> {
+    fn parent_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.inner.parent_mut()
     }
     #[inline]
-    fn root(&self) -> Option<&controls::Member> {
+    fn root(&self) -> Option<&dyn controls::Member> {
         self.inner.root()
     }
     #[inline]
-    fn root_mut(&mut self) -> Option<&mut controls::Member> {
+    fn root_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.inner.root_mut()
     }
 
@@ -976,62 +976,62 @@ impl<T: MultiContainerInner> controls::MultiContainer for Member<MultiContainer<
         self.inner.inner.len()
     }
     #[inline]
-    fn set_child_to(&mut self, index: usize, child: Box<controls::Control>) -> Option<Box<controls::Control>> {
+    fn set_child_to(&mut self, index: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
         self.inner
             .inner
             .set_child_to(&mut self.base, index, child)
     }
     #[inline]
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<controls::Control>> {
+    fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn controls::Control>> {
         self.inner
             .inner
             .remove_child_from(&mut self.base, index)
     }
     #[inline]
-    fn child_at(&self, index: usize) -> Option<&controls::Control> {
+    fn child_at(&self, index: usize) -> Option<&dyn controls::Control> {
         self.inner.inner.child_at(index)
     }
     #[inline]
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut controls::Control> {
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn controls::Control> {
         self.inner.inner.child_at_mut(index)
     }
 
     #[inline]
-    fn as_multi_container(&self) -> &controls::MultiContainer {
+    fn as_multi_container(&self) -> &dyn controls::MultiContainer {
         self
     }
     #[inline]
-    fn as_multi_container_mut(&mut self) -> &mut controls::MultiContainer {
+    fn as_multi_container_mut(&mut self) -> &mut dyn controls::MultiContainer {
         self
     }
     #[inline]
-    fn into_multi_container(self: Box<Self>) -> Box<controls::MultiContainer> {
+    fn into_multi_container(self: Box<Self>) -> Box<dyn controls::MultiContainer> {
         self
     }
 }
 impl<T: MultiContainerInner> controls::Member for Member<MultiContainer<T>> {
     #[inline]
-    fn is_container(&self) -> Option<&controls::Container> {
+    fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
     }
     #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut controls::Container> {
+    fn is_container_mut(&mut self) -> Option<&mut dyn controls::Container> {
         Some(self)
     }
 }
 impl<T: MultiContainerInner> controls::Container for Member<MultiContainer<T>> {
     #[inline]
-    fn is_multi_mut(&mut self) -> Option<&mut controls::MultiContainer> {
+    fn is_multi_mut(&mut self) -> Option<&mut dyn controls::MultiContainer> {
         Some(self)
     }
     #[inline]
-    fn is_multi(&self) -> Option<&controls::MultiContainer> {
+    fn is_multi(&self) -> Option<&dyn controls::MultiContainer> {
         Some(self)
     }
 }
 impl<T: MultiContainerInner + ControlInner> controls::Container for Member<Control<MultiContainer<T>>> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Control> {
+    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
         if self.base.id == id {
             Some(self)
         } else {
@@ -1039,7 +1039,7 @@ impl<T: MultiContainerInner + ControlInner> controls::Container for Member<Contr
         }
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&controls::Control> {
+    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         if self.base.id == id {
             Some(self)
         } else {
@@ -1057,34 +1057,34 @@ impl<T: MultiContainerInner + ControlInner> controls::Container for Member<Contr
     }
 
     #[inline]
-    fn is_multi_mut(&mut self) -> Option<&mut controls::MultiContainer> {
+    fn is_multi_mut(&mut self) -> Option<&mut dyn controls::MultiContainer> {
         Some(self)
     }
     #[inline]
-    fn is_multi(&self) -> Option<&controls::MultiContainer> {
+    fn is_multi(&self) -> Option<&dyn controls::MultiContainer> {
         Some(self)
     }
 
     #[inline]
-    fn as_container(&self) -> &controls::Container {
+    fn as_container(&self) -> &dyn controls::Container {
         self
     }
     #[inline]
-    fn as_container_mut(&mut self) -> &mut controls::Container {
+    fn as_container_mut(&mut self) -> &mut dyn controls::Container {
         self
     }
     #[inline]
-    fn into_container(self: Box<Self>) -> Box<controls::Container> {
+    fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
         self
     }
 }
 impl<T: MultiContainerInner + ControlInner> controls::Member for Member<Control<MultiContainer<T>>> {
     #[inline]
-    fn is_container(&self) -> Option<&controls::Container> {
+    fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
     }
     #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut controls::Container> {
+    fn is_container_mut(&mut self) -> Option<&mut dyn controls::Container> {
         Some(self)
     }
 }
@@ -1094,38 +1094,38 @@ impl<T: MultiContainerInner + ControlInner> controls::MultiContainer for Member<
         self.inner.inner.inner.len()
     }
     #[inline]
-    fn set_child_to(&mut self, index: usize, child: Box<controls::Control>) -> Option<Box<controls::Control>> {
+    fn set_child_to(&mut self, index: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
         self.inner
             .inner
             .inner
             .set_child_to(&mut self.base, index, child)
     }
     #[inline]
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<controls::Control>> {
+    fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn controls::Control>> {
         self.inner
             .inner
             .inner
             .remove_child_from(&mut self.base, index)
     }
     #[inline]
-    fn child_at(&self, index: usize) -> Option<&controls::Control> {
+    fn child_at(&self, index: usize) -> Option<&dyn controls::Control> {
         self.inner.inner.inner.child_at(index)
     }
     #[inline]
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut controls::Control> {
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn controls::Control> {
         self.inner.inner.inner.child_at_mut(index)
     }
 
     #[inline]
-    fn as_multi_container(&self) -> &controls::MultiContainer {
+    fn as_multi_container(&self) -> &dyn controls::MultiContainer {
         self
     }
     #[inline]
-    fn as_multi_container_mut(&mut self) -> &mut controls::MultiContainer {
+    fn as_multi_container_mut(&mut self) -> &mut dyn controls::MultiContainer {
         self
     }
     #[inline]
-    fn into_multi_container(self: Box<Self>) -> Box<controls::MultiContainer> {
+    fn into_multi_container(self: Box<Self>) -> Box<dyn controls::MultiContainer> {
         self
     }
 }
@@ -1147,15 +1147,15 @@ impl<T: HasLabelInner + MemberInner> controls::HasLabel for Member<T> {
     }
 
     #[inline]
-    fn as_has_label(&self) -> &controls::HasLabel {
+    fn as_has_label(&self) -> &dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn as_has_label_mut(&mut self) -> &mut controls::HasLabel {
+    fn as_has_label_mut(&mut self) -> &mut dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn into_has_label(self: Box<Self>) -> Box<controls::HasLabel> {
+    fn into_has_label(self: Box<Self>) -> Box<dyn controls::HasLabel> {
         self
     }
 }
@@ -1170,15 +1170,15 @@ impl<T: HasLabelInner + ControlInner> controls::HasLabel for Member<Control<T>> 
     }
 
     #[inline]
-    fn as_has_label(&self) -> &controls::HasLabel {
+    fn as_has_label(&self) -> &dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn as_has_label_mut(&mut self) -> &mut controls::HasLabel {
+    fn as_has_label_mut(&mut self) -> &mut dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn into_has_label(self: Box<Self>) -> Box<controls::HasLabel> {
+    fn into_has_label(self: Box<Self>) -> Box<dyn controls::HasLabel> {
         self
     }
 }
@@ -1193,15 +1193,15 @@ impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<Sing
     }
 
     #[inline]
-    fn as_has_label(&self) -> &controls::HasLabel {
+    fn as_has_label(&self) -> &dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn as_has_label_mut(&mut self) -> &mut controls::HasLabel {
+    fn as_has_label_mut(&mut self) -> &mut dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn into_has_label(self: Box<Self>) -> Box<controls::HasLabel> {
+    fn into_has_label(self: Box<Self>) -> Box<dyn controls::HasLabel> {
         self
     }
 }
@@ -1216,15 +1216,15 @@ impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<Multi
     }
 
     #[inline]
-    fn as_has_label(&self) -> &controls::HasLabel {
+    fn as_has_label(&self) -> &dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn as_has_label_mut(&mut self) -> &mut controls::HasLabel {
+    fn as_has_label_mut(&mut self) -> &mut dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn into_has_label(self: Box<Self>) -> Box<controls::HasLabel> {
+    fn into_has_label(self: Box<Self>) -> Box<dyn controls::HasLabel> {
         self
     }
 }
@@ -1239,15 +1239,15 @@ impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel 
     }
 
     #[inline]
-    fn as_has_label(&self) -> &controls::HasLabel {
+    fn as_has_label(&self) -> &dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn as_has_label_mut(&mut self) -> &mut controls::HasLabel {
+    fn as_has_label_mut(&mut self) -> &mut dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn into_has_label(self: Box<Self>) -> Box<controls::HasLabel> {
+    fn into_has_label(self: Box<Self>) -> Box<dyn controls::HasLabel> {
         self
     }
 }
@@ -1262,15 +1262,15 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
     }
 
     #[inline]
-    fn as_has_label(&self) -> &controls::HasLabel {
+    fn as_has_label(&self) -> &dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn as_has_label_mut(&mut self) -> &mut controls::HasLabel {
+    fn as_has_label_mut(&mut self) -> &mut dyn controls::HasLabel {
         self
     }
     #[inline]
-    fn into_has_label(self: Box<Self>) -> Box<controls::HasLabel> {
+    fn into_has_label(self: Box<Self>) -> Box<dyn controls::HasLabel> {
         self
     }
 }
@@ -1287,15 +1287,15 @@ impl<T: ClickableInner + MemberInner> controls::Clickable for Member<T> {
     }
 
     #[inline]
-    fn as_clickable(&self) -> &controls::Clickable {
+    fn as_clickable(&self) -> &dyn controls::Clickable {
         self
     }
     #[inline]
-    fn as_clickable_mut(&mut self) -> &mut controls::Clickable {
+    fn as_clickable_mut(&mut self) -> &mut dyn controls::Clickable {
         self
     }
     #[inline]
-    fn into_clickable(self: Box<Self>) -> Box<controls::Clickable> {
+    fn into_clickable(self: Box<Self>) -> Box<dyn controls::Clickable> {
         self
     }
 }
@@ -1306,15 +1306,15 @@ impl<T: ClickableInner + ControlInner> controls::Clickable for Member<Control<T>
     }
 
     #[inline]
-    fn as_clickable(&self) -> &controls::Clickable {
+    fn as_clickable(&self) -> &dyn controls::Clickable {
         self
     }
     #[inline]
-    fn as_clickable_mut(&mut self) -> &mut controls::Clickable {
+    fn as_clickable_mut(&mut self) -> &mut dyn controls::Clickable {
         self
     }
     #[inline]
-    fn into_clickable(self: Box<Self>) -> Box<controls::Clickable> {
+    fn into_clickable(self: Box<Self>) -> Box<dyn controls::Clickable> {
         self
     }
 }
@@ -1325,15 +1325,15 @@ impl<T: ClickableInner + ControlInner + SingleContainerInner> controls::Clickabl
     }
 
     #[inline]
-    fn as_clickable(&self) -> &controls::Clickable {
+    fn as_clickable(&self) -> &dyn controls::Clickable {
         self
     }
     #[inline]
-    fn as_clickable_mut(&mut self) -> &mut controls::Clickable {
+    fn as_clickable_mut(&mut self) -> &mut dyn controls::Clickable {
         self
     }
     #[inline]
-    fn into_clickable(self: Box<Self>) -> Box<controls::Clickable> {
+    fn into_clickable(self: Box<Self>) -> Box<dyn controls::Clickable> {
         self
     }
 }
@@ -1344,15 +1344,15 @@ impl<T: ClickableInner + ControlInner + MultiContainerInner> controls::Clickable
     }
 
     #[inline]
-    fn as_clickable(&self) -> &controls::Clickable {
+    fn as_clickable(&self) -> &dyn controls::Clickable {
         self
     }
     #[inline]
-    fn as_clickable_mut(&mut self) -> &mut controls::Clickable {
+    fn as_clickable_mut(&mut self) -> &mut dyn controls::Clickable {
         self
     }
     #[inline]
-    fn into_clickable(self: Box<Self>) -> Box<controls::Clickable> {
+    fn into_clickable(self: Box<Self>) -> Box<dyn controls::Clickable> {
         self
     }
 }
@@ -1374,15 +1374,15 @@ impl<T: HasOrientationInner + MemberInner> controls::HasOrientation for Member<T
     }
 
     #[inline]
-    fn as_has_orientation(&self) -> &controls::HasOrientation {
+    fn as_has_orientation(&self) -> &dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn as_has_orientation_mut(&mut self) -> &mut controls::HasOrientation {
+    fn as_has_orientation_mut(&mut self) -> &mut dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn into_has_orientation(self: Box<Self>) -> Box<controls::HasOrientation> {
+    fn into_has_orientation(self: Box<Self>) -> Box<dyn controls::HasOrientation> {
         self
     }
 }
@@ -1399,15 +1399,15 @@ impl<T: HasOrientationInner + ControlInner> controls::HasOrientation for Member<
     }
 
     #[inline]
-    fn as_has_orientation(&self) -> &controls::HasOrientation {
+    fn as_has_orientation(&self) -> &dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn as_has_orientation_mut(&mut self) -> &mut controls::HasOrientation {
+    fn as_has_orientation_mut(&mut self) -> &mut dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn into_has_orientation(self: Box<Self>) -> Box<controls::HasOrientation> {
+    fn into_has_orientation(self: Box<Self>) -> Box<dyn controls::HasOrientation> {
         self
     }
 }
@@ -1424,15 +1424,15 @@ impl<T: HasOrientationInner + SingleContainerInner> controls::HasOrientation for
     }
 
     #[inline]
-    fn as_has_orientation(&self) -> &controls::HasOrientation {
+    fn as_has_orientation(&self) -> &dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn as_has_orientation_mut(&mut self) -> &mut controls::HasOrientation {
+    fn as_has_orientation_mut(&mut self) -> &mut dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn into_has_orientation(self: Box<Self>) -> Box<controls::HasOrientation> {
+    fn into_has_orientation(self: Box<Self>) -> Box<dyn controls::HasOrientation> {
         self
     }
 }
@@ -1449,15 +1449,15 @@ impl<T: HasOrientationInner + MultiContainerInner> controls::HasOrientation for 
     }
 
     #[inline]
-    fn as_has_orientation(&self) -> &controls::HasOrientation {
+    fn as_has_orientation(&self) -> &dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn as_has_orientation_mut(&mut self) -> &mut controls::HasOrientation {
+    fn as_has_orientation_mut(&mut self) -> &mut dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn into_has_orientation(self: Box<Self>) -> Box<controls::HasOrientation> {
+    fn into_has_orientation(self: Box<Self>) -> Box<dyn controls::HasOrientation> {
         self
     }
 }
@@ -1475,15 +1475,15 @@ impl<T: HasOrientationInner + SingleContainerInner + ControlInner> controls::Has
     }
 
     #[inline]
-    fn as_has_orientation(&self) -> &controls::HasOrientation {
+    fn as_has_orientation(&self) -> &dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn as_has_orientation_mut(&mut self) -> &mut controls::HasOrientation {
+    fn as_has_orientation_mut(&mut self) -> &mut dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn into_has_orientation(self: Box<Self>) -> Box<controls::HasOrientation> {
+    fn into_has_orientation(self: Box<Self>) -> Box<dyn controls::HasOrientation> {
         self
     }
 }
@@ -1501,15 +1501,15 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
     }
 
     #[inline]
-    fn as_has_orientation(&self) -> &controls::HasOrientation {
+    fn as_has_orientation(&self) -> &dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn as_has_orientation_mut(&mut self) -> &mut controls::HasOrientation {
+    fn as_has_orientation_mut(&mut self) -> &mut dyn controls::HasOrientation {
         self
     }
     #[inline]
-    fn into_has_orientation(self: Box<Self>) -> Box<controls::HasOrientation> {
+    fn into_has_orientation(self: Box<Self>) -> Box<dyn controls::HasOrientation> {
         self
     }
 }
@@ -1518,18 +1518,18 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 
 pub trait ApplicationInner: Sized + 'static {
     fn with_name(name: &str) -> Box<Application<Self>>;
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<controls::Window>;
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window>;
     fn name(&self) -> ::std::borrow::Cow<str>;
     fn start(&mut self);
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Member>;
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&controls::Member>;
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
 }
 pub struct Application<T: ApplicationInner> {
     inner: T,
 }
 impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<controls::Window> {
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
         self.inner.new_window(title, size, menu)
     }
     #[inline]
@@ -1541,25 +1541,25 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
         self.inner.start()
     }
     #[inline]
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut controls::Member> {
+    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member> {
         self.inner.find_member_by_id_mut(id)
     }
     #[inline]
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&controls::Member> {
+    fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
         self.inner.find_member_by_id(id)
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
     #[inline]
-    fn as_any(&self) -> &Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
     #[inline]
-    fn as_any_mut(&mut self) -> &mut Any {
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
     #[inline]
-    fn into_any(self: Box<Self>) -> Box<Any> {
+    fn into_any(self: Box<Self>) -> Box<dyn Any> {
         self
     }
 }
@@ -1587,7 +1587,7 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 }
 impl<T: ApplicationInner> Application<T> {
     #[inline]
-    pub fn with_name(name: &str) -> Box<controls::Application> {
+    pub fn with_name(name: &str) -> Box<dyn controls::Application> {
         T::with_name(name)
     }
 }
@@ -1603,7 +1603,7 @@ impl<T: WindowInner> controls::Window for Member<SingleContainer<T>> {}
 
 impl<T: WindowInner> Member<SingleContainer<T>> {
     #[inline]
-    pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<controls::Window> {
+    pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
         T::with_params(title, window_size, menu)
     }
 }
@@ -1618,7 +1618,7 @@ impl<T: ButtonInner> controls::Button for Member<Control<T>> {}
 
 impl<T: ButtonInner> Member<Control<T>> {
     #[inline]
-    pub fn with_label(label: &str) -> Box<controls::Button> {
+    pub fn with_label(label: &str) -> Box<dyn controls::Button> {
         T::with_label(label)
     }
 }
@@ -1634,7 +1634,7 @@ impl<T: LinearLayoutInner> controls::LinearLayout for Member<Control<MultiContai
 
 impl<T: LinearLayoutInner> Member<Control<MultiContainer<T>>> {
     #[inline]
-    pub fn with_orientation(orientation: layout::Orientation) -> Box<controls::LinearLayout> {
+    pub fn with_orientation(orientation: layout::Orientation) -> Box<dyn controls::LinearLayout> {
         T::with_orientation(orientation)
     }
 }
@@ -1649,7 +1649,7 @@ impl<T: FrameInner> controls::Frame for Member<Control<SingleContainer<T>>> {}
 
 impl<T: FrameInner> Member<Control<SingleContainer<T>>> {
     #[inline]
-    pub fn with_label(label: &str) -> Box<controls::Frame> {
+    pub fn with_label(label: &str) -> Box<dyn controls::Frame> {
         T::with_label(label)
     }
 }
@@ -1658,14 +1658,14 @@ impl<T: FrameInner> Member<Control<SingleContainer<T>>> {
 
 pub trait SplittedInner
     : MultiContainerInner + ControlInner + HasOrientationInner {
-    fn with_content(first: Box<controls::Control>, second: Box<controls::Control>, orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
+    fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
     fn set_splitter(&mut self, base: &mut MemberControlBase, pos: f32);
     fn splitter(&self) -> f32;
 
-    fn first(&self) -> &controls::Control;
-    fn second(&self) -> &controls::Control;
-    fn first_mut(&mut self) -> &mut controls::Control;
-    fn second_mut(&mut self) -> &mut controls::Control;
+    fn first(&self) -> &dyn controls::Control;
+    fn second(&self) -> &dyn controls::Control;
+    fn first_mut(&mut self) -> &mut dyn controls::Control;
+    fn second_mut(&mut self) -> &mut dyn controls::Control;
 }
 
 impl<T: SplittedInner> controls::Splitted for Member<Control<MultiContainer<T>>> {
@@ -1679,23 +1679,23 @@ impl<T: SplittedInner> controls::Splitted for Member<Control<MultiContainer<T>>>
     fn splitter(&self) -> f32 {
         self.inner.inner.inner.splitter()
     }
-    fn first(&self) -> &controls::Control {
+    fn first(&self) -> &dyn controls::Control {
         self.inner.inner.inner.first()
     }
-    fn second(&self) -> &controls::Control {
+    fn second(&self) -> &dyn controls::Control {
         self.inner.inner.inner.second()
     }
-    fn first_mut(&mut self) -> &mut controls::Control {
+    fn first_mut(&mut self) -> &mut dyn controls::Control {
         self.inner.inner.inner.first_mut()
     }
-    fn second_mut(&mut self) -> &mut controls::Control {
+    fn second_mut(&mut self) -> &mut dyn controls::Control {
         self.inner.inner.inner.second_mut()
     }
 }
 
 impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
     #[inline]
-    pub fn with_content(first: Box<controls::Control>, second: Box<controls::Control>, orientation: layout::Orientation) -> Box<controls::Splitted> {
+    pub fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<dyn controls::Splitted> {
         T::with_content(first, second, orientation)
     }
 }
@@ -1711,9 +1711,9 @@ pub trait OuterDrawable {
     fn set_skip_draw(&mut self, skip: bool);
     fn is_skip_draw(&self) -> bool;
 
-    fn as_drawable(&self) -> &OuterDrawable;
-    fn as_drawable_mut(&mut self) -> &mut OuterDrawable;
-    fn into_drawable(self: Box<Self>) -> Box<OuterDrawable>;
+    fn as_drawable(&self) -> &dyn OuterDrawable;
+    fn as_drawable_mut(&mut self) -> &mut dyn OuterDrawable;
+    fn into_drawable(self: Box<Self>) -> Box<dyn OuterDrawable>;
 }
 
 pub(crate) mod seal {
