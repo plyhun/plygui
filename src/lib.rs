@@ -28,6 +28,3 @@ pub mod macros;
 
 #[cfg(feature = "markup")]
 pub mod markup;
-
-#[cfg(test)]
-mod tests;
