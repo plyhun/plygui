@@ -80,6 +80,9 @@ pub trait Container: Member {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Control>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn Control>;
 
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity);
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity);
+
     fn draw_area_size(&self) -> (u16, u16) {
         let mut size = self.size();
 

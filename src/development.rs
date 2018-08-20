@@ -1,22 +1,17 @@
-use super::{callbacks, controls, ids, layout, types};
+use super::{types, ids, layout, callbacks, controls, utils};
 
-use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::any::Any;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
 
-pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
+pub trait NativeId
+    : Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {
+}
 
 // ==========================================================================================================
-
-pub trait HasBase: Sized + 'static {
-    type Base: Sized;
-    
-    fn base(&self) -> &Self::Base;
-    fn base_mut(&mut self) -> &mut Self::Base;
-}
 
 pub trait HasInner: Sized + 'static {
     type Inner: Sized;
@@ -50,12 +45,7 @@ pub struct MemberFunctions {
 }
 impl MemberFunctions {
     #[inline]
-    pub fn new(
-        _as_any: unsafe fn(&MemberBase) -> &dyn Any,
-        _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any,
-        _as_member: unsafe fn(&MemberBase) -> &dyn controls::Member,
-        _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn controls::Member,
-    ) -> Self {
+    pub fn new(_as_any: unsafe fn(&MemberBase) -> &dyn Any, _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any, _as_member: unsafe fn(&MemberBase) -> &dyn controls::Member, _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn controls::Member) -> Self {
         MemberFunctions {
             _as_any,
             _as_any_mut,
@@ -93,23 +83,21 @@ impl MemberBase {
         unsafe { (self.functions._as_member_mut)(self) }
     }
 }
-impl<T: MemberInner> HasBase for Member<T> {
-    type Base = MemberBase;
-    
+impl<T: MemberInner> Member<T> {
     #[inline]
-    fn base(&self) -> &Self::Base {
+    pub fn base(&self) -> &MemberBase {
         &self.base
     }
     #[inline]
-    fn base_mut(&mut self) -> &mut Self::Base {
+    pub fn base_mut(&mut self) -> &mut MemberBase {
         &mut self.base
     }
-}
-impl<T: MemberInner> Member<T> {
-   pub fn call_on_resize(&mut self, w: u16, h: u16) {
+    pub fn call_on_resize(&mut self, w: u16, h: u16) {
         let self2 = self as *mut Self;
         if let Some(ref mut cb) = self.base_mut().handler_resize {
-            let self2: &mut Self = unsafe { ::std::mem::transmute(self2.clone()) };
+            let self2: &mut Self = unsafe { 
+                ::std::mem::transmute(self2.clone())
+            };
             (cb.as_mut())(self2, w, h);
         }
     }
@@ -154,10 +142,10 @@ impl<T: MemberInner> controls::Member for Member<T> {
     unsafe fn native_id(&self) -> usize {
         self.inner.native_id().into()
     }
-
+    
     #[cfg(feature = "type_check")]
     unsafe fn type_id(&self) -> TypeId {
-        self.inner.native_id().get_type_id()
+    	self.inner.native_id().get_type_id()
     }
 
     #[inline]
@@ -225,7 +213,7 @@ impl<T: MemberInner> HasInner for Member<T> {
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
-        self.inner
+    	self.inner
     }
 }
 impl<T: MemberInner> seal::Sealed for Member<T> {}
@@ -301,24 +289,37 @@ impl<T: ControlInner> controls::HasLayout for Member<Control<T>> {
 // ===============================================================================================================
 
 pub trait Drawable: Sized + 'static {
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase, coords: Option<(i32, i32)>);
-    fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool);
-    fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase);
+    fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>);
+    fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool);
+    fn invalidate(&mut self, base: &mut MemberControlBase);
 }
 
 // ===============================================================================================================
 
 pub trait ControlInner: HasLayoutInner + Drawable {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32);
-    fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container);
+    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container, x: i32, y: i32);
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container);
 
     fn parent(&self) -> Option<&dyn controls::Member>;
     fn parent_mut(&mut self) -> Option<&mut dyn controls::Member>;
     fn root(&self) -> Option<&dyn controls::Member>;
     fn root_mut(&mut self) -> Option<&mut dyn controls::Member>;
 
+    fn cast_base_mut<'this, 'a: 'this>(&'this self, base: &'a mut MemberBase) -> &'a mut MemberControlBase {
+        unsafe { utils::member_control_base_mut_unchecked(base) }
+    }
+    fn cast_base<'this, 'a: 'this>(&'this self, base: &'a MemberBase) -> &'a MemberControlBase {
+        unsafe { utils::member_control_base_unchecked(base) }
+    }
+
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, mberarkup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, mberarkup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
+}
+
+#[repr(C)]
+pub struct MemberControlBase {
+    pub member: MemberBase,
+    pub control: ControlBase,
 }
 
 #[repr(C)]
@@ -340,15 +341,13 @@ impl Default for ControlBase {
         }
     }
 }
-impl<T: ControlInner> HasBase for Control<T> {
-    type Base = ControlBase;
-    
+impl<T: ControlInner> Control<T> {
     #[inline]
-    fn base(&self) -> &Self::Base {
+    pub fn base(&self) -> &ControlBase {
         &self.base
     }
     #[inline]
-    fn base_mut(&mut self) -> &mut Self::Base {
+    pub fn base_mut(&mut self) -> &mut ControlBase {
         &mut self.base
     }
 }
@@ -375,7 +374,10 @@ impl<T: ControlInner> HasInner for Control<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        Control { inner: inner, base: Default::default() }
+        Control {
+            inner: inner,
+            base: Default::default(),
+        }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -387,7 +389,7 @@ impl<T: ControlInner> HasInner for Control<T> {
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
-        self.inner
+    	self.inner
     }
 }
 impl<T: ControlInner> HasLayoutInner for Control<T> {
@@ -400,16 +402,25 @@ impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
     #[inline]
     fn draw(&mut self, coords: Option<(i32, i32)>) {
         if !self.is_skip_draw() {
-            self.inner.inner.draw(&mut self.base, &mut self.inner.base, coords)
+            self.inner
+                .inner
+                .draw(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+                      coords)
         }
     }
     #[inline]
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) {
-        self.inner.inner.measure(&mut self.base, &mut self.inner.base, w, h)
+        self.inner
+            .inner
+            .measure(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+                     w,
+                     h)
     }
     #[inline]
     fn invalidate(&mut self) {
-        self.inner.inner.invalidate(&mut self.base, &mut self.inner.base)
+        self.inner
+            .inner
+            .invalidate(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) })
     }
     #[inline]
     fn set_skip_draw(&mut self, skip: bool) {
@@ -436,16 +447,24 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
     #[inline]
     fn on_added_to_container(&mut self, parent: &dyn controls::Container, x: i32, y: i32) {
         #[cfg(feature = "type_check")]
-        unsafe {
-            if self.inner.inner.native_id().get_type_id() != parent.type_id() {
-                panic!("Attempt to use the control from an incompatible backend!")
-            }
-        }
-        self.inner.inner.on_added_to_container(&mut self.base, &mut self.inner.base, parent, x, y)
+        unsafe { 
+    		if self.inner.inner.native_id().get_type_id() != parent.type_id() { 
+    			panic!("Attempt to use the control from an incompatible backend!") 
+    		} 
+    	}
+        self.inner
+            .inner
+            .on_added_to_container(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+                                   parent,
+                                   x,
+                                   y)
     }
     #[inline]
     fn on_removed_from_container(&mut self, parent: &dyn controls::Container) {
-        self.inner.inner.on_removed_from_container(&mut self.base, &mut self.inner.base, parent)
+        self.inner
+            .inner
+            .on_removed_from_container(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+                                       parent)
     }
 
     #[inline]
@@ -467,7 +486,11 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
 
     #[cfg(feature = "markup")]
     default fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
-        self.inner.inner.fill_from_markup(&mut self.base, &mut self.inner.base, markup, registry)
+        self.inner
+            .inner
+            .fill_from_markup(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+                              markup,
+                              registry)
     }
 
     #[inline]
@@ -509,6 +532,9 @@ impl<T: ControlInner> Member<Control<T>> {
 pub trait ContainerInner: MemberInner {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control>;
+
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity);
+    fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity);
 }
 impl<T: ContainerInner> controls::Container for Member<T> {
     #[inline]
@@ -518,6 +544,15 @@ impl<T: ContainerInner> controls::Container for Member<T> {
     #[inline]
     default fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         self.inner.find_control_by_id(id)
+    }
+
+    #[inline]
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) {
+        self.inner.gravity()
+    }
+    #[inline]
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity) {
+        self.inner.set_gravity(&mut self.base, w, h)
     }
 
     #[inline]
@@ -542,33 +577,10 @@ pub trait SingleContainerInner: ContainerInner {
     fn child_mut(&mut self) -> Option<&mut dyn controls::Control>;
 }
 
-pub struct SingleContainerBase {
-    pub child: Option<Box<dyn controls::Control>>,
-}
-
-impl Default for SingleContainerBase {
-    fn default() -> Self {
-        SingleContainerBase { child: None }
-    }
-}
-
 pub struct SingleContainer<T: SingleContainerInner> {
-    base: SingleContainerBase,
     inner: T,
 }
 
-impl<T: SingleContainerInner> HasBase for SingleContainer<T> {
-    type Base = SingleContainerBase;
-    
-    #[inline]
-    fn base(&self) -> &Self::Base {
-        &self.base
-    }
-    #[inline]
-    fn base_mut(&mut self) -> &mut Self::Base {
-        &mut self.base
-    }
-}
 impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {
     type Id = T::Id;
 
@@ -591,7 +603,7 @@ impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        SingleContainer { inner: inner, base: SingleContainerBase::default() }
+        SingleContainer { inner: inner }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -603,7 +615,7 @@ impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
-        self.inner
+    	self.inner
     }
 }
 impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
@@ -615,19 +627,28 @@ impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContaine
     fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         self.inner.find_control_by_id(id)
     }
+
+    #[inline]
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) {
+        self.inner.gravity()
+    }
+    #[inline]
+    fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity) {
+        self.inner.set_gravity(base, w, h)
+    }
 }
 impl<T: SingleContainerInner + ControlInner + Drawable> Drawable for SingleContainer<T> {
     #[inline]
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase, coords: Option<(i32, i32)>) {
-        self.inner.draw(member, control, coords)
+    fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) {
+        self.inner.draw(base, coords)
     }
     #[inline]
-    fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
-        self.inner.measure(member, control, w, h)
+    fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) {
+        self.inner.measure(base, w, h)
     }
     #[inline]
-    fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
-        self.inner.invalidate(member, control)
+    fn invalidate(&mut self, base: &mut MemberControlBase) {
+        self.inner.invalidate(base)
     }
 }
 impl<T: SingleContainerInner + ControlInner> HasLayoutInner for SingleContainer<T> {
@@ -638,12 +659,12 @@ impl<T: SingleContainerInner + ControlInner> HasLayoutInner for SingleContainer<
 }
 impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T> {
     #[inline]
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
-        self.inner.on_added_to_container(member, control, parent, x, y)
+    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
+        self.inner.on_added_to_container(base, parent, x, y)
     }
     #[inline]
-    fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container) {
-        self.inner.on_removed_from_container(member, control, parent)
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container) {
+        self.inner.on_removed_from_container(base, parent)
     }
 
     #[inline]
@@ -664,7 +685,7 @@ impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T>
     }
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
         self.inner.fill_from_markup(base, markup, registry)
     }
 }
@@ -771,6 +792,15 @@ impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Cont
     }
 
     #[inline]
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) {
+        self.inner.inner.gravity()
+    }
+    #[inline]
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity) {
+        self.inner.inner.set_gravity(&mut self.base, w, h)
+    }
+
+    #[inline]
     fn is_single_mut(&mut self) -> Option<&mut dyn controls::SingleContainer> {
         Some(self)
     }
@@ -829,32 +859,10 @@ pub trait MultiContainerInner: ContainerInner {
     }
 }
 
-pub struct MultiContainerBase {
-    pub children: Vec<Box<dyn controls::Control>>
-}
-impl Default for MultiContainerBase {
-    fn default() -> Self {
-        MultiContainerBase { children: Vec::with_capacity(2) }
-    }
-}
-
 pub struct MultiContainer<T: MultiContainerInner> {
-    base: MultiContainerBase,
     inner: T,
 }
 
-impl<T: MultiContainerInner> HasBase for MultiContainer<T> {
-    type Base = MultiContainerBase;
-    
-    #[inline]
-    fn base(&self) -> &Self::Base {
-        &self.base
-    }
-    #[inline]
-    fn base_mut(&mut self) -> &mut Self::Base {
-        &mut self.base
-    }
-}
 impl<T: MultiContainerInner> MemberInner for MultiContainer<T> {
     type Id = T::Id;
 
@@ -876,7 +884,7 @@ impl<T: MultiContainerInner> HasInner for MultiContainer<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        MultiContainer { inner: inner, base: MultiContainerBase::default() }
+        MultiContainer { inner: inner }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -888,7 +896,7 @@ impl<T: MultiContainerInner> HasInner for MultiContainer<T> {
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
-        self.inner
+    	self.inner
     }
 }
 impl<T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<T> {
@@ -900,19 +908,28 @@ impl<T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<
     fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
         self.inner.find_control_by_id(id)
     }
+
+    #[inline]
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) {
+        self.inner.gravity()
+    }
+    #[inline]
+    fn set_gravity(&mut self, base: &mut MemberBase, w: layout::Gravity, h: layout::Gravity) {
+        self.inner.set_gravity(base, w, h)
+    }
 }
 impl<T: MultiContainerInner + ControlInner + Drawable> Drawable for MultiContainer<T> {
     #[inline]
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase, coords: Option<(i32, i32)>) {
-        self.inner.draw(member, control, coords)
+    fn draw(&mut self, base: &mut MemberControlBase, coords: Option<(i32, i32)>) {
+        self.inner.draw(base, coords)
     }
     #[inline]
-    fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
-        self.inner.measure(member, control, w, h)
+    fn measure(&mut self, base: &mut MemberControlBase, w: u16, h: u16) -> (u16, u16, bool) {
+        self.inner.measure(base, w, h)
     }
     #[inline]
-    fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
-        self.inner.invalidate(member, control)
+    fn invalidate(&mut self, base: &mut MemberControlBase) {
+        self.inner.invalidate(base)
     }
 }
 impl<T: MultiContainerInner + ControlInner> HasLayoutInner for MultiContainer<T> {
@@ -923,12 +940,12 @@ impl<T: MultiContainerInner + ControlInner> HasLayoutInner for MultiContainer<T>
 }
 impl<T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> {
     #[inline]
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
-        self.inner.on_added_to_container(member, control, parent, x, y)
+    fn on_added_to_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
+        self.inner.on_added_to_container(base, parent, x, y)
     }
     #[inline]
-    fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container) {
-        self.inner.on_removed_from_container(member, control, parent)
+    fn on_removed_from_container(&mut self, base: &mut MemberControlBase, parent: &dyn controls::Container) {
+        self.inner.on_removed_from_container(base, parent)
     }
 
     #[inline]
@@ -949,7 +966,7 @@ impl<T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> {
     }
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
+    fn fill_from_markup(&mut self, base: &mut MemberControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
         self.inner.fill_from_markup(base, markup, registry)
     }
 }
@@ -960,11 +977,15 @@ impl<T: MultiContainerInner> controls::MultiContainer for Member<MultiContainer<
     }
     #[inline]
     fn set_child_to(&mut self, index: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
-        self.inner.inner.set_child_to(&mut self.base, index, child)
+        self.inner
+            .inner
+            .set_child_to(&mut self.base, index, child)
     }
     #[inline]
     fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn controls::Control>> {
-        self.inner.inner.remove_child_from(&mut self.base, index)
+        self.inner
+            .inner
+            .remove_child_from(&mut self.base, index)
     }
     #[inline]
     fn child_at(&self, index: usize) -> Option<&dyn controls::Control> {
@@ -1027,6 +1048,15 @@ impl<T: MultiContainerInner + ControlInner> controls::Container for Member<Contr
     }
 
     #[inline]
+    fn gravity(&self) -> (layout::Gravity, layout::Gravity) {
+        self.inner.inner.gravity()
+    }
+    #[inline]
+    fn set_gravity(&mut self, w: layout::Gravity, h: layout::Gravity) {
+        self.inner.inner.set_gravity(&mut self.base, w, h)
+    }
+
+    #[inline]
     fn is_multi_mut(&mut self) -> Option<&mut dyn controls::MultiContainer> {
         Some(self)
     }
@@ -1065,11 +1095,17 @@ impl<T: MultiContainerInner + ControlInner> controls::MultiContainer for Member<
     }
     #[inline]
     fn set_child_to(&mut self, index: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
-        self.inner.inner.inner.set_child_to(&mut self.base, index, child)
+        self.inner
+            .inner
+            .inner
+            .set_child_to(&mut self.base, index, child)
     }
     #[inline]
     fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn controls::Control>> {
-        self.inner.inner.inner.remove_child_from(&mut self.base, index)
+        self.inner
+            .inner
+            .inner
+            .remove_child_from(&mut self.base, index)
     }
     #[inline]
     fn child_at(&self, index: usize) -> Option<&dyn controls::Control> {
@@ -1357,7 +1393,9 @@ impl<T: HasOrientationInner + ControlInner> controls::HasOrientation for Member<
     }
     #[inline]
     fn set_layout_orientation(&mut self, value: layout::Orientation) {
-        self.inner.inner.set_layout_orientation(&mut self.base, value)
+        self.inner
+            .inner
+            .set_layout_orientation(&mut self.base, value)
     }
 
     #[inline]
@@ -1380,7 +1418,9 @@ impl<T: HasOrientationInner + SingleContainerInner> controls::HasOrientation for
     }
     #[inline]
     fn set_layout_orientation(&mut self, value: layout::Orientation) {
-        self.inner.inner.set_layout_orientation(&mut self.base, value)
+        self.inner
+            .inner
+            .set_layout_orientation(&mut self.base, value)
     }
 
     #[inline]
@@ -1403,7 +1443,9 @@ impl<T: HasOrientationInner + MultiContainerInner> controls::HasOrientation for 
     }
     #[inline]
     fn set_layout_orientation(&mut self, value: layout::Orientation) {
-        self.inner.inner.set_layout_orientation(&mut self.base, value)
+        self.inner
+            .inner
+            .set_layout_orientation(&mut self.base, value)
     }
 
     #[inline]
@@ -1426,7 +1468,10 @@ impl<T: HasOrientationInner + SingleContainerInner + ControlInner> controls::Has
     }
     #[inline]
     fn set_layout_orientation(&mut self, value: layout::Orientation) {
-        self.inner.inner.inner.set_layout_orientation(&mut self.base, value)
+        self.inner
+            .inner
+            .inner
+            .set_layout_orientation(&mut self.base, value)
     }
 
     #[inline]
@@ -1449,7 +1494,10 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
     }
     #[inline]
     fn set_layout_orientation(&mut self, value: layout::Orientation) {
-        self.inner.inner.inner.set_layout_orientation(&mut self.base, value)
+        self.inner
+            .inner
+            .inner
+            .set_layout_orientation(&mut self.base, value)
     }
 
     #[inline]
@@ -1534,7 +1582,7 @@ impl<T: ApplicationInner> HasInner for Application<T> {
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
-        self.inner
+    	self.inner
     }
 }
 impl<T: ApplicationInner> Application<T> {
@@ -1577,7 +1625,8 @@ impl<T: ButtonInner> Member<Control<T>> {
 
 // ===============================================================================================================
 
-pub trait LinearLayoutInner: ControlInner + MultiContainerInner + HasOrientationInner {
+pub trait LinearLayoutInner
+    : ControlInner + MultiContainerInner + HasOrientationInner {
     fn with_orientation(orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
 }
 
@@ -1607,9 +1656,10 @@ impl<T: FrameInner> Member<Control<SingleContainer<T>>> {
 
 // ===============================================================================================================
 
-pub trait SplittedInner: MultiContainerInner + ControlInner + HasOrientationInner {
+pub trait SplittedInner
+    : MultiContainerInner + ControlInner + HasOrientationInner {
     fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
-    fn set_splitter(&mut self, member: &mut MemberBase, control: &mut ControlBase, pos: f32);
+    fn set_splitter(&mut self, base: &mut MemberControlBase, pos: f32);
     fn splitter(&self) -> f32;
 
     fn first(&self) -> &dyn controls::Control;
@@ -1620,7 +1670,11 @@ pub trait SplittedInner: MultiContainerInner + ControlInner + HasOrientationInne
 
 impl<T: SplittedInner> controls::Splitted for Member<Control<MultiContainer<T>>> {
     fn set_splitter(&mut self, pos: f32) {
-        self.inner.inner.inner.set_splitter(&mut self.base, &mut self.inner.base, pos)
+        self.inner
+            .inner
+            .inner
+            .set_splitter(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) },
+                          pos)
     }
     fn splitter(&self) -> f32 {
         self.inner.inner.inner.splitter()
