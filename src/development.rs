@@ -3,6 +3,8 @@ use super::{callbacks, controls, ids, layout, types};
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::PhantomData;
+use std::rc::Rc;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -35,6 +37,8 @@ pub struct MemberBase {
     pub functions: MemberFunctions,
 
     pub handler_resize: Option<callbacks::Resize>,
+    
+    _no_threads: PhantomData<Rc<()>>,
 }
 #[repr(C)]
 pub struct Member<T: MemberInner> {
@@ -74,6 +78,8 @@ impl MemberBase {
             functions: functions,
 
             handler_resize: None,
+            
+            _no_threads: PhantomData,
         }
     }
     #[inline]
