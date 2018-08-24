@@ -295,7 +295,7 @@ pub trait Drawable: Sized + 'static {
 // ===============================================================================================================
 
 pub trait ControlInner: HasLayoutInner + Drawable {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32);
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, w: u16, h: u16);
     fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container);
 
     fn parent(&self) -> Option<&dyn controls::Member>;
@@ -434,14 +434,14 @@ impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
 }
 impl<T: ControlInner> controls::Control for Member<Control<T>> {
     #[inline]
-    fn on_added_to_container(&mut self, parent: &dyn controls::Container, x: i32, y: i32) {
+    fn on_added_to_container(&mut self, parent: &dyn controls::Container, x: i32, y: i32, w: u16, h: u16) {
         #[cfg(feature = "type_check")]
         unsafe {
             if self.inner.inner.native_id().get_type_id() != parent.type_id() {
                 panic!("Attempt to use the control from an incompatible backend!")
             }
         }
-        self.inner.inner.on_added_to_container(&mut self.base, &mut self.inner.base, parent, x, y)
+        self.inner.inner.on_added_to_container(&mut self.base, &mut self.inner.base, parent, x, y, w, h)
     }
     #[inline]
     fn on_removed_from_container(&mut self, parent: &dyn controls::Container) {
@@ -619,8 +619,8 @@ impl<T: SingleContainerInner + ControlInner> HasLayoutInner for SingleContainer<
 }
 impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T> {
     #[inline]
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
-        self.inner.on_added_to_container(member, control, parent, x, y)
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, w: u16, h: u16) {
+        self.inner.on_added_to_container(member, control, parent, x, y, w, h)
     }
     #[inline]
     fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container) {
@@ -885,8 +885,8 @@ impl<T: MultiContainerInner + ControlInner> HasLayoutInner for MultiContainer<T>
 }
 impl<T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> {
     #[inline]
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32) {
-        self.inner.on_added_to_container(member, control, parent, x, y)
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, w: u16, h: u16) {
+        self.inner.on_added_to_container(member, control, parent, x, y, w, h)
     }
     #[inline]
     fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container) {

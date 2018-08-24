@@ -56,8 +56,8 @@ pub trait HasLayout: Member {
 }
 
 pub trait Control: HasLayout + development::OuterDrawable {
-    fn on_added_to_container(&mut self, &dyn Container, x: i32, y: i32);
-    fn on_removed_from_container(&mut self, &dyn Container);
+    fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16);
+    fn on_removed_from_container(&mut self, parent: &dyn Container);
 
     fn parent(&self) -> Option<&dyn Member>;
     fn parent_mut(&mut self) -> Option<&mut dyn Member>;
@@ -75,20 +75,6 @@ pub trait Control: HasLayout + development::OuterDrawable {
 pub trait Container: Member {
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Control>;
     fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn Control>;
-
-    fn draw_area_size(&self) -> (u16, u16) {
-        let mut size = self.size();
-
-        if let Some(c) = self.is_control() {
-            use std::cmp::max;
-
-            let hl = c.as_has_layout();
-            let (lm, tm, rm, bm) = hl.layout_margin().into();
-            size.0 = max(0, size.0 as i32 - (lm + rm)) as u16;
-            size.1 = max(0, size.1 as i32 - (tm + bm)) as u16;
-        }
-        size
-    }
 
     fn is_multi_mut(&mut self) -> Option<&mut dyn MultiContainer> {
         None
