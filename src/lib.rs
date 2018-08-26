@@ -20,6 +20,7 @@ pub mod layout;
 pub mod ids;
 pub mod controls;
 pub mod utils;
+pub mod defaults;
 
 #[macro_use]
 pub mod callbacks;
