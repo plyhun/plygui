@@ -467,7 +467,7 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
 
     #[cfg(feature = "markup")]
     default fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
-        self.inner.inner.fill_from_markup(unsafe { utils::member_control_base_mut_unchecked(&mut self.base) }, markup, registry)
+        self.inner.inner.fill_from_markup(&mut self.base, &mut self.inner.base, markup, registry)
     }
 
     #[inline]
@@ -646,7 +646,7 @@ impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T>
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
-        self.inner.fill_from_markup(base, markup, registry)
+        self.inner.fill_from_markup(member, control, markup, registry)
     }
 }
 impl<T: SingleContainerInner> controls::SingleContainer for Member<SingleContainer<T>> {
@@ -912,7 +912,7 @@ impl<T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> {
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry) {
-        self.inner.fill_from_markup(base, markup, registry)
+        self.inner.fill_from_markup(member, control, markup, registry)
     }
 }
 impl<T: MultiContainerInner> controls::MultiContainer for Member<MultiContainer<T>> {

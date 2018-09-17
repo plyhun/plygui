@@ -65,7 +65,7 @@ pub trait Control: HasLayout + development::OuterDrawable {
     fn root_mut(&mut self) -> Option<&mut dyn Member>;
 
     #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, markup: &dyn super::markup::Markup, registry: &mut dyn super::markup::MarkupRegistry);
+    fn fill_from_markup(&mut self, markup: &super::markup::Markup, registry: &mut super::markup::MarkupRegistry);
 
     fn as_control(&self) -> &dyn Control;
     fn as_control_mut(&mut self) -> &mut dyn Control;

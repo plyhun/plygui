@@ -8,7 +8,7 @@ use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess};
 use typemap::{Key, TypeMap};
 
 pub type MemberType = String;
-pub type MemberSpawner = fn() -> Box<controls::Control>;
+pub type MemberSpawner = fn() -> Box<dyn controls::Control>;
 
 struct CallbackKeyWrapper<T>(PhantomData<T>);
 struct CallbackWrapper<T: callbacks::Callback>(T);
@@ -238,7 +238,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
     }
 }
 
-pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<super::controls::Control> {
+pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<dyn super::controls::Control> {
     let markup: Markup = super::serde_json::from_str(json).unwrap();
 
     let mut control = registry.member(&markup.member_type).unwrap()();
@@ -254,7 +254,7 @@ macro_rules! bind_markup_callback {
 }
 #[macro_export]
 macro_rules! fill_from_markup_base {
-	($this: expr, $base: expr, $mrk: ident, $reg: ident, $typ:ty, [$($arg:ident),+]) => {
+	($this: expr, $mem: expr, $mrk: ident, $reg: ident, $typ:ty, [$($arg:ident),+]) => {
 		if !&[$($arg),+].contains(&$mrk.member_type.as_str()) {
 			match $mrk.id {
 				Some(ref id) => panic!("Markup does not belong to {}: {} ({})", stringify!($typ), $mrk.member_type, id),
@@ -262,15 +262,15 @@ macro_rules! fill_from_markup_base {
 			}
 		}		
     	if let Some(ref id) = $mrk.id {
-    		$reg.store_id(&id, $base.member.id).unwrap();
+    		$reg.store_id(&id, $mem.id).unwrap();
     	}
 	}
 }
 #[macro_export]
 macro_rules! fill_from_markup_label {
-	($this: expr, $base: expr, $mrk: ident) => {
+	($this: expr, $mem: expr, $mrk: ident) => {
 		use plygui_api::development::HasLabelInner;
-		$this.set_label($base, &$mrk.attributes.get("label").unwrap().as_attribute());
+		$this.set_label($mem, &$mrk.attributes.get("label").unwrap().as_attribute());
 	}
 }
 #[macro_export]
@@ -284,25 +284,25 @@ macro_rules! fill_from_markup_callbacks {
 }
 #[macro_export]
 macro_rules! fill_from_markup_children {
-	($this: expr, $base: expr, $mrk: ident, $reg: ident) => {
+	($this: expr, $mem: expr, $mrk: ident, $reg: ident) => {
 		for child_markup in $mrk.attributes.get(::plygui_api::markup::CHILDREN).unwrap_or(&::plygui_api::markup::MarkupNode::Children(vec![])).as_children() {
 			use plygui_api::development::MultiContainerInner;
 			
     		let mut child = $reg.member(&child_markup.member_type).unwrap()();
     		child.fill_from_markup(child_markup, $reg);
-			$this.push_child($base, child);
+			$this.push_child($mem, child);
 		}	
 	}
 }
 #[macro_export]
 macro_rules! fill_from_markup_child {
-	($this: expr, $base: expr, $mrk: ident, $reg: ident) => {
+	($this: expr, $mem: expr, $mrk: ident, $reg: ident) => {
 		if let Some(child_markup) = $mrk.attributes.get(::plygui_api::markup::CHILD).map(|m| m.as_child()) {
 			use plygui_api::development::SingleContainerInner;
 			
     		let mut child = $reg.member(&child_markup.member_type).unwrap()();
     		child.fill_from_markup(child_markup, $reg);
-			$this.set_child($base, Some(child));
+			$this.set_child($mem, Some(child));
 		}	
 	}
 }
