@@ -37,7 +37,7 @@ pub struct MemberBase {
     pub functions: MemberFunctions,
 
     pub handler_resize: Option<callbacks::Resize>,
-    
+
     _no_threads: PhantomData<Rc<()>>,
 }
 #[repr(C)]
@@ -78,7 +78,7 @@ impl MemberBase {
             functions: functions,
 
             handler_resize: None,
-            
+
             _no_threads: PhantomData,
         }
     }
@@ -239,10 +239,10 @@ impl<T: MemberInner> seal::Sealed for Member<T> {}
 
 pub trait HasLayoutInner: MemberInner {
     fn on_layout_changed(&mut self, base: &mut MemberBase);
-    
+
     fn layout_margin(&self, _member: &MemberBase) -> layout::BoundarySize {
-	    layout::BoundarySize::AllTheSame(0)
-	}
+        layout::BoundarySize::AllTheSame(0)
+    }
 }
 
 impl<T: ControlInner> controls::HasLayout for Member<Control<T>> {
@@ -1511,6 +1511,8 @@ impl<T: ApplicationInner> seal::Sealed for Application<T> {}
 
 pub trait WindowInner: HasLabelInner + SingleContainerInner {
     fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<Member<SingleContainer<Self>>>;
+    fn on_frame(&mut self, cb: callbacks::Frame);
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::Frame>;
 }
 
 impl<T: WindowInner> controls::Window for Member<SingleContainer<T>> {}

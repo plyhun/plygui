@@ -1,4 +1,4 @@
-use super::{layout, callbacks, types, ids, development};
+use super::{callbacks, development, ids, layout, types};
 
 use std::any::Any;
 #[cfg(feature = "type_check")]
@@ -44,12 +44,12 @@ pub trait HasOrientation: AsAny + development::seal::Sealed {
 pub trait HasLayout: Member {
     fn layout_width(&self) -> layout::Size;
     fn layout_height(&self) -> layout::Size;
-    
+
     fn layout_margin(&self) -> layout::BoundarySize;
 
     fn set_layout_width(&mut self, layout::Size);
     fn set_layout_height(&mut self, layout::Size);
-    
+
     fn as_has_layout(&self) -> &dyn HasLayout;
     fn as_has_layout_mut(&mut self) -> &mut dyn HasLayout;
     fn into_has_layout(self: Box<Self>) -> Box<dyn HasLayout>;

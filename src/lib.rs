@@ -3,7 +3,6 @@
 #![cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
 #![cfg_attr(feature = "cargo-clippy", allow(redundant_field_names))]
 #![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
-
 #![cfg_attr(feature = "type_check", feature(get_type_id))]
 #![feature(specialization)]
 
@@ -14,13 +13,13 @@ extern crate serde_json;
 #[cfg(feature = "markup")]
 extern crate typemap;
 
-pub mod types;
-pub mod development;
-pub mod layout;
-pub mod ids;
 pub mod controls;
-pub mod utils;
 pub mod defaults;
+pub mod development;
+pub mod ids;
+pub mod layout;
+pub mod types;
+pub mod utils;
 
 #[macro_use]
 pub mod callbacks;
