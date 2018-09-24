@@ -1,10 +1,12 @@
 use super::{callbacks, controls, ids, layout, types};
 
 use std::any::Any;
+use std::borrow::Cow;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
+use std::sync::mpsc;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -537,7 +539,7 @@ impl<T: ContainerInner> controls::Container for Member<T> {
 // ===============================================================================================================
 
 pub trait SingleContainerInner: ContainerInner {
-    fn set_child(&mut self, base: &mut MemberBase, Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>>;
+    fn set_child(&mut self, base: &mut MemberBase, child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>>;
     fn child(&self) -> Option<&dyn controls::Control>;
     fn child_mut(&mut self) -> Option<&mut dyn controls::Control>;
 }
@@ -546,22 +548,6 @@ pub struct SingleContainer<T: SingleContainerInner> {
     inner: T,
 }
 
-impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {
-    type Id = T::Id;
-
-    #[inline]
-    fn size(&self) -> (u16, u16) {
-        self.inner.size()
-    }
-    #[inline]
-    fn on_set_visibility(&mut self, base: &mut MemberBase) {
-        self.inner.on_set_visibility(base)
-    }
-    #[inline]
-    unsafe fn native_id(&self) -> Self::Id {
-        self.inner.native_id()
-    }
-}
 impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
     type Inner = T;
     type Params = ();
@@ -581,6 +567,22 @@ impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
     #[inline]
     fn into_inner(self) -> Self::Inner {
         self.inner
+    }
+}
+impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {
+    type Id = T::Id;
+
+    #[inline]
+    fn size(&self) -> (u16, u16) {
+        self.inner.size()
+    }
+    #[inline]
+    fn on_set_visibility(&mut self, base: &mut MemberBase) {
+        self.inner.on_set_visibility(base)
+    }
+    #[inline]
+    unsafe fn native_id(&self) -> Self::Id {
+        self.inner.native_id()
     }
 }
 impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
@@ -1059,12 +1061,12 @@ impl<T: MultiContainerInner + ControlInner> controls::MultiContainer for Member<
 // ===============================================================================================================
 
 pub trait HasLabelInner {
-    fn label(&self) -> ::std::borrow::Cow<str>;
+    fn label(&self) -> Cow<str>;
     fn set_label(&mut self, base: &mut MemberBase, label: &str);
 }
 impl<T: HasLabelInner + MemberInner> controls::HasLabel for Member<T> {
     #[inline]
-    fn label(&self) -> ::std::borrow::Cow<str> {
+    fn label(&self) -> Cow<str> {
         self.inner.label()
     }
     #[inline]
@@ -1087,7 +1089,7 @@ impl<T: HasLabelInner + MemberInner> controls::HasLabel for Member<T> {
 }
 impl<T: HasLabelInner + ControlInner> controls::HasLabel for Member<Control<T>> {
     #[inline]
-    fn label(&self) -> ::std::borrow::Cow<str> {
+    fn label(&self) -> Cow<str> {
         self.inner.inner.label()
     }
     #[inline]
@@ -1110,7 +1112,7 @@ impl<T: HasLabelInner + ControlInner> controls::HasLabel for Member<Control<T>> 
 }
 impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<SingleContainer<T>> {
     #[inline]
-    fn label(&self) -> ::std::borrow::Cow<str> {
+    fn label(&self) -> Cow<str> {
         self.inner.inner.label()
     }
     #[inline]
@@ -1133,7 +1135,7 @@ impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<Sing
 }
 impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<MultiContainer<T>> {
     #[inline]
-    fn label(&self) -> ::std::borrow::Cow<str> {
+    fn label(&self) -> Cow<str> {
         self.inner.inner.label()
     }
     #[inline]
@@ -1156,7 +1158,7 @@ impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<Multi
 }
 impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn label(&self) -> ::std::borrow::Cow<str> {
+    fn label(&self) -> Cow<str> {
         self.inner.inner.inner.label()
     }
     #[inline]
@@ -1179,7 +1181,7 @@ impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel 
 }
 impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel for Member<Control<MultiContainer<T>>> {
     #[inline]
-    fn label(&self) -> ::std::borrow::Cow<str> {
+    fn label(&self) -> Cow<str> {
         self.inner.inner.inner.label()
     }
     #[inline]
@@ -1433,7 +1435,7 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 pub trait ApplicationInner: Sized + 'static {
     fn with_name(name: &str) -> Box<Application<Self>>;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window>;
-    fn name(&self) -> ::std::borrow::Cow<str>;
+    fn name(&self) -> Cow<str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
@@ -1447,7 +1449,7 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
         self.inner.new_window(title, size, menu)
     }
     #[inline]
-    fn name(&self) -> ::std::borrow::Cow<str> {
+    fn name(&self) -> Cow<str> {
         self.inner.name()
     }
     #[inline]
@@ -1509,15 +1511,115 @@ impl<T: ApplicationInner> seal::Sealed for Application<T> {}
 
 // ===============================================================================================================
 
+pub struct WindowBase {
+    queue: mpsc::Receiver<callbacks::Frame>,
+    sender: mpsc::Sender<callbacks::Frame>,
+}
+impl WindowBase {
+    pub(crate) fn new() -> Self {
+        let (tx, rx) = mpsc::channel();
+        WindowBase { sender: tx, queue: rx }
+    }
+    pub fn sender(&mut self) -> &mut mpsc::Sender<callbacks::Frame> {
+        &mut self.sender
+    }
+    pub fn queue(&mut self) -> &mut mpsc::Receiver<callbacks::Frame> {
+        &mut self.queue
+    }
+}
+
+pub struct Window<T: WindowInner> {
+    base: WindowBase,
+    inner: T,
+}
+
+impl<T: WindowInner> HasBase for Window<T> {
+    type Base = WindowBase;
+
+    fn base(&self) -> &Self::Base {
+        &self.base
+    }
+    fn base_mut(&mut self) -> &mut Self::Base {
+        &mut self.base
+    }
+}
+impl<T: WindowInner> HasInner for Window<T> {
+    type Inner = T;
+    type Params = ();
+
+    fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
+        Window { base: WindowBase::new(), inner: inner }
+    }
+    fn as_inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+    fn as_inner_mut(&mut self) -> &mut Self::Inner {
+        &mut self.inner
+    }
+    fn into_inner(self) -> Self::Inner {
+        self.inner
+    }
+}
+impl<T: WindowInner> MemberInner for Window<T> {
+    type Id = T::Id;
+
+    #[inline]
+    fn size(&self) -> (u16, u16) {
+        self.inner.size()
+    }
+    #[inline]
+    fn on_set_visibility(&mut self, base: &mut MemberBase) {
+        self.inner.on_set_visibility(base)
+    }
+    #[inline]
+    unsafe fn native_id(&self) -> Self::Id {
+        self.inner.native_id()
+    }
+}
+impl<T: WindowInner + ContainerInner> ContainerInner for Window<T> {
+    #[inline]
+    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
+        self.inner.find_control_by_id_mut(id)
+    }
+    #[inline]
+    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
+        self.inner.find_control_by_id(id)
+    }
+}
+impl<T: WindowInner + SingleContainerInner> SingleContainerInner for Window<T> {
+    #[inline]
+    fn set_child(&mut self, base: &mut MemberBase, child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>> {
+        self.inner.set_child(base, child)
+    }
+    #[inline]
+    fn child(&self) -> Option<&dyn controls::Control> {
+        self.inner.child()
+    }
+    #[inline]
+    fn child_mut(&mut self) -> Option<&mut dyn controls::Control> {
+        self.inner.child_mut()
+    }
+}
+impl<T: WindowInner + HasLabelInner> HasLabelInner for Window<T> {
+    #[inline]
+    fn label(&self) -> Cow<str> {
+        self.inner.label()
+    }
+    #[inline]
+    fn set_label(&mut self, base: &mut MemberBase, label: &str) {
+        self.inner.set_label(base, label)
+    }
+}
+
 pub trait WindowInner: HasLabelInner + SingleContainerInner {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<Member<SingleContainer<Self>>>;
+    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<Member<SingleContainer<Window<Self>>>>;
     fn on_frame(&mut self, cb: callbacks::Frame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::Frame>;
 }
 
-impl<T: WindowInner> controls::Window for Member<SingleContainer<T>> {}
+impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
 
-impl<T: WindowInner> Member<SingleContainer<T>> {
+impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
     #[inline]
     pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
         T::with_params(title, window_size, menu)
