@@ -67,6 +67,16 @@ macro_rules! callback {
 				self.1.as_mut()
 			}
 		}
+		impl From<$id> for (CallbackId, Box<dyn $($typ)+>) {
+		    fn from(a: $id) -> Self {
+		        (a.0, a.1)
+		    }
+		}
+		impl From<(CallbackId, Box<dyn $($typ)+>)> for $id {
+		    fn from(a: (CallbackId, Box<dyn $($typ)+>)) -> Self {
+		        $id(a.0, a.1)
+		    }
+		}
 	}
 }
 
