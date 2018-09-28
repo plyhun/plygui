@@ -113,8 +113,8 @@ impl<T: MemberInner> HasBase for Member<T> {
         &mut self.base
     }
 }
-impl<T: MemberInner> Member<T> {
-    pub fn call_on_resize(&mut self, w: u16, h: u16) {
+impl<T: MemberInner> OuterMember for Member<T> {
+    fn call_on_resize(&mut self, w: u16, h: u16) {
         let self2 = self as *mut Self;
         if let Some(ref mut cb) = self.base_mut().handler_resize {
             (cb.as_mut())(unsafe { &mut *self2 }, w, h);
@@ -1714,9 +1714,11 @@ impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
 
 // ===============================================================================================================
 
-pub trait Final {}
+pub trait OuterMember: seal::Sealed {
+	fn call_on_resize(&mut self, w: u16, h: u16);
+}
 
-pub trait OuterDrawable {
+pub trait OuterDrawable: seal::Sealed {
     fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self);
