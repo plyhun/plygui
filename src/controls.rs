@@ -32,7 +32,7 @@ pub trait Member: AsAny + development::seal::Sealed {
     fn into_member(self: Box<Self>) -> Box<dyn Member>;
 }
 
-pub trait HasOrientation: AsAny + development::seal::Sealed {
+pub trait HasOrientation: Member + development::seal::Sealed {
     fn layout_orientation(&self) -> layout::Orientation;
     fn set_layout_orientation(&mut self, layout::Orientation);
 
@@ -138,7 +138,7 @@ pub trait MultiContainer: Container {
     fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer>;
 }
 
-pub trait HasLabel: AsAny + development::seal::Sealed {
+pub trait HasLabel: Member + development::seal::Sealed {
     fn label(&self) -> ::std::borrow::Cow<str>;
     fn set_label(&mut self, &str);
 
@@ -147,7 +147,7 @@ pub trait HasLabel: AsAny + development::seal::Sealed {
     fn into_has_label(self: Box<Self>) -> Box<dyn HasLabel>;
 }
 
-pub trait Clickable: AsAny + development::seal::Sealed {
+pub trait Clickable: Member + development::seal::Sealed {
     fn on_click(&mut self, Option<callbacks::Click>);
 
     fn as_clickable(&self) -> &dyn Clickable;
