@@ -1714,6 +1714,21 @@ impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
 
 // ===============================================================================================================
 
+pub trait TextInner: ControlInner + HasLabelInner {
+	fn with_text(text: &str) -> Box<Member<Control<Self>>>;
+}
+
+impl<T: TextInner> controls::Text for Member<Control<T>> {}
+
+impl<T: TextInner> Member<Control<T>> {
+    #[inline]
+    pub fn with_text(text: &str) -> Box<dyn controls::Text> {
+        T::with_text(text)
+    }
+}
+
+// ===============================================================================================================
+
 pub trait OuterMember: seal::Sealed {
 	fn call_on_resize(&mut self, w: u16, h: u16);
 }

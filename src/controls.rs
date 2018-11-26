@@ -186,3 +186,5 @@ pub trait Splitted: MultiContainer + Control + HasOrientation {
     fn splitter(&self) -> f32;
 }
 //impl <T: Splitted> development::Final for T {}
+
+pub trait Text: Control + HasLabel {}
