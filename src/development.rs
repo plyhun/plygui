@@ -1716,6 +1716,9 @@ impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
 
 pub trait TextInner: ControlInner + HasLabelInner {
 	fn with_text(text: &str) -> Box<Member<Control<Self>>>;
+	fn empty() -> Box<Member<Control<Self>>> {
+	    Self::with_text("")
+	}
 }
 
 impl<T: TextInner> controls::Text for Member<Control<T>> {}
@@ -1725,6 +1728,10 @@ impl<T: TextInner> Member<Control<T>> {
     pub fn with_text(text: &str) -> Box<dyn controls::Text> {
         T::with_text(text)
     }
+    #[inline]
+    pub fn empty() -> Box<dyn controls::Text> {
+	    T::empty()
+	}
 }
 
 // ===============================================================================================================

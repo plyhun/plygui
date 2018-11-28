@@ -188,3 +188,4 @@ pub trait Splitted: MultiContainer + Control + HasOrientation {
 //impl <T: Splitted> development::Final for T {}
 
 pub trait Text: Control + HasLabel {}
+//impl <T: Text> development::Final for T {}
