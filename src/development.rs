@@ -780,7 +780,7 @@ impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Cont
 
 pub trait MultiContainerInner: ContainerInner {
     fn len(&self) -> usize;
-    fn set_child_to(&mut self, base: &mut MemberBase, index: usize, Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>>;
+    fn set_child_to(&mut self, base: &mut MemberBase, index: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>>;
     fn remove_child_from(&mut self, base: &mut MemberBase, index: usize) -> Option<Box<dyn controls::Control>>;
     fn child_at(&self, index: usize) -> Option<&dyn controls::Control>;
     fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn controls::Control>;
@@ -1061,12 +1061,12 @@ impl<T: MultiContainerInner + ControlInner> controls::MultiContainer for Member<
 // ===============================================================================================================
 
 pub trait HasLabelInner {
-    fn label(&self) -> Cow<str>;
+    fn label(&self) -> Cow<'_, str>;
     fn set_label(&mut self, base: &mut MemberBase, label: &str);
 }
 impl<T: HasLabelInner + MemberInner> controls::HasLabel for Member<T> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.label()
     }
     #[inline]
@@ -1089,7 +1089,7 @@ impl<T: HasLabelInner + MemberInner> controls::HasLabel for Member<T> {
 }
 impl<T: HasLabelInner + ControlInner> controls::HasLabel for Member<Control<T>> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.inner.label()
     }
     #[inline]
@@ -1112,7 +1112,7 @@ impl<T: HasLabelInner + ControlInner> controls::HasLabel for Member<Control<T>> 
 }
 impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<SingleContainer<T>> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.inner.label()
     }
     #[inline]
@@ -1135,7 +1135,7 @@ impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<Sing
 }
 impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<MultiContainer<T>> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.inner.label()
     }
     #[inline]
@@ -1158,7 +1158,7 @@ impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<Multi
 }
 impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.inner.inner.label()
     }
     #[inline]
@@ -1181,7 +1181,7 @@ impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel 
 }
 impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel for Member<Control<MultiContainer<T>>> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.inner.inner.label()
     }
     #[inline]
@@ -1435,7 +1435,7 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 pub trait ApplicationInner: Sized + 'static {
     fn with_name(name: &str) -> Box<Application<Self>>;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window>;
-    fn name(&self) -> Cow<str>;
+    fn name(&self) -> Cow<'_, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
@@ -1449,7 +1449,7 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
         self.inner.new_window(title, size, menu)
     }
     #[inline]
-    fn name(&self) -> Cow<str> {
+    fn name(&self) -> Cow<'_, str> {
         self.inner.name()
     }
     #[inline]
@@ -1602,7 +1602,7 @@ impl<T: WindowInner + SingleContainerInner> SingleContainerInner for Window<T> {
 }
 impl<T: WindowInner + HasLabelInner> HasLabelInner for Window<T> {
     #[inline]
-    fn label(&self) -> Cow<str> {
+    fn label(&self) -> Cow<'_, str> {
         self.inner.label()
     }
     #[inline]

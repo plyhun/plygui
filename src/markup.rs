@@ -172,7 +172,7 @@ struct MarkupVisitor;
 impl<'de> Visitor<'de> for MarkupVisitor {
     type Value = Markup;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("struct Markup")
     }
 

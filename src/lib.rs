@@ -6,12 +6,10 @@
 #![cfg_attr(feature = "type_check", feature(get_type_id))]
 #![feature(specialization)]
 
-#[cfg(feature = "markup")]
-extern crate serde;
+
 #[cfg(feature = "markup")]
 extern crate serde_json;
-#[cfg(feature = "markup")]
-extern crate typemap;
+
 
 pub mod controls;
 pub mod defaults;

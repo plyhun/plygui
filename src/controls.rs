@@ -12,7 +12,7 @@ pub trait AsAny {
 
 pub trait Member: AsAny + development::seal::Sealed {
     fn size(&self) -> (u16, u16);
-    fn on_resize(&mut self, Option<callbacks::Resize>);
+    fn on_resize(&mut self, callback: Option<callbacks::Resize>);
 
     fn set_visibility(&mut self, visibility: types::Visibility);
     fn visibility(&self) -> types::Visibility;
@@ -34,7 +34,7 @@ pub trait Member: AsAny + development::seal::Sealed {
 
 pub trait HasOrientation: Member + development::seal::Sealed {
     fn layout_orientation(&self) -> layout::Orientation;
-    fn set_layout_orientation(&mut self, layout::Orientation);
+    fn set_layout_orientation(&mut self, orientation: layout::Orientation);
 
     fn as_has_orientation(&self) -> &dyn HasOrientation;
     fn as_has_orientation_mut(&mut self) -> &mut dyn HasOrientation;
@@ -47,8 +47,8 @@ pub trait HasLayout: Member {
 
     fn layout_margin(&self) -> layout::BoundarySize;
 
-    fn set_layout_width(&mut self, layout::Size);
-    fn set_layout_height(&mut self, layout::Size);
+    fn set_layout_width(&mut self, width: layout::Size);
+    fn set_layout_height(&mut self, height: layout::Size);
 
     fn as_has_layout(&self) -> &dyn HasLayout;
     fn as_has_layout_mut(&mut self) -> &mut dyn HasLayout;
@@ -95,7 +95,7 @@ pub trait Container: Member {
 }
 
 pub trait SingleContainer: Container {
-    fn set_child(&mut self, Option<Box<dyn Control>>) -> Option<Box<dyn Control>>;
+    fn set_child(&mut self, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>>;
     fn child(&self) -> Option<&dyn Control>;
     fn child_mut(&mut self) -> Option<&mut dyn Control>;
 
@@ -106,7 +106,7 @@ pub trait SingleContainer: Container {
 
 pub trait MultiContainer: Container {
     fn len(&self) -> usize;
-    fn set_child_to(&mut self, index: usize, Box<dyn Control>) -> Option<Box<dyn Control>>;
+    fn set_child_to(&mut self, index: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>>;
     fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn Control>>;
     fn child_at(&self, index: usize) -> Option<&dyn Control>;
     fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control>;
@@ -139,8 +139,8 @@ pub trait MultiContainer: Container {
 }
 
 pub trait HasLabel: Member + development::seal::Sealed {
-    fn label(&self) -> ::std::borrow::Cow<str>;
-    fn set_label(&mut self, &str);
+    fn label(&self) -> ::std::borrow::Cow<'_, str>;
+    fn set_label(&mut self, label: &str);
 
     fn as_has_label(&self) -> &dyn HasLabel;
     fn as_has_label_mut(&mut self) -> &mut dyn HasLabel;
@@ -148,7 +148,7 @@ pub trait HasLabel: Member + development::seal::Sealed {
 }
 
 pub trait Clickable: Member + development::seal::Sealed {
-    fn on_click(&mut self, Option<callbacks::Click>);
+    fn on_click(&mut self, callback: Option<callbacks::Click>);
 
     fn as_clickable(&self) -> &dyn Clickable;
     fn as_clickable_mut(&mut self) -> &mut dyn Clickable;
@@ -157,7 +157,7 @@ pub trait Clickable: Member + development::seal::Sealed {
 
 pub trait Application: AsAny + development::seal::Sealed {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn Window>;
-    fn name(&self) -> ::std::borrow::Cow<str>;
+    fn name(&self) -> ::std::borrow::Cow<'_, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn Member>;
