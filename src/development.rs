@@ -1744,7 +1744,7 @@ impl<T: TextInner> Member<Control<T>> {
 // ===============================================================================================================
 
 pub trait AlertInner: MemberInner + HasLabelInner {
-	fn with_text(text: &str, severity: types::AlertSeverity) -> Box<Member<Self>>;
+	fn with_text(text: &str, severity: types::AlertSeverity, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
 	fn severity(&self) -> types::AlertSeverity;
 }
 
@@ -1757,8 +1757,8 @@ impl<T: AlertInner> controls::Alert for Member<T> {
 
 impl<T: AlertInner> Member<T> {
     #[inline]
-    pub fn with_text(text: &str, severity: types::AlertSeverity) -> Box<dyn controls::Alert> {
-        T::with_text(text, severity)
+    pub fn with_text(text: &str, severity: types::AlertSeverity, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Alert> {
+        T::with_text(text, severity, parent)
     }
 }
 
