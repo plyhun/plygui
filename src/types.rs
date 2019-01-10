@@ -6,7 +6,7 @@ pub enum Visibility {
     Gone,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WindowStartSize {
     Exact(u16, u16),
     Fullscreen,
@@ -15,4 +15,10 @@ pub enum WindowStartSize {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WindowMenu {
     None,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AlertSeverity {
+	Info,
+	Alert,
 }

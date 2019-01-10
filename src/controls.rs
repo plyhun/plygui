@@ -189,3 +189,9 @@ pub trait Splitted: MultiContainer + Control + HasOrientation {
 
 pub trait Text: Control + HasLabel {}
 //impl <T: Text> development::Final for T {}
+
+pub trait Alert: Member + HasLabel {
+	fn severity(&self) -> types::AlertSeverity;
+}
+//impl <T: Alert> development::Final for T {}
+

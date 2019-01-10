@@ -1714,6 +1714,13 @@ impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
 
 // ===============================================================================================================
 
+pub trait DialogInner: MemberInner {
+	fn close(&mut self);
+	fn is_modal(&self) -> bool;
+}
+
+// ===============================================================================================================
+
 pub trait TextInner: ControlInner + HasLabelInner {
 	fn with_text(text: &str) -> Box<Member<Control<Self>>>;
 	fn empty() -> Box<Member<Control<Self>>> {
@@ -1732,6 +1739,27 @@ impl<T: TextInner> Member<Control<T>> {
     pub fn empty() -> Box<dyn controls::Text> {
 	    T::empty()
 	}
+}
+
+// ===============================================================================================================
+
+pub trait AlertInner: MemberInner + HasLabelInner {
+	fn with_text(text: &str, severity: types::AlertSeverity) -> Box<Member<Self>>;
+	fn severity(&self) -> types::AlertSeverity;
+}
+
+impl<T: AlertInner> controls::Alert for Member<T> {
+	#[inline]
+	fn severity(&self) -> types::AlertSeverity {
+		self.as_inner().severity()
+	}
+}
+
+impl<T: AlertInner> Member<T> {
+    #[inline]
+    pub fn with_text(text: &str, severity: types::AlertSeverity) -> Box<dyn controls::Alert> {
+        T::with_text(text, severity)
+    }
 }
 
 // ===============================================================================================================
