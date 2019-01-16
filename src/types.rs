@@ -22,3 +22,9 @@ pub enum AlertSeverity {
 	Info,
 	Alert,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TextContent {
+	Plain(String),
+	LabelDescription(String, String),
+}

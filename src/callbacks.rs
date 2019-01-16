@@ -83,3 +83,5 @@ macro_rules! callback {
 callback!(Resize, FnMut(&mut dyn controls::Member, u16, u16));
 callback!(Click, FnMut(&mut dyn controls::Clickable));
 callback!(Frame, FnMut(&mut dyn controls::Window) -> bool);
+callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
+
