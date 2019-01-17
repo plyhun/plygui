@@ -1744,7 +1744,7 @@ impl<T: TextInner> Member<Control<T>> {
 // ===============================================================================================================
 
 pub trait AlertInner: MemberInner + HasLabelInner {
-	fn with_content(content: types::TextContent, severity: types::AlertSeverity, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
+	fn with_actions(content: types::TextContent, severity: types::AlertSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
 	fn severity(&self) -> types::AlertSeverity;
 }
 
@@ -1756,9 +1756,13 @@ impl<T: AlertInner> controls::Alert for Member<T> {
 }
 
 impl<T: AlertInner> Member<T> {
-    #[inline]
+	#[inline]
     pub fn with_content(content: types::TextContent, severity: types::AlertSeverity, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Alert> {
-        T::with_content(content, severity, parent)
+        T::with_actions(content, severity, vec![], parent)
+    }
+    #[inline]
+    pub fn with_actions(content: types::TextContent, severity: types::AlertSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Alert> {
+        T::with_actions(content, severity, actions, parent)
     }
 }
 
