@@ -20,6 +20,7 @@ pub enum WindowMenu {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlertSeverity {
 	Info,
+	Warning,
 	Alert,
 }
 
