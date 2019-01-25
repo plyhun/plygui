@@ -164,7 +164,12 @@ pub trait Application: AsAny + development::seal::Sealed {
 }
 //impl <T: Application> development::Final for T {}
 
-pub trait Window: SingleContainer + HasLabel {}
+pub trait Closeable: Member {
+	fn close(&mut self, with_callbacks: bool);
+	fn on_close(&mut self, callback: Option<callbacks::Action>);
+}
+
+pub trait Window: SingleContainer + HasLabel + Closeable {}
 //impl <T: Window> development::Final for T {}
 
 pub trait Button: Control + Clickable + HasLabel {}

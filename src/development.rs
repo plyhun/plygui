@@ -1060,11 +1060,11 @@ impl<T: MultiContainerInner + ControlInner> controls::MultiContainer for Member<
 
 // ===============================================================================================================
 
-pub trait HasLabelInner {
+pub trait HasLabelInner: MemberInner {
     fn label(&self) -> Cow<'_, str>;
     fn set_label(&mut self, base: &mut MemberBase, label: &str);
 }
-impl<T: HasLabelInner + MemberInner> controls::HasLabel for Member<T> {
+impl<T: HasLabelInner> controls::HasLabel for Member<T> {
     #[inline]
     fn label(&self) -> Cow<'_, str> {
         self.inner.label()
@@ -1203,9 +1203,70 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
     }
 }
 
+// ==============================================================================================================
+
+pub trait CloseableInner: MemberInner {
+    fn close(&mut self, with_callbacks: bool);
+    fn on_close(&mut self, callback: Option<callbacks::Action>);
+}
+
+impl<T: CloseableInner> controls::Closeable for Member<T> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.on_close(callback)
+    }
+}
+
+impl<T: CloseableInner + ControlInner> controls::Closeable for Member<Control<T>> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.inner.on_close(callback)
+    }
+}
+
+impl<T: CloseableInner + SingleContainerInner> controls::Closeable for Member<SingleContainer<T>> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.inner.on_close(callback)
+    }
+}
+
+impl<T: CloseableInner + MultiContainerInner> controls::Closeable for Member<MultiContainer<T>> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.inner.on_close(callback)
+    }
+}
+
+impl<T: CloseableInner + ControlInner + SingleContainerInner> controls::Closeable for Member<Control<SingleContainer<T>>> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.inner.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.inner.inner.on_close(callback)
+    }
+}
+
+impl<T: CloseableInner + ControlInner + MultiContainerInner> controls::Closeable for Member<Control<MultiContainer<T>>> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.inner.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.inner.inner.on_close(callback)
+    }
+}
+
 // ===============================================================================================================
 
-pub trait ClickableInner {
+pub trait ClickableInner: MemberInner {
     fn on_click(&mut self, cb: Option<callbacks::Click>);
 }
 impl<T: ClickableInner + MemberInner> controls::Clickable for Member<T> {
@@ -1576,7 +1637,7 @@ impl<T: WindowInner> MemberInner for Window<T> {
         self.inner.native_id()
     }
 }
-impl<T: WindowInner + ContainerInner> ContainerInner for Window<T> {
+impl<T: WindowInner> ContainerInner for Window<T> {
     #[inline]
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
         self.inner.find_control_by_id_mut(id)
@@ -1586,7 +1647,7 @@ impl<T: WindowInner + ContainerInner> ContainerInner for Window<T> {
         self.inner.find_control_by_id(id)
     }
 }
-impl<T: WindowInner + SingleContainerInner> SingleContainerInner for Window<T> {
+impl<T: WindowInner> SingleContainerInner for Window<T> {
     #[inline]
     fn set_child(&mut self, base: &mut MemberBase, child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>> {
         self.inner.set_child(base, child)
@@ -1600,7 +1661,7 @@ impl<T: WindowInner + SingleContainerInner> SingleContainerInner for Window<T> {
         self.inner.child_mut()
     }
 }
-impl<T: WindowInner + HasLabelInner> HasLabelInner for Window<T> {
+impl<T: WindowInner> HasLabelInner for Window<T> {
     #[inline]
     fn label(&self) -> Cow<'_, str> {
         self.inner.label()
@@ -1611,7 +1672,16 @@ impl<T: WindowInner + HasLabelInner> HasLabelInner for Window<T> {
     }
 }
 
-pub trait WindowInner: HasLabelInner + SingleContainerInner {
+impl<T: WindowInner> CloseableInner for Window<T> {
+    fn close(&mut self, with_callbacks: bool) {
+        self.inner.close(with_callbacks)
+    }
+    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+        self.inner.on_close(callback)
+    }
+}
+
+pub trait WindowInner: HasLabelInner + CloseableInner + SingleContainerInner {
     fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<Member<SingleContainer<Window<Self>>>>;
     fn on_frame(&mut self, cb: callbacks::Frame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::Frame>;
@@ -1715,17 +1785,17 @@ impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
 // ===============================================================================================================
 
 pub trait DialogInner: MemberInner {
-	fn close(&mut self);
-	fn is_modal(&self) -> bool;
+    fn close(&mut self);
+    fn is_modal(&self) -> bool;
 }
 
 // ===============================================================================================================
 
 pub trait TextInner: ControlInner + HasLabelInner {
-	fn with_text(text: &str) -> Box<Member<Control<Self>>>;
-	fn empty() -> Box<Member<Control<Self>>> {
-	    Self::with_text("")
-	}
+    fn with_text(text: &str) -> Box<Member<Control<Self>>>;
+    fn empty() -> Box<Member<Control<Self>>> {
+        Self::with_text("")
+    }
 }
 
 impl<T: TextInner> controls::Text for Member<Control<T>> {}
@@ -1737,26 +1807,26 @@ impl<T: TextInner> Member<Control<T>> {
     }
     #[inline]
     pub fn empty() -> Box<dyn controls::Text> {
-	    T::empty()
-	}
+        T::empty()
+    }
 }
 
 // ===============================================================================================================
 
 pub trait AlertInner: MemberInner + HasLabelInner {
-	fn with_actions(content: types::TextContent, severity: types::AlertSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
-	fn severity(&self) -> types::AlertSeverity;
+    fn with_actions(content: types::TextContent, severity: types::AlertSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
+    fn severity(&self) -> types::AlertSeverity;
 }
 
 impl<T: AlertInner> controls::Alert for Member<T> {
-	#[inline]
-	fn severity(&self) -> types::AlertSeverity {
-		self.as_inner().severity()
-	}
+    #[inline]
+    fn severity(&self) -> types::AlertSeverity {
+        self.as_inner().severity()
+    }
 }
 
 impl<T: AlertInner> Member<T> {
-	#[inline]
+    #[inline]
     pub fn with_content(content: types::TextContent, severity: types::AlertSeverity, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Alert> {
         T::with_actions(content, severity, vec![], parent)
     }
@@ -1769,7 +1839,7 @@ impl<T: AlertInner> Member<T> {
 // ===============================================================================================================
 
 pub trait OuterMember: seal::Sealed {
-	fn call_on_resize(&mut self, w: u16, h: u16);
+    fn call_on_resize(&mut self, w: u16, h: u16);
 }
 
 pub trait OuterDrawable: seal::Sealed {
