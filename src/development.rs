@@ -1206,7 +1206,7 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
 // ==============================================================================================================
 
 pub trait CloseableInner: MemberInner {
-    fn close(&mut self, with_callbacks: bool);
+    fn close(&mut self, skip_callbacks: bool);
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
@@ -1813,27 +1813,37 @@ impl<T: TextInner> Member<Control<T>> {
 
 // ===============================================================================================================
 
-pub trait AlertInner: MemberInner + HasLabelInner {
-    fn with_actions(content: types::TextContent, severity: types::AlertSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
-    fn severity(&self) -> types::AlertSeverity;
+pub trait MessageInner: MemberInner + HasLabelInner + CloseableInner {
+    fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
+    fn severity(&self) -> types::MessageSeverity;
+    fn start(&mut self) -> Result<String, ()>;
 }
 
-impl<T: AlertInner> controls::Alert for Member<T> {
+impl<T: MessageInner> controls::Message for Member<T> {
     #[inline]
-    fn severity(&self) -> types::AlertSeverity {
+    fn severity(&self) -> types::MessageSeverity {
         self.as_inner().severity()
+    }
+    #[inline]
+    fn start(&mut self) -> Result<String, ()> {
+        self.as_inner_mut().start()
     }
 }
 
-impl<T: AlertInner> Member<T> {
+impl<T: MessageInner> Member<T> {
     #[inline]
-    pub fn with_content(content: types::TextContent, severity: types::AlertSeverity, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Alert> {
+    pub fn with_content(content: types::TextContent, severity: types::MessageSeverity, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Message> {
         T::with_actions(content, severity, vec![], parent)
     }
     #[inline]
-    pub fn with_actions(content: types::TextContent, severity: types::AlertSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Alert> {
+    pub fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Message> {
         T::with_actions(content, severity, actions, parent)
     }
+    #[inline]
+    pub fn start_with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Result<String, ()> {
+        use crate::controls::Message;
+        T::with_actions(content, severity, actions, parent).start()
+    }    
 }
 
 // ===============================================================================================================

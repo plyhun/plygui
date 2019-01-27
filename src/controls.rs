@@ -165,7 +165,7 @@ pub trait Application: AsAny + development::seal::Sealed {
 //impl <T: Application> development::Final for T {}
 
 pub trait Closeable: Member {
-	fn close(&mut self, with_callbacks: bool);
+	fn close(&mut self, skip_callbacks: bool);
 	fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
@@ -195,8 +195,8 @@ pub trait Splitted: MultiContainer + Control + HasOrientation {
 pub trait Text: Control + HasLabel {}
 //impl <T: Text> development::Final for T {}
 
-pub trait Alert: Member + HasLabel {
-	fn severity(&self) -> types::AlertSeverity;
+pub trait Message: Member + HasLabel + Closeable {
+	fn severity(&self) -> types::MessageSeverity;
+	fn start(&mut self) -> Result<String, ()>;
 }
-//impl <T: Alert> development::Final for T {}
-
+//impl <T: Message> development::Final for T {}
