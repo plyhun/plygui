@@ -6,11 +6,6 @@
 #![cfg_attr(feature = "type_check", feature(get_type_id))]
 #![feature(specialization)]
 
-
-#[cfg(feature = "markup")]
-extern crate serde_json;
-
-
 pub mod controls;
 pub mod defaults;
 pub mod development;
@@ -18,6 +13,8 @@ pub mod ids;
 pub mod layout;
 pub mod types;
 pub mod utils;
+
+mod runtime;
 
 #[macro_use]
 pub mod callbacks;

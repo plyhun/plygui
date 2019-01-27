@@ -1,11 +1,11 @@
-use super::{callbacks, controls, ids, layout, types};
+use super::{callbacks, controls, ids, layout, types, runtime};
 
 use std::any::Any;
 use std::borrow::Cow;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::marker::PhantomData;
-use std::rc::Rc;
+use std::rc::{Weak, Rc};
+use std::cell::UnsafeCell;
 use std::sync::mpsc;
 
 #[cfg(feature = "type_check")]
@@ -40,7 +40,7 @@ pub struct MemberBase {
 
     pub handler_resize: Option<callbacks::Resize>,
 
-    _no_threads: PhantomData<Rc<()>>,
+    pub app: Weak<UnsafeCell<dyn ApplicationInner>>,
 }
 #[repr(C)]
 pub struct Member<T: MemberInner> {
@@ -81,7 +81,7 @@ impl MemberBase {
 
             handler_resize: None,
 
-            _no_threads: PhantomData,
+            app: runtime::APPLICATION.with(|a| a.clone()),
         }
     }
     #[inline]
@@ -1493,8 +1493,11 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 
 // ===============================================================================================================
 
-pub trait ApplicationInner: Sized + 'static {
-    fn with_name(name: &str) -> Box<Application<Self>>;
+pub trait NewApplication<T: ApplicationInner> {
+    fn init_with_name(name: &str) -> Box<Application<T>>;
+}
+
+pub trait ApplicationInner: 'static {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window>;
     fn name(&self) -> Cow<'_, str>;
     fn start(&mut self);
@@ -1502,28 +1505,28 @@ pub trait ApplicationInner: Sized + 'static {
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
 }
 pub struct Application<T: ApplicationInner> {
-    inner: T,
+    inner: Rc<UnsafeCell<T>>,
 }
 impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
-        self.inner.new_window(title, size, menu)
+        unsafe {&mut *self.inner.get()}.new_window(title, size, menu)
     }
     #[inline]
     fn name(&self) -> Cow<'_, str> {
-        self.inner.name()
+        unsafe {&mut *self.inner.get()}.name()
     }
     #[inline]
     fn start(&mut self) {
-        self.inner.start()
+        unsafe {&mut *self.inner.get()}.start()
     }
     #[inline]
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member> {
-        self.inner.find_member_by_id_mut(id)
+        unsafe {&mut *self.inner.get()}.find_member_by_id_mut(id)
     }
     #[inline]
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
-        self.inner.find_member_by_id(id)
+        unsafe {&mut *self.inner.get()}.find_member_by_id(id)
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
@@ -1547,25 +1550,27 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
+        let inner = Rc::new(UnsafeCell::new(inner));
+        runtime::try_init(inner.clone());
         Application { inner }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
-        &self.inner
+        unsafe { &*self.inner.get() }
     }
     #[inline]
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
-        &mut self.inner
+        unsafe { &mut *self.inner.get() }
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
-        self.inner
+        panic!("Never unwrap an Application");
     }
 }
-impl<T: ApplicationInner> Application<T> {
+impl<T: ApplicationInner + NewApplication<T>> Application<T> {
     #[inline]
-    pub fn with_name(name: &str) -> Box<dyn controls::Application> {
-        T::with_name(name)
+    pub fn init_with_name(name: &str) -> Box<Self> {
+        T::init_with_name(name)
     }
 }
 impl<T: ApplicationInner> seal::Sealed for Application<T> {}
