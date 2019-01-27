@@ -1,8 +1,8 @@
-use std::rc::{Rc, Weak};
+use super::development::ApplicationInner;
+use super::{controls, ids, types};
 use std::borrow::Cow;
 use std::cell::UnsafeCell;
-use super::development::ApplicationInner;
-use super::{types, ids, controls};
+use std::rc::{Rc, Weak};
 
 static mut READY: bool = false;
 
@@ -19,11 +19,13 @@ pub fn try_init(app: Rc<UnsafeCell<dyn ApplicationInner>>) -> Rc<UnsafeCell<dyn 
     } else {
         // TODO here may come the race!
         APPLICATION.with(|a| unsafe {
-                let a = a as &_ as *const Weak<UnsafeCell<dyn ApplicationInner>> as *mut Weak<UnsafeCell<dyn ApplicationInner>>;
-                let mut b = Rc::downgrade(&app.clone());
-                ::std::mem::swap(&mut *a, &mut b);
+            let a = a as &_ as *const Weak<UnsafeCell<dyn ApplicationInner>> as *mut Weak<UnsafeCell<dyn ApplicationInner>>;
+            let mut b = Rc::downgrade(&app.clone());
+            ::std::mem::swap(&mut *a, &mut b);
         });
-        unsafe { READY = true; }
+        unsafe {
+            READY = true;
+        }
         app
     }
 }

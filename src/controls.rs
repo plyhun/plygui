@@ -165,8 +165,8 @@ pub trait Application: AsAny + development::seal::Sealed {
 //impl <T: Application> development::Final for T {}
 
 pub trait Closeable: Member {
-	fn close(&mut self, skip_callbacks: bool);
-	fn on_close(&mut self, callback: Option<callbacks::Action>);
+    fn close(&mut self, skip_callbacks: bool);
+    fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
 pub trait Window: SingleContainer + HasLabel + Closeable {}
@@ -196,7 +196,7 @@ pub trait Text: Control + HasLabel {}
 //impl <T: Text> development::Final for T {}
 
 pub trait Message: Member + HasLabel + Closeable {
-	fn severity(&self) -> types::MessageSeverity;
-	fn start(&mut self) -> Result<String, ()>;
+    fn severity(&self) -> types::MessageSeverity;
+    fn start(&mut self) -> Result<String, ()>;
 }
 //impl <T: Message> development::Final for T {}

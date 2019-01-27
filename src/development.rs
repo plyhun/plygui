@@ -1,11 +1,11 @@
-use super::{callbacks, controls, ids, layout, types, runtime};
+use super::{callbacks, controls, ids, layout, runtime, types};
 
 use std::any::Any;
 use std::borrow::Cow;
+use std::cell::UnsafeCell;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::rc::{Weak, Rc};
-use std::cell::UnsafeCell;
+use std::rc::{Rc, Weak};
 use std::sync::mpsc;
 
 #[cfg(feature = "type_check")]
@@ -1510,23 +1510,23 @@ pub struct Application<T: ApplicationInner> {
 impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
-        unsafe {&mut *self.inner.get()}.new_window(title, size, menu)
+        unsafe { &mut *self.inner.get() }.new_window(title, size, menu)
     }
     #[inline]
     fn name(&self) -> Cow<'_, str> {
-        unsafe {&mut *self.inner.get()}.name()
+        unsafe { &mut *self.inner.get() }.name()
     }
     #[inline]
     fn start(&mut self) {
-        unsafe {&mut *self.inner.get()}.start()
+        unsafe { &mut *self.inner.get() }.start()
     }
     #[inline]
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member> {
-        unsafe {&mut *self.inner.get()}.find_member_by_id_mut(id)
+        unsafe { &mut *self.inner.get() }.find_member_by_id_mut(id)
     }
     #[inline]
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
-        unsafe {&mut *self.inner.get()}.find_member_by_id(id)
+        unsafe { &mut *self.inner.get() }.find_member_by_id(id)
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
@@ -1848,7 +1848,7 @@ impl<T: MessageInner> Member<T> {
     pub fn start_with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Result<String, ()> {
         use crate::controls::Message;
         T::with_actions(content, severity, actions, parent).start()
-    }    
+    }
 }
 
 // ===============================================================================================================
