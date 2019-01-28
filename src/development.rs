@@ -1818,7 +1818,7 @@ impl<T: TextInner> Member<Control<T>> {
 
 // ===============================================================================================================
 
-pub trait MessageInner: MemberInner + HasLabelInner + CloseableInner {
+pub trait MessageInner: MemberInner + HasLabelInner {
     fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>>;
     fn severity(&self) -> types::MessageSeverity;
     fn start(&mut self) -> Result<String, ()>;
