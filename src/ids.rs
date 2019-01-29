@@ -1,6 +1,6 @@
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-static GLOBAL_COUNT: AtomicUsize = ATOMIC_USIZE_INIT;
+static GLOBAL_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Id(usize);

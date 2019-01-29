@@ -164,7 +164,7 @@ impl<T: MemberInner> controls::Member for Member<T> {
 
     #[cfg(feature = "type_check")]
     unsafe fn type_id(&self) -> TypeId {
-        self.inner.native_id().get_type_id()
+        self.inner.native_id().type_id()
     }
 
     #[inline]
@@ -439,7 +439,7 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
     fn on_added_to_container(&mut self, parent: &dyn controls::Container, x: i32, y: i32, w: u16, h: u16) {
         #[cfg(feature = "type_check")]
         unsafe {
-            if self.inner.inner.native_id().get_type_id() != parent.type_id() {
+            if self.inner.inner.native_id().type_id() != parent.type_id() {
                 panic!("Attempt to use the control from an incompatible backend!")
             }
         }
