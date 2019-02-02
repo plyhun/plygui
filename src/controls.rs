@@ -197,6 +197,6 @@ pub trait Text: Control + HasLabel {}
 
 pub trait Message: Member + HasLabel {
     fn severity(&self) -> types::MessageSeverity;
-    fn start(&mut self) -> Result<String, ()>;
+    fn start(self: Box<Self>) -> Result<String, ()>;
 }
 //impl <T: Message> development::Final for T {}
