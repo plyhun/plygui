@@ -1498,7 +1498,8 @@ pub trait NewApplication<T: ApplicationInner> {
 }
 
 pub trait ApplicationInner: 'static {
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window>;
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window>;
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray>;
     fn name(&self) -> Cow<'_, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
@@ -1509,8 +1510,12 @@ pub struct Application<T: ApplicationInner> {
 }
 impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         unsafe { &mut *self.inner.get() }.new_window(title, size, menu)
+    }
+    #[inline]
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
+        unsafe { &mut *self.inner.get() }.new_tray(title, menu)
     }
     #[inline]
     fn name(&self) -> Cow<'_, str> {
@@ -1687,7 +1692,7 @@ impl<T: WindowInner> CloseableInner for Window<T> {
 }
 
 pub trait WindowInner: HasLabelInner + CloseableInner + SingleContainerInner {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<Member<SingleContainer<Window<Self>>>>;
+    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Member<SingleContainer<Window<Self>>>>;
     fn on_frame(&mut self, cb: callbacks::Frame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::Frame>;
 }
@@ -1696,7 +1701,7 @@ impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
 
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
     #[inline]
-    pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn controls::Window> {
+    pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         T::with_params(title, window_size, menu)
     }
 }
@@ -1789,13 +1794,6 @@ impl<T: SplittedInner> Member<Control<MultiContainer<T>>> {
 
 // ===============================================================================================================
 
-pub trait DialogInner: MemberInner {
-    fn close(&mut self);
-    fn is_modal(&self) -> bool;
-}
-
-// ===============================================================================================================
-
 pub trait TextInner: ControlInner + HasLabelInner {
     fn with_text(text: &str) -> Box<Member<Control<Self>>>;
     fn empty() -> Box<Member<Control<Self>>> {
@@ -1848,6 +1846,21 @@ impl<T: MessageInner> Member<T> {
     pub fn start_with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Result<String, ()> {
         use crate::controls::Message;
         T::with_actions(content, severity, actions, parent).start()
+    }
+}
+
+// ===============================================================================================================
+
+pub trait TrayInner: MemberInner + HasLabelInner + CloseableInner {
+    fn with_params(title: &str, menu: types::Menu) -> Box<Member<Self>>;
+}
+
+impl<T: TrayInner> controls::Tray for Member<T> {}
+
+impl<T: TrayInner> Member<T> {
+    #[inline]
+    pub fn with_params(title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
+        T::with_params(title, menu)
     }
 }
 

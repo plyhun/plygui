@@ -33,7 +33,10 @@ pub fn try_init(app: Rc<UnsafeCell<dyn ApplicationInner>>) -> Rc<UnsafeCell<dyn 
 struct Dummy;
 
 impl ApplicationInner for Dummy {
-    fn new_window(&mut self, _: &str, _: types::WindowStartSize, _: types::WindowMenu) -> Box<dyn controls::Window> {
+    fn new_window(&mut self, _: &str, _: types::WindowStartSize, _: types::Menu) -> Box<dyn controls::Window> {
+        unreachable!()
+    }
+    fn new_tray(&mut self, _: &str, _: types::Menu) -> Box<dyn controls::Tray> {
         unreachable!()
     }
     fn name(&self) -> Cow<'_, str> {

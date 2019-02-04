@@ -156,7 +156,8 @@ pub trait Clickable: Member + development::seal::Sealed {
 }
 
 pub trait Application: AsAny + development::seal::Sealed {
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::WindowMenu) -> Box<dyn Window>;
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Member>;
@@ -200,3 +201,6 @@ pub trait Message: Member + HasLabel {
     fn start(self: Box<Self>) -> Result<String, ()>;
 }
 //impl <T: Message> development::Final for T {}
+
+pub trait Tray: Member + HasLabel + Closeable {}
+//impl <T: Tray> development::Final for T {}
