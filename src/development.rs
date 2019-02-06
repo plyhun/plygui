@@ -1493,11 +1493,8 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 
 // ===============================================================================================================
 
-pub trait NewApplication<T: ApplicationInner> {
-    fn init_with_name(name: &str) -> Box<Application<T>>;
-}
-
 pub trait ApplicationInner: 'static {
+    fn get() -> Box<Application<Self>> where Self: Sized;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray>;
     fn name(&self) -> Cow<'_, str>;
@@ -1572,10 +1569,10 @@ impl<T: ApplicationInner> HasInner for Application<T> {
         panic!("Never unwrap an Application");
     }
 }
-impl<T: ApplicationInner + NewApplication<T>> Application<T> {
+impl<T: ApplicationInner> Application<T> {
     #[inline]
-    pub fn init_with_name(name: &str) -> Box<Self> {
-        T::init_with_name(name)
+    pub fn get() -> Box<Self> {
+        T::get()
     }
 }
 impl<T: ApplicationInner> seal::Sealed for Application<T> {}
@@ -1698,13 +1695,13 @@ pub trait WindowInner: HasLabelInner + CloseableInner + SingleContainerInner {
 }
 
 impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
-
+/* // Ban free creation of Window, use Application for that
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
     #[inline]
     pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         T::with_params(title, window_size, menu)
     }
-}
+}*/
 
 // ===============================================================================================================
 
@@ -1856,13 +1853,13 @@ pub trait TrayInner: MemberInner + HasLabelInner + CloseableInner {
 }
 
 impl<T: TrayInner> controls::Tray for Member<T> {}
-
+/* // Ban free creation of Tray, use Application for that
 impl<T: TrayInner> Member<T> {
     #[inline]
     pub fn with_params(title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
         T::with_params(title, menu)
     }
-}
+}*/
 
 // ===============================================================================================================
 

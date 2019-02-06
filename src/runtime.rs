@@ -1,4 +1,4 @@
-use super::development::ApplicationInner;
+use super::development::{Application, ApplicationInner};
 use super::{controls, ids, types};
 use std::borrow::Cow;
 use std::cell::UnsafeCell;
@@ -15,7 +15,11 @@ thread_local! {
 
 pub fn try_init(app: Rc<UnsafeCell<dyn ApplicationInner>>) -> Rc<UnsafeCell<dyn ApplicationInner>> {
     if unsafe { READY } {
-        APPLICATION.with(|a| a.clone()).clone().upgrade().unwrap()
+        if let Some(app) = APPLICATION.with(|a| a.clone()).clone().upgrade() {
+            app
+        } else {
+            panic!("Trying to access Application from a non-UI thread!") // TODO perhaps allow this if windows run in an own thread each
+        }
     } else {
         // TODO here may come the race!
         APPLICATION.with(|a| unsafe {
@@ -33,6 +37,9 @@ pub fn try_init(app: Rc<UnsafeCell<dyn ApplicationInner>>) -> Rc<UnsafeCell<dyn 
 struct Dummy;
 
 impl ApplicationInner for Dummy {
+    fn get() -> Box<Application<Self>> where Self: Sized {
+        unreachable!()
+    }
     fn new_window(&mut self, _: &str, _: types::WindowStartSize, _: types::Menu) -> Box<dyn controls::Window> {
         unreachable!()
     }
