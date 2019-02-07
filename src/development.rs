@@ -1,12 +1,12 @@
-use super::{callbacks, controls, ids, layout, runtime, types};
+use super::{callbacks, controls, ids, layout, types};
 
 use std::any::Any;
 use std::borrow::Cow;
-use std::cell::UnsafeCell;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use std::sync::mpsc;
+use std::marker::PhantomData;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -40,7 +40,7 @@ pub struct MemberBase {
 
     pub handler_resize: Option<callbacks::Resize>,
 
-    pub app: Weak<UnsafeCell<dyn ApplicationInner>>,
+    _no_threads: PhantomData<Rc<()>>,
 }
 #[repr(C)]
 pub struct Member<T: MemberInner> {
@@ -80,8 +80,8 @@ impl MemberBase {
             functions: functions,
 
             handler_resize: None,
-
-            app: runtime::APPLICATION.with(|a| a.clone()),
+            
+            _no_threads: PhantomData,
         }
     }
     #[inline]
@@ -285,6 +285,14 @@ impl<T: ControlInner> controls::HasLayout for Member<Control<T>> {
         self
     }
 }
+
+// ===============================================================================================================
+
+pub trait RootInner {
+    fn application(&self) -> &dyn controls::Application;
+    fn application_mut(&mut self) -> &dyn controls::Application;
+}
+
 
 // ===============================================================================================================
 
@@ -1503,32 +1511,32 @@ pub trait ApplicationInner: 'static {
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
 }
 pub struct Application<T: ApplicationInner> {
-    inner: Rc<UnsafeCell<T>>,
+    inner: T,
 }
 impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
-        unsafe { &mut *self.inner.get() }.new_window(title, size, menu)
+       self.inner.new_window(title, size, menu)
     }
     #[inline]
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
-        unsafe { &mut *self.inner.get() }.new_tray(title, menu)
+        self.inner.new_tray(title, menu)
     }
     #[inline]
     fn name(&self) -> Cow<'_, str> {
-        unsafe { &mut *self.inner.get() }.name()
+        self.inner.name()
     }
     #[inline]
     fn start(&mut self) {
-        unsafe { &mut *self.inner.get() }.start()
+        self.inner.start()
     }
     #[inline]
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member> {
-        unsafe { &mut *self.inner.get() }.find_member_by_id_mut(id)
+        self.inner.find_member_by_id_mut(id)
     }
     #[inline]
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
-        unsafe { &mut *self.inner.get() }.find_member_by_id(id)
+        self.inner.find_member_by_id(id)
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
@@ -1552,17 +1560,15 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        let inner = Rc::new(UnsafeCell::new(inner));
-        runtime::try_init(inner.clone());
         Application { inner }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
-        unsafe { &*self.inner.get() }
+        &self.inner
     }
     #[inline]
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
-        unsafe { &mut *self.inner.get() }
+        &mut self.inner
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
@@ -1688,10 +1694,19 @@ impl<T: WindowInner> CloseableInner for Window<T> {
     }
 }
 
-pub trait WindowInner: HasLabelInner + CloseableInner + SingleContainerInner {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Member<SingleContainer<Window<Self>>>>;
+pub trait WindowInner: HasLabelInner + CloseableInner + SingleContainerInner + RootInner {
+    fn with_params(application: Self::Id, title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Member<SingleContainer<Window<Self>>>>;
     fn on_frame(&mut self, cb: callbacks::Frame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::Frame>;
+}
+
+impl<T: WindowInner> RootInner for SingleContainer<Window<T>> {
+    fn application(&self) -> &dyn controls::Application {
+        self.inner.inner.application()
+    }
+    fn application_mut(&mut self) -> &dyn controls::Application {
+        self.inner.inner.application_mut()
+    }
 }
 
 impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
@@ -1848,8 +1863,8 @@ impl<T: MessageInner> Member<T> {
 
 // ===============================================================================================================
 
-pub trait TrayInner: MemberInner + HasLabelInner + CloseableInner {
-    fn with_params(title: &str, menu: types::Menu) -> Box<Member<Self>>;
+pub trait TrayInner: MemberInner + HasLabelInner + CloseableInner + RootInner {
+    fn with_params(application: Self::Id, title: &str, menu: types::Menu) -> Box<Member<Self>>;
 }
 
 impl<T: TrayInner> controls::Tray for Member<T> {}

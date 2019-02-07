@@ -170,6 +170,11 @@ pub trait Closeable: Member {
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
+pub trait Root: Member {
+    fn application(&self) -> &dyn Application;
+    fn application_mut(&mut self) -> &dyn Application;
+}
+
 pub trait Window: SingleContainer + HasLabel + Closeable {}
 //impl <T: Window> development::Final for T {}
 
