@@ -1,6 +1,6 @@
 use super::{callbacks, development, ids, layout, types};
-
 use std::any::Any;
+
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
 
@@ -156,6 +156,7 @@ pub trait Clickable: Member + development::seal::Sealed {
 }
 
 pub trait Application: AsAny + development::seal::Sealed {
+    fn native_id(&self) -> usize; // TODO reuse Member
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;

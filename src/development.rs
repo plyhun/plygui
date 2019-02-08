@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::cell::UnsafeCell;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use std::sync::mpsc;
 
 #[cfg(feature = "type_check")]
@@ -40,7 +40,7 @@ pub struct MemberBase {
 
     pub handler_resize: Option<callbacks::Resize>,
 
-    pub app: Weak<UnsafeCell<dyn ApplicationInner>>,
+    pub app: usize,
 }
 #[repr(C)]
 pub struct Member<T: MemberInner> {
@@ -81,7 +81,7 @@ impl MemberBase {
 
             handler_resize: None,
 
-            app: runtime::APPLICATION.with(|a| a.clone()),
+            app: runtime::APPLICATION.with(|a| *a.borrow()),
         }
     }
     #[inline]
@@ -1494,6 +1494,7 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 // ===============================================================================================================
 
 pub trait ApplicationInner: 'static {
+    fn native_id(&self) -> usize;
     fn get() -> Box<Application<Self>> where Self: Sized;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray>;
@@ -1506,6 +1507,10 @@ pub struct Application<T: ApplicationInner> {
     inner: Rc<UnsafeCell<T>>,
 }
 impl<T: ApplicationInner> controls::Application for Application<T> {
+    #[inline]
+    fn native_id(&self) -> usize {
+        unsafe { &mut *self.inner.get() }.native_id()
+    }
     #[inline]
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         unsafe { &mut *self.inner.get() }.new_window(title, size, menu)
@@ -1552,9 +1557,7 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        let inner = Rc::new(UnsafeCell::new(inner));
-        runtime::try_init(inner.clone());
-        Application { inner }
+        Application { inner: Rc::new(UnsafeCell::new(inner)) }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -1571,8 +1574,14 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 }
 impl<T: ApplicationInner> Application<T> {
     #[inline]
-    pub fn get() -> Box<Self> {
-        T::get()
+    pub fn get() -> Box<dyn controls::Application> {
+        if let Some(inner) = runtime::get::<T>() {
+            Box::new(Application { inner })
+        } else {
+            let app = T::get();
+            runtime::init(app.inner.clone());
+            app
+        }
     }
 }
 impl<T: ApplicationInner> seal::Sealed for Application<T> {}
