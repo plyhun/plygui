@@ -209,7 +209,7 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
 }
 //impl <T: Application> development::Final for T {}
 
-pub trait Closeable: Member {
+pub trait Closeable: HasNativeId {
     fn close(&mut self, skip_callbacks: bool);
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }

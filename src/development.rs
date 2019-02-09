@@ -1267,12 +1267,12 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
 
 // ==============================================================================================================
 
-pub trait CloseableInner: MemberInner {
+pub trait CloseableInner: HasNativeIdInner {
     fn close(&mut self, skip_callbacks: bool);
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
-impl<T: CloseableInner> controls::Closeable for Member<T> {
+impl<T: CloseableInner + MemberInner> controls::Closeable for Member<T> {
     fn close(&mut self, with_callbacks: bool) {
         self.inner.close(with_callbacks)
     }
@@ -1565,6 +1565,7 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
 }
 pub struct Application<T: ApplicationInner> {
+    secret: usize,
     inner: Rc<UnsafeCell<T>>,
 }
 impl<T: ApplicationInner> controls::HasNativeId for Application<T> {
@@ -1620,7 +1621,7 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        Application { inner: Rc::new(UnsafeCell::new(inner)) }
+        Application { inner: Rc::new(UnsafeCell::new(inner)), secret: 12345678 }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -1639,7 +1640,7 @@ impl<T: ApplicationInner> Application<T> {
     #[inline]
     pub fn get() -> Box<dyn controls::Application> {
         if let Some(inner) = runtime::get::<T>() {
-            Box::new(Application { inner })
+            Box::new(Application { inner, secret: 12345678 })
         } else {
             let app = T::get();
             runtime::init(app.inner.clone());

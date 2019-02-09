@@ -15,7 +15,7 @@ pub fn get<T: ApplicationInner>() -> Option<Rc<UnsafeCell<T>>> {
             if a.is_null() {
                 unreachable!()
             } else {
-                Some(unsafe { Rc::from_raw(a) })
+                Some(unsafe { Rc::from_raw(a).clone() })
             }
         })
     } else {
@@ -29,7 +29,7 @@ pub fn init<T: ApplicationInner>(app: Rc<UnsafeCell<T>>) {
     } else {
         // TODO here may come the race!
         APPLICATION.with(|a| {
-            *a.borrow_mut() = Rc::into_raw(app) as *const _ as usize;
+            *a.borrow_mut() = Rc::into_raw(app.clone()) as *const _ as usize;
         });
         unsafe {
             READY = true;
