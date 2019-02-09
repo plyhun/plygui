@@ -10,22 +10,66 @@ pub trait AsAny {
     fn into_any(self: Box<Self>) -> Box<dyn Any>;
 }
 
-pub trait Member: AsAny + development::seal::Sealed {
-    fn size(&self) -> (u16, u16);
-    fn on_resize(&mut self, callback: Option<callbacks::Resize>);
+// ===============================================================================================================
 
-    fn set_visibility(&mut self, visibility: types::Visibility);
-    fn visibility(&self) -> types::Visibility;
-
-    fn id(&self) -> ids::Id;
+pub trait HasNativeId: 'static {
     unsafe fn native_id(&self) -> usize;
-    #[cfg(feature = "type_check")]
-    unsafe fn type_id(&self) -> TypeId;
+}
 
+// ===============================================================================================================
+// TODO automate/macro this
+
+pub trait MaybeMember {
+    fn is_member(&self) -> Option<&dyn Member> { None }
+    fn is_member_mut(&mut self) -> Option<&mut dyn Member> { None }
+}
+pub trait MaybeControl {
     fn is_control(&self) -> Option<&dyn Control>;
     fn is_control_mut(&mut self) -> Option<&mut dyn Control>;
+}
+pub trait MaybeContainer {
     fn is_container(&self) -> Option<&dyn Container>;
     fn is_container_mut(&mut self) -> Option<&mut dyn Container>;
+}
+
+// ===============================================================================================================
+// TODO automate/macro this
+
+pub trait HasSize: Member + development::seal::Sealed {
+    fn size(&self) -> (u16, u16);
+    fn set_size(&mut self, width: u16, height: u16);
+    fn on_size(&mut self, callback: Option<callbacks::OnSize>);
+    
+    fn as_has_size(&self) -> &dyn HasSize;
+    fn as_has_size_mut(&mut self) -> &mut dyn HasSize;
+    fn into_has_size(self: Box<Self>) -> Box<dyn HasSize>;
+}
+pub trait MaybeHasSize {
+    fn is_has_size(&self) -> Option<&dyn HasSize> { None }
+    fn is_has_size_mut(&mut self) -> Option<&mut dyn HasSize> { None }
+}
+
+pub trait HasVisibility: Member + development::seal::Sealed {
+    fn visibility(&self) -> types::Visibility;
+    fn set_visibility(&mut self, visibility: types::Visibility);
+    fn on_visibility(&mut self, callback: Option<callbacks::OnVisibility>);
+    
+    fn as_has_visibility(&self) -> &dyn HasVisibility;
+    fn as_has_visibility_mut(&mut self) -> &mut dyn HasVisibility;
+    fn into_has_visibility(self: Box<Self>) -> Box<dyn HasVisibility>;
+}
+pub trait MaybeHasVisibility {
+    fn is_has_visibility(&self) -> Option<&dyn HasVisibility> { None }
+    fn is_has_visibility_mut(&mut self) -> Option<&mut dyn HasVisibility> { None }
+}
+
+// ===============================================================================================================
+
+pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + development::seal::Sealed {
+    fn id(&self) -> ids::Id;
+    
+    #[cfg(feature = "type_check")]
+    unsafe fn type_id(&self) -> TypeId;
 
     fn as_member(&self) -> &dyn Member;
     fn as_member_mut(&mut self) -> &mut dyn Member;
@@ -55,7 +99,7 @@ pub trait HasLayout: Member {
     fn into_has_layout(self: Box<Self>) -> Box<dyn HasLayout>;
 }
 
-pub trait Control: HasLayout + development::OuterDrawable {
+pub trait Control: HasSize + HasVisibility + HasLayout + development::OuterDrawable {
     fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16);
     fn on_removed_from_container(&mut self, parent: &dyn Container);
 
@@ -148,15 +192,14 @@ pub trait HasLabel: Member + development::seal::Sealed {
 }
 
 pub trait Clickable: Member + development::seal::Sealed {
-    fn on_click(&mut self, callback: Option<callbacks::Click>);
+    fn on_click(&mut self, callback: Option<callbacks::OnClick>);
 
     fn as_clickable(&self) -> &dyn Clickable;
     fn as_clickable_mut(&mut self) -> &mut dyn Clickable;
     fn into_clickable(self: Box<Self>) -> Box<dyn Clickable>;
 }
 
-pub trait Application: AsAny + development::seal::Sealed {
-    fn native_id(&self) -> usize; // TODO reuse Member
+pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;
@@ -171,7 +214,7 @@ pub trait Closeable: Member {
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
-pub trait Window: SingleContainer + HasLabel + Closeable {}
+pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {}
 //impl <T: Window> development::Final for T {}
 
 pub trait Button: Control + Clickable + HasLabel {}

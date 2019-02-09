@@ -1,4 +1,4 @@
-use super::controls;
+use super::{types, controls};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
@@ -38,7 +38,6 @@ impl<T: Callback> From<Sender<T>> for AsyncFeeder<T> {
     }
 }
 
-#[macro_export]
 macro_rules! callback {
 	($id: ident, $($typ:tt)+) => {
 		pub struct $id(CallbackId, Box<dyn $($typ)+>);
@@ -80,8 +79,9 @@ macro_rules! callback {
 	}
 }
 
-callback!(Resize, FnMut(&mut dyn controls::Member, u16, u16));
-callback!(Click, FnMut(&mut dyn controls::Clickable));
-callback!(Frame, FnMut(&mut dyn controls::Window) -> bool);
+callback!(OnSize, FnMut(&mut dyn controls::HasSize, u16, u16));
+callback!(OnVisibility, FnMut(&mut dyn controls::HasVisibility, types::Visibility));
+callback!(OnClick, FnMut(&mut dyn controls::Clickable));
+callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
 

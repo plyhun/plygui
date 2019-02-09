@@ -7,13 +7,31 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::mpsc;
+use std::marker::PhantomData;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
 
 pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
 
+// ===============================================================================================================
+
+pub trait HasNativeIdInner: 'static {
+    type Id: NativeId + Sized;
+
+    unsafe fn native_id(&self) -> Self::Id;
+}
+
 // ==========================================================================================================
+
+pub trait HasSizeInner: MemberInner {
+    fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool;
+}
+pub trait HasVisibilityInner: MemberInner {
+    fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool;
+}
+
+// ===============================================================================================================
 
 pub trait HasBase: Sized + 'static {
     type Base: Sized;
@@ -35,12 +53,10 @@ pub trait HasInner: Sized + 'static {
 #[repr(C)]
 pub struct MemberBase {
     pub id: ids::Id,
-    pub visibility: types::Visibility,
     pub functions: MemberFunctions,
-
-    pub handler_resize: Option<callbacks::Resize>,
-
     pub app: usize,
+    
+    _no_threads: PhantomData<Rc<()>>,
 }
 #[repr(C)]
 pub struct Member<T: MemberInner> {
@@ -76,12 +92,9 @@ impl MemberBase {
     pub fn with_functions(functions: MemberFunctions) -> Self {
         MemberBase {
             id: ids::Id::next(),
-            visibility: types::Visibility::Visible,
             functions: functions,
-
-            handler_resize: None,
-
             app: runtime::APPLICATION.with(|a| *a.borrow()),
+            _no_threads: PhantomData,
         }
     }
     #[inline]
@@ -113,60 +126,30 @@ impl<T: MemberInner> HasBase for Member<T> {
         &mut self.base
     }
 }
-impl<T: MemberInner> OuterMember for Member<T> {
-    fn call_on_resize(&mut self, w: u16, h: u16) {
+impl<T: ControlInner> Member<Control<T>> {
+    pub fn call_on_size(&mut self, w: u16, h: u16) {
         let self2 = self as *mut Self;
-        if let Some(ref mut cb) = self.base_mut().handler_resize {
+        if let Some(ref mut cb) = self.inner.base_mut().on_size {
             (cb.as_mut())(unsafe { &mut *self2 }, w, h);
         }
     }
-}
-
-pub trait MemberInner: Sized + 'static {
-    type Id: NativeId + Sized;
-
-    fn size(&self) -> (u16, u16);
-
-    fn on_set_visibility(&mut self, base: &mut MemberBase);
-
-    unsafe fn native_id(&self) -> Self::Id;
-}
-impl<T: MemberInner> controls::Member for Member<T> {
-    #[inline]
-    fn size(&self) -> (u16, u16) {
-        self.inner.size()
-    }
-    #[inline]
-    fn on_resize(&mut self, cb: Option<callbacks::Resize>) {
-        self.base.handler_resize = cb;
-    }
-
-    #[inline]
-    fn set_visibility(&mut self, visibility: types::Visibility) {
-        if self.base.visibility != visibility {
-            self.base.visibility = visibility;
-            self.inner.on_set_visibility(&mut self.base);
+    pub fn call_on_visibility(&mut self, v: types::Visibility) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.inner.base_mut().on_visibility {
+            (cb.as_mut())(unsafe { &mut *self2 }, v);
         }
     }
-    #[inline]
-    fn visibility(&self) -> types::Visibility {
-        self.base.visibility
-    }
+}
 
-    #[inline]
-    fn id(&self) -> ids::Id {
-        self.base.id
-    }
+pub trait MemberInner: HasNativeIdInner + Sized + 'static {}
+
+impl<T: MemberInner> controls::HasNativeId for Member<T> {
     #[inline]
     unsafe fn native_id(&self) -> usize {
         self.inner.native_id().into()
     }
-
-    #[cfg(feature = "type_check")]
-    unsafe fn type_id(&self) -> TypeId {
-        self.inner.native_id().type_id()
-    }
-
+}
+impl<T: MemberInner> controls::MaybeControl for Member<T> {
     #[inline]
     default fn is_control(&self) -> Option<&dyn controls::Control> {
         None
@@ -175,6 +158,8 @@ impl<T: MemberInner> controls::Member for Member<T> {
     default fn is_control_mut(&mut self) -> Option<&mut dyn controls::Control> {
         None
     }
+}
+impl<T: MemberInner> controls::MaybeContainer for Member<T> {
     #[inline]
     default fn is_container(&self) -> Option<&dyn controls::Container> {
         None
@@ -182,6 +167,19 @@ impl<T: MemberInner> controls::Member for Member<T> {
     #[inline]
     default fn is_container_mut(&mut self) -> Option<&mut dyn controls::Container> {
         None
+    }
+}
+impl<T: MemberInner> controls::MaybeHasSize for Member<T> {}
+impl<T: MemberInner> controls::MaybeHasVisibility for Member<T> {}
+
+impl<T: MemberInner> controls::Member for Member<T> {
+    #[inline]
+    fn id(&self) -> ids::Id {
+        self.base.id
+    }
+    #[cfg(feature = "type_check")]
+    unsafe fn type_id(&self) -> TypeId {
+        self.inner.native_id().type_id()
     }
 
     #[inline]
@@ -296,7 +294,7 @@ pub trait Drawable: Sized + 'static {
 
 // ===============================================================================================================
 
-pub trait ControlInner: HasLayoutInner + Drawable {
+pub trait ControlInner: HasSizeInner + HasVisibilityInner + HasLayoutInner + Drawable {
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, w: u16, h: u16);
     fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container);
 
@@ -312,7 +310,13 @@ pub trait ControlInner: HasLayoutInner + Drawable {
 #[repr(C)]
 pub struct ControlBase {
     pub layout: layout::Attributes,
+    pub visibility: types::Visibility,
+    pub measured: (u16, u16),
+    pub coords: Option<(i32, i32)>,
     pub skip_draw: bool,
+    
+    pub on_size: Option<callbacks::OnSize>,
+    pub on_visibility: Option<callbacks::OnVisibility>,
 }
 #[repr(C)]
 pub struct Control<T: ControlInner> {
@@ -324,7 +328,13 @@ impl Default for ControlBase {
     fn default() -> Self {
         ControlBase {
             layout: layout::Attributes::default(),
+            visibility: types::Visibility::Visible,
+            measured: (0, 0),
+            coords: None,
             skip_draw: false,
+            
+            on_size: None,
+            on_visibility: None,
         }
     }
 }
@@ -338,23 +348,17 @@ impl<T: ControlInner> Control<T> {
         &mut self.base
     }
 }
-
-impl<T: ControlInner> MemberInner for Control<T> {
+impl<T: ControlInner> HasNativeIdInner for Control<T> {
     type Id = T::Id;
 
-    #[inline]
-    fn size(&self) -> (u16, u16) {
-        self.inner.size()
-    }
-    #[inline]
-    fn on_set_visibility(&mut self, base: &mut MemberBase) {
-        self.inner.on_set_visibility(base)
-    }
     #[inline]
     unsafe fn native_id(&self) -> Self::Id {
         self.inner.native_id()
     }
 }
+
+impl<T: ControlInner> MemberInner for Control<T> {}
+
 impl<T: ControlInner> HasBase for Control<T> {
     type Base = ControlBase;
 
@@ -398,6 +402,10 @@ impl<T: ControlInner> HasLayoutInner for Control<T> {
         self.inner.layout_margin(member)
     }
 }
+impl<T: ControlInner> controls::MaybeHasSize for Member<Control<T>> {
+    fn is_has_size(&self) -> Option<&dyn controls::HasSize> { Some(self) }
+    fn is_has_size_mut(&mut self) -> Option<&mut dyn controls::HasSize> { Some(self) }
+}
 impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
     #[inline]
     fn draw(&mut self, coords: Option<(i32, i32)>) {
@@ -433,6 +441,53 @@ impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
     fn into_drawable(self: Box<Self>) -> Box<dyn OuterDrawable> {
         self
     }
+}
+impl<T: ControlInner> controls::HasVisibility for Member<Control<T>> {
+    #[inline]
+    fn visibility(&self) -> types::Visibility {
+        self.inner.base.visibility
+    }
+    #[inline]
+    fn set_visibility(&mut self, visibility: types::Visibility) {
+        if self.inner.inner.on_visibility_set(&mut self.base, visibility) {
+            self.inner.base.visibility = visibility;
+            self.call_on_visibility(visibility);
+        }
+    }
+    #[inline]
+    fn on_visibility(&mut self, callback: Option<callbacks::OnVisibility>) {
+        self.inner.base.on_visibility = callback;
+    }
+    #[inline]
+    fn as_has_visibility(&self) -> &dyn controls::HasVisibility { self }
+    #[inline]
+    fn as_has_visibility_mut(&mut self) -> &mut dyn controls::HasVisibility { self }
+    #[inline]
+    fn into_has_visibility(self: Box<Self>) -> Box<dyn controls::HasVisibility> { self }
+}
+impl<T: ControlInner> controls::HasSize for Member<Control<T>> {
+    #[inline]
+    fn size(&self) -> (u16, u16) {
+        self.inner.base.measured
+    }
+    #[inline]
+    fn set_size(&mut self, width: u16, height: u16) {
+        if self.inner.inner.on_size_set(&mut self.base, (width, height)) {
+            self.inner.base.measured = (width, height);
+            self.call_on_size(width, height);
+        }
+    }
+    #[inline]
+    fn on_size(&mut self, callback: Option<callbacks::OnSize>) {
+        self.inner.base.on_size = callback;
+    }
+    
+    #[inline]
+    fn as_has_size(&self) -> &dyn controls::HasSize { self }
+    #[inline]
+    fn as_has_size_mut(&mut self) -> &mut dyn controls::HasSize { self }
+    #[inline]
+    fn into_has_size(self: Box<Self>) -> Box<dyn controls::HasSize> { self }
 }
 impl<T: ControlInner> controls::Control for Member<Control<T>> {
     #[inline]
@@ -485,7 +540,7 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
         self
     }
 }
-impl<T: ControlInner> controls::Member for Member<Control<T>> {
+impl<T: ControlInner> controls::MaybeControl for Member<Control<T>> {
     #[inline]
     fn is_control(&self) -> Option<&dyn controls::Control> {
         Some(self)
@@ -569,22 +624,16 @@ impl<T: SingleContainerInner> HasInner for SingleContainer<T> {
         self.inner
     }
 }
-impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {
+impl<T: SingleContainerInner> HasNativeIdInner for SingleContainer<T> {
     type Id = T::Id;
 
-    #[inline]
-    fn size(&self) -> (u16, u16) {
-        self.inner.size()
-    }
-    #[inline]
-    fn on_set_visibility(&mut self, base: &mut MemberBase) {
-        self.inner.on_set_visibility(base)
-    }
     #[inline]
     unsafe fn native_id(&self) -> Self::Id {
         self.inner.native_id()
     }
 }
+impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {}
+
 impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
     #[inline]
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
@@ -617,6 +666,16 @@ impl<T: SingleContainerInner + ControlInner> HasLayoutInner for SingleContainer<
     #[inline]
     fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize {
         self.inner.layout_margin(member)
+    }
+}
+impl<T: SingleContainerInner + ControlInner> HasSizeInner for SingleContainer<T> {
+    fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool {
+        self.inner.on_size_set(base, value)
+    }
+}
+impl<T: SingleContainerInner + ControlInner> HasVisibilityInner for SingleContainer<T> {
+    fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool {
+        self.inner.on_visibility_set(base, value)
     }
 }
 impl<T: SingleContainerInner + ControlInner> ControlInner for SingleContainer<T> {
@@ -678,7 +737,7 @@ impl<T: SingleContainerInner> controls::SingleContainer for Member<SingleContain
         self
     }
 }
-impl<T: SingleContainerInner> controls::Member for Member<SingleContainer<T>> {
+impl<T: SingleContainerInner> controls::MaybeContainer for Member<SingleContainer<T>> {
     #[inline]
     fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
@@ -725,7 +784,7 @@ impl<T: SingleContainerInner + ControlInner> controls::SingleContainer for Membe
         self
     }
 }
-impl<T: SingleContainerInner + ControlInner> controls::Member for Member<Control<SingleContainer<T>>> {
+impl<T: SingleContainerInner + ControlInner> controls::MaybeContainer for Member<Control<SingleContainer<T>>> {
     #[inline]
     fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
@@ -815,22 +874,15 @@ pub trait MultiContainerInner: ContainerInner {
 pub struct MultiContainer<T: MultiContainerInner> {
     inner: T,
 }
-
-impl<T: MultiContainerInner> MemberInner for MultiContainer<T> {
+impl<T: MultiContainerInner> HasNativeIdInner for MultiContainer<T> {
     type Id = T::Id;
-
-    fn size(&self) -> (u16, u16) {
-        self.inner.size()
-    }
-
-    fn on_set_visibility(&mut self, base: &mut MemberBase) {
-        self.inner.on_set_visibility(base)
-    }
-
+    
     unsafe fn native_id(&self) -> Self::Id {
         self.inner.native_id()
     }
 }
+impl<T: MultiContainerInner> MemberInner for MultiContainer<T> {}
+
 impl<T: MultiContainerInner> HasInner for MultiContainer<T> {
     type Inner = T;
     type Params = ();
@@ -883,6 +935,16 @@ impl<T: MultiContainerInner + ControlInner> HasLayoutInner for MultiContainer<T>
     }
     fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize {
         self.inner.layout_margin(member)
+    }
+}
+impl<T: MultiContainerInner + ControlInner> HasSizeInner for MultiContainer<T> {
+    fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool {
+        self.inner.on_size_set(base, value)
+    }
+}
+impl<T: MultiContainerInner + ControlInner> HasVisibilityInner for MultiContainer<T> {
+    fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool {
+        self.inner.on_visibility_set(base, value)
     }
 }
 impl<T: MultiContainerInner + ControlInner> ControlInner for MultiContainer<T> {
@@ -952,7 +1014,7 @@ impl<T: MultiContainerInner> controls::MultiContainer for Member<MultiContainer<
         self
     }
 }
-impl<T: MultiContainerInner> controls::Member for Member<MultiContainer<T>> {
+impl<T: MultiContainerInner> controls::MaybeContainer for Member<MultiContainer<T>> {
     #[inline]
     fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
@@ -1012,7 +1074,7 @@ impl<T: MultiContainerInner + ControlInner> controls::Container for Member<Contr
         self
     }
 }
-impl<T: MultiContainerInner + ControlInner> controls::Member for Member<Control<MultiContainer<T>>> {
+impl<T: MultiContainerInner + ControlInner> controls::MaybeContainer for Member<Control<MultiContainer<T>>> {
     #[inline]
     fn is_container(&self) -> Option<&dyn controls::Container> {
         Some(self)
@@ -1267,11 +1329,11 @@ impl<T: CloseableInner + ControlInner + MultiContainerInner> controls::Closeable
 // ===============================================================================================================
 
 pub trait ClickableInner: MemberInner {
-    fn on_click(&mut self, cb: Option<callbacks::Click>);
+    fn on_click(&mut self, cb: Option<callbacks::OnClick>);
 }
 impl<T: ClickableInner + MemberInner> controls::Clickable for Member<T> {
     #[inline]
-    fn on_click(&mut self, cb: Option<callbacks::Click>) {
+    fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.on_click(cb)
     }
 
@@ -1290,7 +1352,7 @@ impl<T: ClickableInner + MemberInner> controls::Clickable for Member<T> {
 }
 impl<T: ClickableInner + ControlInner> controls::Clickable for Member<Control<T>> {
     #[inline]
-    fn on_click(&mut self, cb: Option<callbacks::Click>) {
+    fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.inner.on_click(cb)
     }
 
@@ -1309,7 +1371,7 @@ impl<T: ClickableInner + ControlInner> controls::Clickable for Member<Control<T>
 }
 impl<T: ClickableInner + ControlInner + SingleContainerInner> controls::Clickable for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn on_click(&mut self, cb: Option<callbacks::Click>) {
+    fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.inner.inner.on_click(cb)
     }
 
@@ -1328,7 +1390,7 @@ impl<T: ClickableInner + ControlInner + SingleContainerInner> controls::Clickabl
 }
 impl<T: ClickableInner + ControlInner + MultiContainerInner> controls::Clickable for Member<Control<MultiContainer<T>>> {
     #[inline]
-    fn on_click(&mut self, cb: Option<callbacks::Click>) {
+    fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.inner.inner.on_click(cb)
     }
 
@@ -1493,8 +1555,7 @@ impl<T: HasOrientationInner + MultiContainerInner + ControlInner> controls::HasO
 
 // ===============================================================================================================
 
-pub trait ApplicationInner: 'static {
-    fn native_id(&self) -> usize;
+pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn get() -> Box<Application<Self>> where Self: Sized;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray>;
@@ -1506,11 +1567,13 @@ pub trait ApplicationInner: 'static {
 pub struct Application<T: ApplicationInner> {
     inner: Rc<UnsafeCell<T>>,
 }
-impl<T: ApplicationInner> controls::Application for Application<T> {
+impl<T: ApplicationInner> controls::HasNativeId for Application<T> {
     #[inline]
-    fn native_id(&self) -> usize {
-        unsafe { &mut *self.inner.get() }.native_id()
+    unsafe fn native_id(&self) -> usize {
+        (&mut *self.inner.get()).native_id().into()
     }
+}
+impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         unsafe { &mut *self.inner.get() }.new_window(title, size, menu)
@@ -1589,18 +1652,30 @@ impl<T: ApplicationInner> seal::Sealed for Application<T> {}
 // ===============================================================================================================
 
 pub struct WindowBase {
-    queue: mpsc::Receiver<callbacks::Frame>,
-    sender: mpsc::Sender<callbacks::Frame>,
+    pub visibility: types::Visibility,
+    pub on_size: Option<callbacks::OnSize>,
+    pub on_visibility: Option<callbacks::OnVisibility>,
+    
+    queue: mpsc::Receiver<callbacks::OnFrame>,
+    sender: mpsc::Sender<callbacks::OnFrame>,
 }
 impl WindowBase {
     pub(crate) fn new() -> Self {
         let (tx, rx) = mpsc::channel();
-        WindowBase { sender: tx, queue: rx }
+        WindowBase { 
+            visibility: types::Visibility::Visible,
+            
+            on_size: None,
+            on_visibility: None,
+            
+            sender: tx, 
+            queue: rx, 
+        }
     }
-    pub fn sender(&mut self) -> &mut mpsc::Sender<callbacks::Frame> {
+    pub fn sender(&mut self) -> &mut mpsc::Sender<callbacks::OnFrame> {
         &mut self.sender
     }
-    pub fn queue(&mut self) -> &mut mpsc::Receiver<callbacks::Frame> {
+    pub fn queue(&mut self) -> &mut mpsc::Receiver<callbacks::OnFrame> {
         &mut self.queue
     }
 }
@@ -1637,22 +1712,16 @@ impl<T: WindowInner> HasInner for Window<T> {
         self.inner
     }
 }
-impl<T: WindowInner> MemberInner for Window<T> {
+impl<T: WindowInner> HasNativeIdInner for Window<T> {
     type Id = T::Id;
 
     #[inline]
-    fn size(&self) -> (u16, u16) {
-        self.inner.size()
-    }
-    #[inline]
-    fn on_set_visibility(&mut self, base: &mut MemberBase) {
-        self.inner.on_set_visibility(base)
-    }
-    #[inline]
     unsafe fn native_id(&self) -> Self::Id {
         self.inner.native_id()
-    }
+    }    
 }
+impl<T: WindowInner> MemberInner for Window<T> {}
+
 impl<T: WindowInner> ContainerInner for Window<T> {
     #[inline]
     fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
@@ -1696,13 +1765,75 @@ impl<T: WindowInner> CloseableInner for Window<T> {
         self.inner.on_close(callback)
     }
 }
-
-pub trait WindowInner: HasLabelInner + CloseableInner + SingleContainerInner {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Member<SingleContainer<Window<Self>>>>;
-    fn on_frame(&mut self, cb: callbacks::Frame);
-    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::Frame>;
+impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
+    pub fn call_on_size(&mut self, w: u16, h: u16) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.inner.inner.base_mut().on_size {
+            (cb.as_mut())(unsafe { &mut *self2 }, w, h);
+        }
+    }
+    pub fn call_on_visibility(&mut self, v: types::Visibility) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.inner.inner.base_mut().on_visibility {
+            (cb.as_mut())(unsafe { &mut *self2 }, v);
+        }
+    }
 }
 
+pub trait WindowInner: HasSizeInner + HasVisibilityInner + HasLabelInner + CloseableInner + SingleContainerInner {
+    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Member<SingleContainer<Window<Self>>>>;
+    fn on_frame(&mut self, cb: callbacks::OnFrame);
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
+    fn size(&self) -> (u16, u16);
+    fn position(&self) -> (i32, i32);
+}
+impl<T: WindowInner> controls::HasVisibility for Member<SingleContainer<Window<T>>> {
+    fn visibility(&self) -> types::Visibility {
+        self.inner.inner.base.visibility
+    }
+    fn set_visibility(&mut self, visibility: types::Visibility) {
+        if self.inner.inner.inner.on_visibility_set(&mut self.base, visibility) {
+            self.inner.inner.base.visibility = visibility;
+            self.call_on_visibility(visibility);
+        }
+    }
+    fn on_visibility(&mut self, callback: Option<callbacks::OnVisibility>) {
+        self.inner.inner.base.on_visibility = callback;
+    }
+    
+    fn as_has_visibility(&self) -> &dyn controls::HasVisibility { self }
+    #[inline]
+    fn as_has_visibility_mut(&mut self) -> &mut dyn controls::HasVisibility { self }
+    #[inline]
+    fn into_has_visibility(self: Box<Self>) -> Box<dyn controls::HasVisibility> { self }
+}
+impl<T: WindowInner> controls::MaybeHasSize for Member<SingleContainer<Window<T>>> {
+    fn is_has_size(&self) -> Option<&dyn controls::HasSize> { Some(self) }
+    fn is_has_size_mut(&mut self) -> Option<&mut dyn controls::HasSize> { Some(self) }
+}
+impl<T: WindowInner> controls::HasSize for Member<SingleContainer<Window<T>>> {
+    #[inline]
+    fn size(&self) -> (u16, u16) {
+        self.inner.inner.inner.size()
+    }
+    #[inline]
+    fn set_size(&mut self, width: u16, height: u16) {
+        if self.inner.inner.inner.on_size_set(&mut self.base, (width, height)) {
+            self.call_on_size(width, height);
+        }
+    }
+    #[inline]
+    fn on_size(&mut self, callback: Option<callbacks::OnSize>) {
+        self.inner.inner.base.on_size = callback;
+    }
+    
+    #[inline]
+    fn as_has_size(&self) -> &dyn controls::HasSize { self }
+    #[inline]
+    fn as_has_size_mut(&mut self) -> &mut dyn controls::HasSize { self }
+    #[inline]
+    fn into_has_size(self: Box<Self>) -> Box<dyn controls::HasSize> { self }
+}
 impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
 /* // Ban free creation of Window, use Application for that
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
@@ -1871,10 +2002,6 @@ impl<T: TrayInner> Member<T> {
 }*/
 
 // ===============================================================================================================
-
-pub trait OuterMember: seal::Sealed {
-    fn call_on_resize(&mut self, w: u16, h: u16);
-}
 
 pub trait OuterDrawable: seal::Sealed {
     fn draw(&mut self, coords: Option<(i32, i32)>);
