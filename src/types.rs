@@ -19,14 +19,20 @@ pub enum Menu {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MessageSeverity {
-	Info,
-	Warning,
-	Alert,
+    Info,
+    Warning,
+    Alert,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TextContent {
-	Plain(String),
-	LabelDescription(String, String),
+    Plain(String),
+    LabelDescription(String, String),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImageScalePolicy {
+    CropCenter, // TODO variants
+    FitCenter,  // TODO variants
+                // TODO Tile
+}

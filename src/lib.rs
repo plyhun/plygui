@@ -22,3 +22,7 @@ pub mod macros;
 
 #[cfg(feature = "markup")]
 pub mod markup;
+
+pub mod external {
+    pub use image;
+}

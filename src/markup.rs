@@ -31,6 +31,8 @@ pub const MEMBER_TYPE_SPLITTED: &str = "Splitted";
 pub const MEMBER_TYPE_FRAME: &str = "Frame";
 pub const MEMBER_TYPE_LINEAR_LAYOUT: &str = "LinearLayout";
 pub const MEMBER_TYPE_BUTTON: &str = "Button";
+pub const MEMBER_TYPE_TEXT: &str = "Text";
+pub const MEMBER_TYPE_IMAGE: &str = "Image";
 
 pub struct MarkupRegistry {
     spawners: HashMap<MemberType, MemberSpawner>,

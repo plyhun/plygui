@@ -20,8 +20,12 @@ pub trait HasNativeId: 'static {
 // TODO automate/macro this
 
 pub trait MaybeMember {
-    fn is_member(&self) -> Option<&dyn Member> { None }
-    fn is_member_mut(&mut self) -> Option<&mut dyn Member> { None }
+    fn is_member(&self) -> Option<&dyn Member> {
+        None
+    }
+    fn is_member_mut(&mut self) -> Option<&mut dyn Member> {
+        None
+    }
 }
 pub trait MaybeControl {
     fn is_control(&self) -> Option<&dyn Control>;
@@ -39,35 +43,43 @@ pub trait HasSize: Member + development::seal::Sealed {
     fn size(&self) -> (u16, u16);
     fn set_size(&mut self, width: u16, height: u16);
     fn on_size(&mut self, callback: Option<callbacks::OnSize>);
-    
+
     fn as_has_size(&self) -> &dyn HasSize;
     fn as_has_size_mut(&mut self) -> &mut dyn HasSize;
     fn into_has_size(self: Box<Self>) -> Box<dyn HasSize>;
 }
 pub trait MaybeHasSize {
-    fn is_has_size(&self) -> Option<&dyn HasSize> { None }
-    fn is_has_size_mut(&mut self) -> Option<&mut dyn HasSize> { None }
+    fn is_has_size(&self) -> Option<&dyn HasSize> {
+        None
+    }
+    fn is_has_size_mut(&mut self) -> Option<&mut dyn HasSize> {
+        None
+    }
 }
 
 pub trait HasVisibility: Member + development::seal::Sealed {
     fn visibility(&self) -> types::Visibility;
     fn set_visibility(&mut self, visibility: types::Visibility);
     fn on_visibility(&mut self, callback: Option<callbacks::OnVisibility>);
-    
+
     fn as_has_visibility(&self) -> &dyn HasVisibility;
     fn as_has_visibility_mut(&mut self) -> &mut dyn HasVisibility;
     fn into_has_visibility(self: Box<Self>) -> Box<dyn HasVisibility>;
 }
 pub trait MaybeHasVisibility {
-    fn is_has_visibility(&self) -> Option<&dyn HasVisibility> { None }
-    fn is_has_visibility_mut(&mut self) -> Option<&mut dyn HasVisibility> { None }
+    fn is_has_visibility(&self) -> Option<&dyn HasVisibility> {
+        None
+    }
+    fn is_has_visibility_mut(&mut self) -> Option<&mut dyn HasVisibility> {
+        None
+    }
 }
 
 // ===============================================================================================================
 
 pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + development::seal::Sealed {
     fn id(&self) -> ids::Id;
-    
+
     #[cfg(feature = "type_check")]
     unsafe fn type_id(&self) -> TypeId;
 
@@ -248,3 +260,9 @@ pub trait Message: Member + HasLabel {
 
 pub trait Tray: Member + HasLabel + Closeable {}
 //impl <T: Tray> development::Final for T {}
+
+pub trait Image: Control {
+    fn set_scale(&mut self, policy: types::ImageScalePolicy);
+    fn scale(&self) -> types::ImageScalePolicy;
+}
+//impl <T: Image> development::Final for T {}
