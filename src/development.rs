@@ -287,7 +287,7 @@ impl<T: ControlInner> controls::HasLayout for Member<Control<T>> {
 // ===============================================================================================================
 
 pub trait Drawable: Sized + 'static {
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase, coords: Option<(i32, i32)>);
+    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase);
     fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase);
 }
@@ -409,8 +409,11 @@ impl<T: ControlInner> controls::MaybeHasSize for Member<Control<T>> {
 impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
     #[inline]
     fn draw(&mut self, coords: Option<(i32, i32)>) {
+        if coords.is_some() {
+            self.inner.base.coords = coords;
+        }
         if !self.is_skip_draw() {
-            self.inner.inner.draw(&mut self.base, &mut self.inner.base, coords)
+            self.inner.inner.draw(&mut self.base, &mut self.inner.base)
         }
     }
     #[inline]
@@ -498,11 +501,13 @@ impl<T: ControlInner> controls::Control for Member<Control<T>> {
                 panic!("Attempt to use the control from an incompatible backend!")
             }
         }
+        self.inner.base.coords = Some((x, y));
         self.inner.inner.on_added_to_container(&mut self.base, &mut self.inner.base, parent, x, y, w, h)
     }
     #[inline]
     fn on_removed_from_container(&mut self, parent: &dyn controls::Container) {
-        self.inner.inner.on_removed_from_container(&mut self.base, &mut self.inner.base, parent)
+        self.inner.inner.on_removed_from_container(&mut self.base, &mut self.inner.base, parent);
+        self.inner.base.coords = None;
     }
 
     #[inline]
@@ -646,8 +651,8 @@ impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContaine
 }
 impl<T: SingleContainerInner + ControlInner + Drawable> Drawable for SingleContainer<T> {
     #[inline]
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase, coords: Option<(i32, i32)>) {
-        self.inner.draw(member, control, coords)
+    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
+        self.inner.draw(member, control)
     }
     #[inline]
     fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
@@ -916,8 +921,8 @@ impl<T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<
 }
 impl<T: MultiContainerInner + ControlInner + Drawable> Drawable for MultiContainer<T> {
     #[inline]
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase, coords: Option<(i32, i32)>) {
-        self.inner.draw(member, control, coords)
+    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
+        self.inner.draw(member, control)
     }
     #[inline]
     fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
@@ -1565,7 +1570,6 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
 }
 pub struct Application<T: ApplicationInner> {
-    secret: usize,
     inner: Rc<UnsafeCell<T>>,
 }
 impl<T: ApplicationInner> controls::HasNativeId for Application<T> {
@@ -1621,7 +1625,7 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        Application { inner: Rc::new(UnsafeCell::new(inner)), secret: 12345678 }
+        Application { inner: Rc::new(UnsafeCell::new(inner)) }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -1640,7 +1644,7 @@ impl<T: ApplicationInner> Application<T> {
     #[inline]
     pub fn get() -> Box<dyn controls::Application> {
         if let Some(inner) = runtime::get::<T>() {
-            Box::new(Application { inner, secret: 12345678 })
+            Box::new(Application { inner })
         } else {
             let app = T::get();
             runtime::init(app.inner.clone());
