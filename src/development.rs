@@ -139,6 +139,13 @@ impl<T: ControlInner> Member<Control<T>> {
             (cb.as_mut())(unsafe { &mut *self2 }, v);
         }
     }
+    pub fn as_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut T) {
+        let self2 = self as *mut Self;
+        let self3 = self as *mut Self;
+        (
+            unsafe { &mut *self2 }.base_mut(), unsafe { &mut *self3 }.as_inner_mut().base_mut(), self.as_inner_mut().as_inner_mut()
+        )
+    }
 }
 
 pub trait MemberInner: HasNativeIdInner + Sized + 'static {}
