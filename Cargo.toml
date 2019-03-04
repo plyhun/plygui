@@ -9,7 +9,7 @@ name = "plygui_api"
 path = "src/lib.rs"
 
 [dependencies]
-image = {vesrion = "~0.19" }
+image = { version = "~0.21" }
 serde = { version = "^1.0", optional = true }
 serde_json = { version = "^1.0", optional = true }
 typemap = { version = "^0.3", optional = true }

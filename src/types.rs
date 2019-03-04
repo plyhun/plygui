@@ -12,9 +12,13 @@ pub enum WindowStartSize {
     Fullscreen,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Menu {
-    None,
+pub type Menu = Option<Vec<MenuItem>>;
+
+#[derive(Debug, PartialEq)]
+pub enum MenuItem {
+	Action(String, crate::callbacks::Action),
+	Delimiter,
+	Sub(String, Vec<MenuItem>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
