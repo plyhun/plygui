@@ -76,6 +76,17 @@ macro_rules! callback {
 		        $id(a.0, a.1)
 		    }
 		}
+		
+		impl ::std::fmt::Debug for $id {
+			fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+				write!(f, "{}({})", self.name(), self.id().0)
+			}
+		}
+		impl ::std::cmp::PartialEq for $id {
+			fn eq(&self, other: &$id) -> bool {
+				self.id().eq(&other.id())
+			}
+		}
 	}
 }
 
