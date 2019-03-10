@@ -15,7 +15,13 @@ pub fn get<T: ApplicationInner>() -> Option<Rc<UnsafeCell<T>>> {
             if a.is_null() {
                 unreachable!()
             } else {
-                Some(unsafe { Rc::from_raw(a).clone() })
+                // get currently saved rointer
+                let r = unsafe { Rc::from_raw(a) };
+                // clone the pointer
+                let ret = Some(r.clone());
+                // forget the currently saved pointer, so it won't be dropped
+                Rc::into_raw(r);
+                ret
             }
         })
     } else {
