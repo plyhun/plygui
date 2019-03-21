@@ -1296,13 +1296,13 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
 // ==============================================================================================================
 
 pub trait CloseableInner: HasNativeIdInner {
-    fn close(&mut self, skip_callbacks: bool);
+    fn close(&mut self, skip_callbacks: bool) -> bool;
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 
 impl<T: CloseableInner + MemberInner> controls::Closeable for Member<T> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.on_close(callback)
@@ -1310,8 +1310,8 @@ impl<T: CloseableInner + MemberInner> controls::Closeable for Member<T> {
 }
 
 impl<T: CloseableInner + ControlInner> controls::Closeable for Member<Control<T>> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.on_close(callback)
@@ -1319,8 +1319,8 @@ impl<T: CloseableInner + ControlInner> controls::Closeable for Member<Control<T>
 }
 
 impl<T: CloseableInner + SingleContainerInner> controls::Closeable for Member<SingleContainer<T>> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.on_close(callback)
@@ -1328,8 +1328,8 @@ impl<T: CloseableInner + SingleContainerInner> controls::Closeable for Member<Si
 }
 
 impl<T: CloseableInner + MultiContainerInner> controls::Closeable for Member<MultiContainer<T>> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.on_close(callback)
@@ -1337,8 +1337,8 @@ impl<T: CloseableInner + MultiContainerInner> controls::Closeable for Member<Mul
 }
 
 impl<T: CloseableInner + ControlInner + SingleContainerInner> controls::Closeable for Member<Control<SingleContainer<T>>> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.inner.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.inner.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.inner.on_close(callback)
@@ -1346,8 +1346,8 @@ impl<T: CloseableInner + ControlInner + SingleContainerInner> controls::Closeabl
 }
 
 impl<T: CloseableInner + ControlInner + MultiContainerInner> controls::Closeable for Member<Control<MultiContainer<T>>> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.inner.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.inner.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.inner.on_close(callback)
@@ -1593,6 +1593,7 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
+    fn exit(&mut self, skip_on_close: bool) -> bool;
 }
 pub struct Application<T: ApplicationInner> {
     inner: Rc<UnsafeCell<T>>,
@@ -1627,6 +1628,12 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
         unsafe { &mut *self.inner.get() }.find_member_by_id(id)
+    }
+    #[inline]
+    fn exit(self: Box<Self>, skip_on_close: bool) -> bool {
+    	let exited = unsafe { &mut *self.inner.get() }.exit(skip_on_close);
+    	if exited { runtime::deinit(&self.inner); }
+    	exited
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
@@ -1788,8 +1795,8 @@ impl<T: WindowInner> HasLabelInner for Window<T> {
 }
 
 impl<T: WindowInner> CloseableInner for Window<T> {
-    fn close(&mut self, with_callbacks: bool) {
-        self.inner.close(with_callbacks)
+    fn close(&mut self, skip_callbacks: bool) -> bool {
+        self.inner.close(skip_callbacks)
     }
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.on_close(callback)

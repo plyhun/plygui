@@ -218,11 +218,12 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
     fn start(&mut self);
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn Member>;
+    fn exit(self: Box<Self>, skip_on_close: bool) -> bool;
 }
 //impl <T: Application> development::Final for T {}
 
 pub trait Closeable: HasNativeId {
-    fn close(&mut self, skip_callbacks: bool);
+    fn close(&mut self, skip_callbacks: bool) -> bool;
     fn on_close(&mut self, callback: Option<callbacks::Action>);
 }
 

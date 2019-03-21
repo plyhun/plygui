@@ -42,3 +42,23 @@ pub fn init<T: ApplicationInner>(app: Rc<UnsafeCell<T>>) {
         }
     }
 }
+pub fn deinit<T: ApplicationInner>(_: &Rc<UnsafeCell<T>>) {
+	if unsafe { READY } {
+		// TODO here may come the race!
+        APPLICATION.with(|a| {
+        	{	
+	        	let a = *a.borrow() as *const UnsafeCell<T>;
+	            if a.is_null() {
+	                unreachable!()
+	            } else {
+	                let r = unsafe { Rc::from_raw(a) };
+		        	println!("run {}", Rc::strong_count(&r));	            
+	            }
+        	}
+        	*a.borrow_mut() = 0;
+        });
+        unsafe {
+            READY = false;
+        }
+	}
+}
