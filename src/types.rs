@@ -16,16 +16,16 @@ pub type Menu = Option<Vec<MenuItem>>;
 
 #[derive(Debug, PartialEq)]
 pub enum MenuItem {
-	Action(String, crate::callbacks::Action, MenuItemRole),
-	Delimiter,
-	Sub(String, Vec<MenuItem>, MenuItemRole),
+    Action(String, crate::callbacks::Action, MenuItemRole),
+    Delimiter,
+    Sub(String, Vec<MenuItem>, MenuItemRole),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MenuItemRole {
-	None,
-	Options,
-	Help,
+    None,
+    Options,
+    Help,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

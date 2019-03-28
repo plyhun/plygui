@@ -142,9 +142,7 @@ impl<T: ControlInner> Member<Control<T>> {
     pub fn as_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut T) {
         let self2 = self as *mut Self;
         let self3 = self as *mut Self;
-        (
-            unsafe { &mut *self2 }.base_mut(), unsafe { &mut *self3 }.as_inner_mut().base_mut(), self.as_inner_mut().as_inner_mut()
-        )
+        (unsafe { &mut *self2 }.base_mut(), unsafe { &mut *self3 }.as_inner_mut().base_mut(), self.as_inner_mut().as_inner_mut())
     }
 }
 
@@ -1589,10 +1587,16 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
         Self: Sized;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray>;
+
+    fn remove_window(&mut self, id: Self::Id);
+    fn remove_tray(&mut self, id: Self::Id);
+
     fn name(&self) -> Cow<'_, str>;
     fn start(&mut self);
+
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
+
     fn exit(&mut self, skip_on_close: bool) -> bool;
 }
 pub struct Application<T: ApplicationInner> {
@@ -1631,9 +1635,11 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
     }
     #[inline]
     fn exit(self: Box<Self>, skip_on_close: bool) -> bool {
-    	let exited = unsafe { &mut *self.inner.get() }.exit(skip_on_close);
-    	if exited { runtime::deinit(&self.inner); }
-    	exited
+        let exited = unsafe { &mut *self.inner.get() }.exit(skip_on_close);
+        if exited {
+            runtime::deinit(&self.inner);
+        }
+        exited
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {

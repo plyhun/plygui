@@ -1,4 +1,4 @@
-use super::{types, controls};
+use super::{controls, types};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
@@ -76,7 +76,7 @@ macro_rules! callback {
 		        $id(a.0, a.1)
 		    }
 		}
-		
+
 		impl ::std::fmt::Debug for $id {
 			fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
 				write!(f, "{}({})", self.name(), self.id().0)
@@ -95,4 +95,3 @@ callback!(OnVisibility, FnMut(&mut dyn controls::HasVisibility, types::Visibilit
 callback!(OnClick, FnMut(&mut dyn controls::Clickable));
 callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
-

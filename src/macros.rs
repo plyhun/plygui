@@ -1,9 +1,9 @@
 #[macro_export]
 macro_rules! impl_all_defaults {
-	($typ: ty) => {
-		impl_as_any!{$typ}
-		impl_as_member!{$typ}
-	}
+    ($typ: ty) => {
+        impl_as_any! {$typ}
+        impl_as_member! {$typ}
+    };
 }
 
 #[macro_export]
