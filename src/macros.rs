@@ -33,6 +33,7 @@ macro_rules! default_markup_register_members {
             registry.register_member(plygui_api::markup::MEMBER_TYPE_LINEAR_LAYOUT.into(), layout_linear::spawn).unwrap();
             registry.register_member(plygui_api::markup::MEMBER_TYPE_FRAME.into(), frame::spawn).unwrap();
             registry.register_member(plygui_api::markup::MEMBER_TYPE_SPLITTED.into(), splitted::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_IMAGE.into(), image::spawn).unwrap();
         }
     };
 }
