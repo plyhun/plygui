@@ -1,4 +1,11 @@
-use super::{callbacks, controls, ids, layout, runtime, types};
+use crate::{callbacks, controls, ids, layout, runtime, types};
+use crate::auto::{
+    CloseableInner,
+	ClickableInner,
+	HasSizeInner,
+	HasLabelInner,
+	HasVisibilityInner,
+};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -14,8 +21,6 @@ use std::any::TypeId;
 
 pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
 
-// ===============================================================================================================
-
 pub trait HasNativeIdInner: 'static {
     type Id: NativeId + Sized;
 
@@ -23,14 +28,14 @@ pub trait HasNativeIdInner: 'static {
 }
 
 // ==========================================================================================================
-
+/*
 pub trait HasSizeInner: MemberInner {
     fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool;
 }
 pub trait HasVisibilityInner: MemberInner {
     fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool;
 }
-
+*/
 // ===============================================================================================================
 
 pub trait HasBase: Sized + 'static {
@@ -1148,17 +1153,13 @@ impl<T: MultiContainerInner + ControlInner> controls::MultiContainer for Member<
 
 // ===============================================================================================================
 
-pub trait HasLabelInner: MemberInner {
-    fn label(&self) -> Cow<'_, str>;
-    fn set_label(&mut self, base: &mut MemberBase, label: &str);
-}
 impl<T: HasLabelInner> controls::HasLabel for Member<T> {
     #[inline]
-    fn label(&self) -> Cow<'_, str> {
+    fn label(&self) -> Cow<str> {
         self.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, label: &str) {
+    fn set_label(&mut self, label: Cow<str>) {
         self.inner.set_label(&mut self.base, label)
     }
 
@@ -1181,7 +1182,7 @@ impl<T: HasLabelInner + ControlInner> controls::HasLabel for Member<Control<T>> 
         self.inner.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, label: &str) {
+    fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.set_label(&mut self.base, label)
     }
 
@@ -1204,7 +1205,7 @@ impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<Sing
         self.inner.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, label: &str) {
+    fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.set_label(&mut self.base, label)
     }
 
@@ -1227,7 +1228,7 @@ impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<Multi
         self.inner.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, label: &str) {
+    fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.set_label(&mut self.base, label)
     }
 
@@ -1250,7 +1251,7 @@ impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel 
         self.inner.inner.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, label: &str) {
+    fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.inner.set_label(&mut self.base, label)
     }
 
@@ -1273,7 +1274,7 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
         self.inner.inner.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, label: &str) {
+    fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.inner.set_label(&mut self.base, label)
     }
 
@@ -1293,16 +1294,11 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
 
 // ==============================================================================================================
 
-pub trait CloseableInner: HasNativeIdInner {
-    fn close(&mut self, skip_callbacks: bool) -> bool;
-    fn on_close(&mut self, callback: Option<callbacks::Action>);
-}
-
 impl<T: CloseableInner + MemberInner> controls::Closeable for Member<T> {
     fn close(&mut self, skip_callbacks: bool) -> bool {
         self.inner.close(skip_callbacks)
     }
-    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+    fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.on_close(callback)
     }
 }
@@ -1311,7 +1307,7 @@ impl<T: CloseableInner + ControlInner> controls::Closeable for Member<Control<T>
     fn close(&mut self, skip_callbacks: bool) -> bool {
         self.inner.inner.close(skip_callbacks)
     }
-    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+    fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.on_close(callback)
     }
 }
@@ -1320,7 +1316,7 @@ impl<T: CloseableInner + SingleContainerInner> controls::Closeable for Member<Si
     fn close(&mut self, skip_callbacks: bool) -> bool {
         self.inner.inner.close(skip_callbacks)
     }
-    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+    fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.on_close(callback)
     }
 }
@@ -1329,7 +1325,7 @@ impl<T: CloseableInner + MultiContainerInner> controls::Closeable for Member<Mul
     fn close(&mut self, skip_callbacks: bool) -> bool {
         self.inner.inner.close(skip_callbacks)
     }
-    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+    fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.on_close(callback)
     }
 }
@@ -1347,7 +1343,7 @@ impl<T: CloseableInner + ControlInner + MultiContainerInner> controls::Closeable
     fn close(&mut self, skip_callbacks: bool) -> bool {
         self.inner.inner.inner.close(skip_callbacks)
     }
-    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+    fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.inner.on_close(callback)
     }
 }
@@ -1795,7 +1791,7 @@ impl<T: WindowInner> HasLabelInner for Window<T> {
         self.inner.label()
     }
     #[inline]
-    fn set_label(&mut self, base: &mut MemberBase, label: &str) {
+    fn set_label(&mut self, base: &mut MemberBase, label: Cow<str>) {
         self.inner.set_label(base, label)
     }
 }
@@ -1804,7 +1800,7 @@ impl<T: WindowInner> CloseableInner for Window<T> {
     fn close(&mut self, skip_callbacks: bool) -> bool {
         self.inner.close(skip_callbacks)
     }
-    fn on_close(&mut self, callback: Option<callbacks::Action>) {
+    fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.on_close(callback)
     }
 }

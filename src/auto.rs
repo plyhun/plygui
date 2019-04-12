@@ -1,4 +1,7 @@
 use crate::callbacks::*;
+use crate::types;
+use crate::controls::{Member, Control, Container, SingleContainer, MultiContainer};
+use crate::development::{MemberInner, ControlInner, ContainerInner, SingleContainerInner, MultiContainerInner, MemberBase};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -14,7 +17,14 @@ pub trait HasNativeId: 'static {
 }
 
 able!(Close);
+able!(Click);
 
+has!(Label(Cow<'_, str>): Member);
+has_reacted!(Size(u16, u16): Member);
+has_reacted!(Visibility(types::Visibility): Member);
 
-
-has!(Label(Cow<'_, str>));
+maybe!(Member);
+maybe!(Control);
+maybe!(Container);
+maybe!(HasSize);
+maybe!(HasVisibility);

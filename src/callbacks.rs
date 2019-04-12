@@ -1,4 +1,9 @@
-use super::{controls, types};
+use crate::controls;
+pub use crate::auto::{
+    OnSize,
+    OnVisibility,
+    OnClick
+};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
@@ -101,8 +106,5 @@ macro_rules! callback {
 	}
 }
 
-callback!(OnSize, FnMut(&mut dyn controls::HasSize, u16, u16));
-callback!(OnVisibility, FnMut(&mut dyn controls::HasVisibility, types::Visibility));
-callback!(OnClick, FnMut(&mut dyn controls::Clickable));
 callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
