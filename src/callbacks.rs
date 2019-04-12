@@ -2,6 +2,12 @@ use super::{controls, types};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
+use std::fmt::{Display, Formatter, Result as FmtResult};
+
+pub use crate::auto::{
+	OnClose, 
+	OnLabel
+};
 
 static GLOBAL_COUNT: AtomicUsize = AtomicUsize::new(0);
 
@@ -12,6 +18,11 @@ impl CallbackId {
     pub fn next() -> CallbackId {
         CallbackId(atomic_next())
     }
+}
+impl Display for CallbackId {
+	fn fmt(&self, f: &mut Formatter) -> FmtResult {
+		write!(f, "#{}", self.0)
+	}
 }
 
 fn atomic_next() -> usize {

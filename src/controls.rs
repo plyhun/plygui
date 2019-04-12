@@ -1,14 +1,14 @@
 use super::{callbacks, development, ids, layout, types};
-use std::any::Any;
+pub use crate::auto::{
+	AsAny,
+	Closeable,
+	HasLabel
+};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
 
-pub trait AsAny {
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-    fn into_any(self: Box<Self>) -> Box<dyn Any>;
-}
+
 
 // ===============================================================================================================
 
