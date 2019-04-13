@@ -205,6 +205,7 @@ pub trait HasLabel: Member + development::seal::Sealed {
 
 pub trait Clickable: Member + development::seal::Sealed {
     fn on_click(&mut self, callback: Option<callbacks::OnClick>);
+    fn click(&mut self);
 
     fn as_clickable(&self) -> &dyn Clickable;
     fn as_clickable_mut(&mut self) -> &mut dyn Clickable;
@@ -225,6 +226,10 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
 pub trait Closeable: HasNativeId {
     fn close(&mut self, skip_callbacks: bool) -> bool;
     fn on_close(&mut self, callback: Option<callbacks::Action>);
+    
+    fn as_closeable(&self) -> &dyn Closeable;
+    fn as_closeable_mut(&mut self) -> &mut dyn Closeable;
+    fn into_closeable(self: Box<Self>) -> Box<dyn Closeable>;
 }
 
 pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {}
