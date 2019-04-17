@@ -232,7 +232,9 @@ pub trait Closeable: HasNativeId {
     fn into_closeable(self: Box<Self>) -> Box<dyn Closeable>;
 }
 
-pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {}
+pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
+}
 //impl <T: Window> development::Final for T {}
 
 pub trait Button: Control + Clickable + HasLabel {}

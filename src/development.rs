@@ -1988,7 +1988,11 @@ impl<T: WindowInner> controls::HasSize for Member<SingleContainer<Window<T>>> {
         self
     }
 }
-impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
+impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
+        self.inner.inner.inner.on_frame_async_feeder()
+    }
+}
 /* // Ban free creation of Window, use Application for that
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
     #[inline]

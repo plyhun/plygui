@@ -37,6 +37,8 @@ impl<T: Callback> From<Sender<T>> for AsyncFeeder<T> {
         AsyncFeeder { sender: s }
     }
 }
+unsafe impl <T: Callback> Send for AsyncFeeder<T> {}
+unsafe impl <T: Callback> Sync for AsyncFeeder<T> {}
 
 macro_rules! callback {
 	($id: ident, $($typ:tt)+) => {
