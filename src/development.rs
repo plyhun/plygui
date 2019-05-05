@@ -1305,7 +1305,7 @@ impl<T: CloseableInner + MemberInner> controls::Closeable for Member<T> {
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1327,7 +1327,7 @@ impl<T: CloseableInner + ControlInner> controls::Closeable for Member<Control<T>
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1349,7 +1349,7 @@ impl<T: CloseableInner + SingleContainerInner> controls::Closeable for Member<Si
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1371,7 +1371,7 @@ impl<T: CloseableInner + MultiContainerInner> controls::Closeable for Member<Mul
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1393,7 +1393,7 @@ impl<T: CloseableInner + ControlInner + SingleContainerInner> controls::Closeabl
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1415,7 +1415,7 @@ impl<T: CloseableInner + ControlInner + MultiContainerInner> controls::Closeable
     fn on_close(&mut self, callback: Option<callbacks::Action>) {
         self.inner.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1468,7 +1468,7 @@ impl<T: ClickableInner + ControlInner> controls::Clickable for Member<Control<T>
     fn click(&mut self) {
         self.inner.inner.click()
     }
-    
+
     #[inline]
     fn as_clickable(&self) -> &dyn controls::Clickable {
         self
@@ -1491,7 +1491,7 @@ impl<T: ClickableInner + ControlInner + SingleContainerInner> controls::Clickabl
     fn click(&mut self) {
         self.inner.inner.inner.click()
     }
-    
+
     #[inline]
     fn as_clickable(&self) -> &dyn controls::Clickable {
         self
@@ -1514,7 +1514,7 @@ impl<T: ClickableInner + ControlInner + MultiContainerInner> controls::Clickable
     fn click(&mut self) {
         self.inner.inner.inner.click()
     }
-    
+
     #[inline]
     fn as_clickable(&self) -> &dyn controls::Clickable {
         self
@@ -1775,13 +1775,16 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 }
 impl<T: ApplicationInner> Application<T> {
     #[inline]
-    pub fn get() -> Box<dyn controls::Application> {
-        if let Some(inner) = runtime::get::<T>() {
-            Box::new(Application { inner })
+    pub fn get() -> types::ApplicationResult {
+        let (inner, ready) = runtime::get::<T>();
+        if let Some(inner) = inner {
+            types::ApplicationResult::Existing(Box::new(Application { inner }))
+        } else if ready {
+            types::ApplicationResult::ErrorNonUiThread
         } else {
             let app = T::get();
             runtime::init(app.inner.clone());
-            app
+            types::ApplicationResult::New(app)
         }
     }
 }
