@@ -1,6 +1,6 @@
 use crate::callbacks::*;
 use crate::types;
-use crate::controls::{Member, Control, Container, SingleContainer, MultiContainer};
+use crate::controls::{Member, Control, Container, SingleContainer, MultiContainer, Window};
 use crate::development::{MemberInner, ControlInner, ContainerInner, SingleContainerInner, MultiContainerInner, MemberBase};
 
 use std::any::Any;
@@ -28,3 +28,5 @@ maybe!(Control);
 maybe!(Container);
 maybe!(HasSize);
 maybe!(HasVisibility);
+
+on!(Frame (&mut dyn Window) -> bool);

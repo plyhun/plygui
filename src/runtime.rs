@@ -8,12 +8,13 @@ thread_local! {
     pub static APPLICATION: RefCell<usize> = RefCell::new(0);
 }
 
-pub fn get<T: ApplicationInner>() -> Option<Rc<UnsafeCell<T>>> {
-    if unsafe { READY } {
+pub fn get<T: ApplicationInner>() -> (Option<Rc<UnsafeCell<T>>>, bool) {
+    let ready = unsafe { READY };
+    if ready {
         APPLICATION.with(|a| {
             let a = *a.borrow() as *const UnsafeCell<T>;
             if a.is_null() {
-                unreachable!()
+                (None, ready)
             } else {
                 // get currently saved rointer
                 let r = unsafe { Rc::from_raw(a) };
@@ -21,11 +22,11 @@ pub fn get<T: ApplicationInner>() -> Option<Rc<UnsafeCell<T>>> {
                 let ret = Some(r.clone());
                 // forget the currently saved pointer, so it won't be dropped
                 Rc::into_raw(r);
-                ret
+                (ret, ready)
             }
         })
     } else {
-        None
+        (None, ready)
     }
 }
 

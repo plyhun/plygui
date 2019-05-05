@@ -21,6 +21,8 @@ use std::any::TypeId;
 
 pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
 
+// ===============================================================================================================
+
 pub trait HasNativeIdInner: 'static {
     type Id: NativeId + Sized;
 
@@ -28,15 +30,6 @@ pub trait HasNativeIdInner: 'static {
 }
 
 // ==========================================================================================================
-/*
-pub trait HasSizeInner: MemberInner {
-    fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool;
-}
-pub trait HasVisibilityInner: MemberInner {
-    fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool;
-}
-*/
-// ===============================================================================================================
 
 pub trait HasBase: Sized + 'static {
     type Base: Sized;
@@ -1457,6 +1450,7 @@ impl<T: ClickableInner + MemberInner> controls::Clickable for Member<T> {
     fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.on_click(cb)
     }
+    #[inline]
     fn click(&mut self, skip_callbacks: bool) -> bool {
         self.inner.click(skip_callbacks)
     }
@@ -1479,6 +1473,7 @@ impl<T: ClickableInner + ControlInner> controls::Clickable for Member<Control<T>
     fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.inner.on_click(cb)
     }
+    #[inline]
     fn click(&mut self, skip_callbacks: bool) -> bool {
         self.inner.inner.click(skip_callbacks)
     }
@@ -1501,6 +1496,7 @@ impl<T: ClickableInner + ControlInner + SingleContainerInner> controls::Clickabl
     fn on_click(&mut self, cb: Option<callbacks::OnClick>) {
         self.inner.inner.inner.on_click(cb)
     }
+    #[inline]
     fn click(&mut self, skip_callbacks: bool) -> bool {
         self.inner.inner.inner.click(skip_callbacks)
     }
@@ -1788,13 +1784,16 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 }
 impl<T: ApplicationInner> Application<T> {
     #[inline]
-    pub fn get() -> Box<dyn controls::Application> {
-        if let Some(inner) = runtime::get::<T>() {
-            Box::new(Application { inner })
+    pub fn get() -> types::ApplicationResult {
+        let (inner, ready) = runtime::get::<T>();
+        if let Some(inner) = inner {
+            types::ApplicationResult::Existing(Box::new(Application { inner }))
+        } else if ready {
+            types::ApplicationResult::ErrorNonUiThread
         } else {
             let app = T::get();
             runtime::init(app.inner.clone());
-            app
+            types::ApplicationResult::New(app)
         }
     }
 }
@@ -2005,7 +2004,11 @@ impl<T: WindowInner> controls::HasSize for Member<SingleContainer<Window<T>>> {
         self
     }
 }
-impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
+impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
+        self.inner.inner.inner.on_frame_async_feeder()
+    }
+}
 /* // Ban free creation of Window, use Application for that
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
     #[inline]

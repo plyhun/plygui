@@ -2,7 +2,8 @@ use crate::controls;
 pub use crate::auto::{
     OnSize,
     OnVisibility,
-    OnClick
+    OnClick,
+    OnFrame,
 };
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -53,6 +54,8 @@ impl<T: Callback> From<Sender<T>> for AsyncFeeder<T> {
         AsyncFeeder { sender: s }
     }
 }
+unsafe impl <T: Callback> Send for AsyncFeeder<T> {}
+unsafe impl <T: Callback> Sync for AsyncFeeder<T> {}
 
 macro_rules! callback {
 	($id: ident, $($typ:tt)+) => {
@@ -106,5 +109,6 @@ macro_rules! callback {
 	}
 }
 
-callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
+//callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
+
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
