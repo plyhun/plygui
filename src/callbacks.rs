@@ -1,7 +1,19 @@
-use super::{controls, types};
+use crate::controls;
+pub use crate::auto::{
+    OnSize,
+    OnVisibility,
+    OnClick,
+    OnFrame,
+};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
+use std::fmt::{Display, Formatter, Result as FmtResult};
+
+pub use crate::auto::{
+	OnClose, 
+	OnLabel
+};
 
 static GLOBAL_COUNT: AtomicUsize = AtomicUsize::new(0);
 
@@ -12,6 +24,11 @@ impl CallbackId {
     pub fn next() -> CallbackId {
         CallbackId(atomic_next())
     }
+}
+impl Display for CallbackId {
+	fn fmt(&self, f: &mut Formatter) -> FmtResult {
+		write!(f, "#{}", self.0)
+	}
 }
 
 fn atomic_next() -> usize {
@@ -92,8 +109,6 @@ macro_rules! callback {
 	}
 }
 
-callback!(OnSize, FnMut(&mut dyn controls::HasSize, u16, u16));
-callback!(OnVisibility, FnMut(&mut dyn controls::HasVisibility, types::Visibility));
-callback!(OnClick, FnMut(&mut dyn controls::Clickable));
-callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
+//callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
+
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);

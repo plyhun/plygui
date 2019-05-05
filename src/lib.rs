@@ -5,6 +5,9 @@
 #![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
 #![feature(specialization)]
 
+#[macro_use]
+extern crate able;
+
 pub mod controls;
 pub mod defaults;
 pub mod development;
@@ -14,6 +17,7 @@ pub mod types;
 pub mod utils;
 
 mod runtime;
+mod auto;
 
 #[macro_use]
 pub mod callbacks;
