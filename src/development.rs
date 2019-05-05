@@ -1,11 +1,12 @@
-use crate::{callbacks, controls, ids, layout, runtime, types};
-use crate::auto::{
+pub use crate::auto::{
     CloseableInner,
 	ClickableInner,
 	HasSizeInner,
 	HasLabelInner,
 	HasVisibilityInner,
 };
+
+use crate::{callbacks, controls, ids, layout, runtime, types};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -1155,10 +1156,6 @@ impl<T: MemberInner + HasLabelInner> controls::HasLabel for Member<T> {
     fn set_label(&mut self, label: Cow<str>) {
         self.inner.set_label(&mut self.base, label)
     }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.on_label(callback)
-    }
 
     #[inline]
     fn as_has_label(&self) -> &dyn controls::HasLabel {
@@ -1181,10 +1178,6 @@ impl<T: HasLabelInner + ControlInner + MemberInner> controls::HasLabel for Membe
     #[inline]
     fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.set_label(&mut self.base, label)
-    }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.inner.on_label(callback)
     }
 
     #[inline]
@@ -1209,10 +1202,6 @@ impl<T: HasLabelInner + SingleContainerInner> controls::HasLabel for Member<Sing
     fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.set_label(&mut self.base, label)
     }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.inner.on_label(callback)
-    }
 
     #[inline]
     fn as_has_label(&self) -> &dyn controls::HasLabel {
@@ -1235,10 +1224,6 @@ impl<T: HasLabelInner + MultiContainerInner> controls::HasLabel for Member<Multi
     #[inline]
     fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.set_label(&mut self.base, label)
-    }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.inner.on_label(callback)
     }
 
     #[inline]
@@ -1263,10 +1248,6 @@ impl<T: HasLabelInner + ControlInner + SingleContainerInner> controls::HasLabel 
     fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.inner.set_label(&mut self.base, label)
     }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.inner.inner.on_label(callback)
-    }
 
     #[inline]
     fn as_has_label(&self) -> &dyn controls::HasLabel {
@@ -1289,10 +1270,6 @@ impl<T: HasLabelInner + ControlInner + MultiContainerInner> controls::HasLabel f
     #[inline]
     fn set_label(&mut self, label: Cow<str>) {
         self.inner.inner.inner.set_label(&mut self.base, label)
-    }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.inner.inner.on_label(callback)
     }
 
     #[inline]
@@ -1904,10 +1881,6 @@ impl<T: WindowInner> HasLabelInner for Window<T> {
     #[inline]
     fn set_label(&mut self, base: &mut MemberBase, label: Cow<str>) {
         self.inner.set_label(base, label)
-    }
-    #[inline]
-    fn on_label(&mut self, callback: Option<callbacks::OnLabel>) {
-        self.inner.on_label(callback)
     }
 }
 
