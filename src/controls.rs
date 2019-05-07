@@ -146,11 +146,12 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn Member>;
     fn exit(self: Box<Self>, skip_on_close: bool) -> bool;
+    fn on_frame(&mut self, cb: callbacks::OnFrame);
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
 }
 //impl <T: Application> development::Final for T {}
 
 pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {
-    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
 }
 //impl <T: Window> development::Final for T {}
 

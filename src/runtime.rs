@@ -1,4 +1,4 @@
-use super::development::ApplicationInner;
+use super::development::{ApplicationInnerWrapper, ApplicationInner};
 use std::cell::{RefCell, UnsafeCell};
 use std::rc::Rc;
 
@@ -8,11 +8,11 @@ thread_local! {
     pub static APPLICATION: RefCell<usize> = RefCell::new(0);
 }
 
-pub fn get<T: ApplicationInner>() -> (Option<Rc<UnsafeCell<T>>>, bool) {
+pub fn get<T: ApplicationInner>() -> (Option<Rc<UnsafeCell<ApplicationInnerWrapper<T>>>>, bool) {
     let ready = unsafe { READY };
     if ready {
         APPLICATION.with(|a| {
-            let a = *a.borrow() as *const UnsafeCell<T>;
+            let a = *a.borrow() as *const UnsafeCell<ApplicationInnerWrapper<T>>;
             if a.is_null() {
                 (None, ready)
             } else {
@@ -30,7 +30,7 @@ pub fn get<T: ApplicationInner>() -> (Option<Rc<UnsafeCell<T>>>, bool) {
     }
 }
 
-pub fn init<T: ApplicationInner>(app: Rc<UnsafeCell<T>>) {
+pub fn init<T: ApplicationInner>(app: Rc<UnsafeCell<ApplicationInnerWrapper<T>>>) {
     if unsafe { READY } {
         panic!("Trying to access Application from a non-UI thread!") // TODO perhaps allow this if windows run in an own thread each
     } else {
@@ -43,12 +43,12 @@ pub fn init<T: ApplicationInner>(app: Rc<UnsafeCell<T>>) {
         }
     }
 }
-pub fn deinit<T: ApplicationInner>(_: &Rc<UnsafeCell<T>>) {
+pub fn deinit<T: ApplicationInner>(_: &Rc<UnsafeCell<ApplicationInnerWrapper<T>>>) {
     if unsafe { READY } {
         // TODO here may come the race!
         APPLICATION.with(|a| {
             {
-                let a = *a.borrow() as *const UnsafeCell<T>;
+                let a = *a.borrow() as *const UnsafeCell<ApplicationInnerWrapper<T>>;
                 if a.is_null() {
                     unreachable!()
                 } else {

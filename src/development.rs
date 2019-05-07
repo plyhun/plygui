@@ -1677,50 +1677,95 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
 
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
+    
+    
 
     fn exit(&mut self, skip_on_close: bool) -> bool;
+    
+    fn on_frame_async_feeder(&mut self, feeder: callbacks::AsyncFeeder<callbacks::OnFrame>) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
+        feeder
+    }
+    fn on_frame(&mut self, feeder: &mut callbacks::AsyncFeeder<callbacks::OnFrame>, cb: callbacks::OnFrame) {
+        let _ = feeder.feed(cb);
+    }
 }
 pub struct Application<T: ApplicationInner> {
-    inner: Rc<UnsafeCell<T>>,
+    inner: Rc<UnsafeCell<ApplicationInnerWrapper<T>>>,
+}
+pub struct ApplicationBase {
+    queue: mpsc::Receiver<callbacks::OnFrame>,
+    sender: mpsc::Sender<callbacks::OnFrame>,
+}
+pub struct ApplicationInnerWrapper<T: ApplicationInner> {
+    base: ApplicationBase,
+    inner: T,
+}
+impl ApplicationBase {
+    pub fn sender(&mut self) -> &mut mpsc::Sender<callbacks::OnFrame> {
+        &mut self.sender
+    }
+    pub fn queue(&mut self) -> &mut mpsc::Receiver<callbacks::OnFrame> {
+        &mut self.queue
+    }
+}
+impl<T: ApplicationInner> HasBase for Application<T> {
+    type Base = ApplicationBase;
+
+    fn base(&self) -> &Self::Base {
+        unsafe { &(&*self.inner.get()).base }
+    }
+    fn base_mut(&mut self) -> &mut Self::Base {
+        unsafe { &mut(&mut *self.inner.get()).base }
+    }
 }
 impl<T: ApplicationInner> controls::HasNativeId for Application<T> {
     #[inline]
     unsafe fn native_id(&self) -> usize {
-        (&mut *self.inner.get()).native_id().into()
+        self.as_inner().native_id().into()
     }
 }
 impl<T: ApplicationInner> controls::Application for Application<T> {
     #[inline]
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
-        unsafe { &mut *self.inner.get() }.new_window(title, size, menu)
+        self.as_inner_mut().new_window(title, size, menu)
     }
     #[inline]
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
-        unsafe { &mut *self.inner.get() }.new_tray(title, menu)
+        self.as_inner_mut().new_tray(title, menu)
     }
     #[inline]
     fn name(&self) -> Cow<'_, str> {
-        unsafe { &mut *self.inner.get() }.name()
+        self.as_inner().name()
     }
     #[inline]
     fn start(&mut self) {
-        unsafe { &mut *self.inner.get() }.start()
+        self.as_inner_mut().start()
     }
     #[inline]
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member> {
-        unsafe { &mut *self.inner.get() }.find_member_by_id_mut(id)
+        self.as_inner_mut().find_member_by_id_mut(id)
     }
     #[inline]
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
-        unsafe { &mut *self.inner.get() }.find_member_by_id(id)
+        self.as_inner().find_member_by_id(id)
     }
     #[inline]
-    fn exit(self: Box<Self>, skip_on_close: bool) -> bool {
-        let exited = unsafe { &mut *self.inner.get() }.exit(skip_on_close);
+    fn exit(mut self: Box<Self>, skip_on_close: bool) -> bool {
+        let exited = self.as_inner_mut().exit(skip_on_close);
         if exited {
             runtime::deinit(&self.inner);
         }
         exited
+    }
+    #[inline]
+    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
+        let feeder = self.base_mut().sender().clone();
+        self.as_inner_mut().on_frame_async_feeder(feeder.into())
+    }
+    #[inline]
+    fn on_frame(&mut self, cb: callbacks::OnFrame) {
+        let mut feeder = self.base_mut().sender().clone().into();
+        self.as_inner_mut().on_frame(&mut feeder, cb)
     }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
@@ -1744,15 +1789,24 @@ impl<T: ApplicationInner> HasInner for Application<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
-        Application { inner: Rc::new(UnsafeCell::new(inner)) }
+        let (tx, rx) = mpsc::channel();
+        Application { 
+            inner: Rc::new(UnsafeCell::new(ApplicationInnerWrapper {
+                base: ApplicationBase {
+                    sender: tx,
+                    queue: rx,
+                },        
+                inner: inner,
+            })),
+        }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
-        unsafe { &*self.inner.get() }
+        unsafe { &(&*self.inner.get()).inner }
     }
     #[inline]
     fn as_inner_mut(&mut self) -> &mut Self::Inner {
-        unsafe { &mut *self.inner.get() }
+        unsafe { &mut (&mut *self.inner.get()).inner }
     }
     #[inline]
     fn into_inner(self) -> Self::Inner {
@@ -1782,28 +1836,15 @@ pub struct WindowBase {
     pub visibility: types::Visibility,
     pub on_size: Option<callbacks::OnSize>,
     pub on_visibility: Option<callbacks::OnVisibility>,
-
-    queue: mpsc::Receiver<callbacks::OnFrame>,
-    sender: mpsc::Sender<callbacks::OnFrame>,
 }
 impl WindowBase {
     pub(crate) fn new() -> Self {
-        let (tx, rx) = mpsc::channel();
         WindowBase {
             visibility: types::Visibility::Visible,
 
             on_size: None,
             on_visibility: None,
-
-            sender: tx,
-            queue: rx,
         }
-    }
-    pub fn sender(&mut self) -> &mut mpsc::Sender<callbacks::OnFrame> {
-        &mut self.sender
-    }
-    pub fn queue(&mut self) -> &mut mpsc::Receiver<callbacks::OnFrame> {
-        &mut self.queue
     }
 }
 
@@ -1909,8 +1950,6 @@ impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
 
 pub trait WindowInner: HasSizeInner + HasVisibilityInner + HasLabelInner + CloseableInner + SingleContainerInner {
     fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Member<SingleContainer<Window<Self>>>>;
-    fn on_frame(&mut self, cb: callbacks::OnFrame);
-    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
     fn size(&self) -> (u16, u16);
     fn position(&self) -> (i32, i32);
 }
@@ -1978,9 +2017,6 @@ impl<T: WindowInner> controls::HasSize for Member<SingleContainer<Window<T>>> {
     }
 }
 impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {
-    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
-        self.inner.inner.inner.on_frame_async_feeder()
-    }
 }
 /* // Ban free creation of Window, use Application for that
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
