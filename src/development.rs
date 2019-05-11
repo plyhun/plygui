@@ -1,10 +1,4 @@
-pub use crate::auto::{
-    CloseableInner,
-	ClickableInner,
-	HasSizeInner,
-	HasLabelInner,
-	HasVisibilityInner,
-};
+pub use crate::auto::{ClickableInner, CloseableInner, HasLabelInner, HasSizeInner, HasVisibilityInner};
 
 use crate::{callbacks, controls, ids, layout, runtime, types};
 
@@ -20,12 +14,12 @@ use std::sync::mpsc;
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
 
-pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> {}
+pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> + Sized {}
 
 // ===============================================================================================================
 
 pub trait HasNativeIdInner: 'static {
-    type Id: NativeId + Sized;
+    type Id: NativeId;
 
     unsafe fn native_id(&self) -> Self::Id;
 }
@@ -1295,7 +1289,7 @@ impl<T: CloseableInner + MemberInner> controls::Closeable for Member<T> {
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1317,7 +1311,7 @@ impl<T: CloseableInner + ControlInner> controls::Closeable for Member<Control<T>
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1339,7 +1333,7 @@ impl<T: CloseableInner + SingleContainerInner> controls::Closeable for Member<Si
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1361,7 +1355,7 @@ impl<T: CloseableInner + MultiContainerInner> controls::Closeable for Member<Mul
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1383,7 +1377,7 @@ impl<T: CloseableInner + ControlInner + SingleContainerInner> controls::Closeabl
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1405,7 +1399,7 @@ impl<T: CloseableInner + ControlInner + MultiContainerInner> controls::Closeable
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.inner.inner.inner.on_close(callback)
     }
-    
+
     #[inline]
     fn as_closeable(&self) -> &dyn controls::Closeable {
         self
@@ -1677,17 +1671,17 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
 
     fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
     fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
-    
-    
 
     fn exit(&mut self, skip_on_close: bool) -> bool;
-    
+
     fn on_frame_async_feeder(&mut self, feeder: callbacks::AsyncFeeder<callbacks::OnFrame>) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
         feeder
     }
     fn on_frame(&mut self, feeder: &mut callbacks::AsyncFeeder<callbacks::OnFrame>, cb: callbacks::OnFrame) {
         let _ = feeder.feed(cb);
     }
+    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &(dyn controls::Member)> + 'a>;
+    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &mut (dyn controls::Member)> + 'a>;
 }
 pub struct Application<T: ApplicationInner> {
     inner: Rc<UnsafeCell<ApplicationInnerWrapper<T>>>,
@@ -1715,7 +1709,7 @@ impl<T: ApplicationInner> HasBase for Application<T> {
         unsafe { &(&*self.inner.get()).base }
     }
     fn base_mut(&mut self) -> &mut Self::Base {
-        unsafe { &mut(&mut *self.inner.get()).base }
+        unsafe { &mut (&mut *self.inner.get()).base }
     }
 }
 impl<T: ApplicationInner> controls::HasNativeId for Application<T> {
@@ -1767,6 +1761,14 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
         let mut feeder = self.base_mut().sender().clone().into();
         self.as_inner_mut().on_frame(&mut feeder, cb)
     }
+    #[inline]
+    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn controls::Member)> + 'a> {
+        self.as_inner().members()
+    }
+    #[inline]
+    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn controls::Member)> + 'a> {
+        self.as_inner_mut().members_mut()
+    }
 }
 impl<T: ApplicationInner> controls::AsAny for Application<T> {
     #[inline]
@@ -1790,12 +1792,9 @@ impl<T: ApplicationInner> HasInner for Application<T> {
     #[inline]
     fn with_inner(inner: Self::Inner, _: Self::Params) -> Self {
         let (tx, rx) = mpsc::channel();
-        Application { 
+        Application {
             inner: Rc::new(UnsafeCell::new(ApplicationInnerWrapper {
-                base: ApplicationBase {
-                    sender: tx,
-                    queue: rx,
-                },        
+                base: ApplicationBase { sender: tx, queue: rx },
                 inner: inner,
             })),
         }
@@ -2016,8 +2015,7 @@ impl<T: WindowInner> controls::HasSize for Member<SingleContainer<Window<T>>> {
         self
     }
 }
-impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {
-}
+impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
 /* // Ban free creation of Window, use Application for that
 impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
     #[inline]

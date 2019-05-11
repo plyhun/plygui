@@ -1,23 +1,8 @@
-use crate::{development, ids, layout, types, callbacks};
-pub use crate::auto::{
-	AsAny,
-	MaybeMember,
-	MaybeControl,
-	MaybeContainer,
-	MaybeHasSize,
-	MaybeHasVisibility,
-	Closeable,
-	Clickable,
-	HasNativeId,
-	HasSize,
-	HasLabel,
-	HasVisibility
-};
+pub use crate::auto::{AsAny, Clickable, Closeable, HasLabel, HasNativeId, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
+use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
-
-
 
 // ===============================================================================================================
 
@@ -148,11 +133,13 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
     fn exit(self: Box<Self>, skip_on_close: bool) -> bool;
     fn on_frame(&mut self, cb: callbacks::OnFrame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
+
+    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a>; //E0562 :(
+    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a>; //E0562 :(
 }
 //impl <T: Application> development::Final for T {}
 
-pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {
-}
+pub trait Window: HasSize + HasVisibility + SingleContainer + HasLabel + Closeable {}
 //impl <T: Window> development::Final for T {}
 
 pub trait Button: Control + Clickable + HasLabel {}
