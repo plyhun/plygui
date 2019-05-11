@@ -47,6 +47,11 @@ pub enum ImageScalePolicy {
     FitCenter,  // TODO variants
                 // TODO Tile
 }
+#[derive(Debug, Clone, PartialEq)]
+pub enum FindBy {
+    Id(crate::ids::Id),
+    Tag(String)
+}
 
 pub enum ApplicationResult {
     New(Box<dyn crate::controls::Application>),

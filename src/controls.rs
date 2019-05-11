@@ -3,11 +3,14 @@ use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
+use std::borrow::Cow;
 
 // ===============================================================================================================
 
 pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + development::seal::Sealed {
     fn id(&self) -> ids::Id;
+    fn tag(&self) -> Option<Cow<str>>;
+    fn set_tag(&mut self, tag: Option<Cow<str>>);
 
     #[cfg(feature = "type_check")]
     unsafe fn type_id(&self) -> TypeId;
@@ -58,8 +61,8 @@ pub trait Control: HasSize + HasVisibility + HasLayout + development::OuterDrawa
 }
 
 pub trait Container: Member {
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Control>;
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn Control>;
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control>;
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control>;
 
     fn is_multi_mut(&mut self) -> Option<&mut dyn MultiContainer> {
         None
@@ -128,8 +131,8 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;
     fn start(&mut self);
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn Member>;
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn Member>;
+    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member>;
+    fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member>;
     fn exit(self: Box<Self>, skip_on_close: bool) -> bool;
     fn on_frame(&mut self, cb: callbacks::OnFrame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;

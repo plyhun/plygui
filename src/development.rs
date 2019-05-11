@@ -45,9 +45,10 @@ pub trait HasInner: Sized + 'static {
 
 #[repr(C)]
 pub struct MemberBase {
-    pub id: ids::Id,
-    pub functions: MemberFunctions,
-    pub app: usize,
+    id: ids::Id,
+    functions: MemberFunctions,
+    app: usize,
+    tag: Option<String>,
 
     _no_threads: PhantomData<Rc<()>>,
 }
@@ -87,8 +88,15 @@ impl MemberBase {
             id: ids::Id::next(),
             functions: functions,
             app: runtime::APPLICATION.with(|a| *a.borrow()),
+            tag: None,
             _no_threads: PhantomData,
         }
+    }
+    pub fn tag(&self) -> Option<Cow<str>> {
+        self.tag.as_ref().map(|t| t.as_str().into())
+    }
+    pub fn set_tag(&mut self, tag: Option<Cow<str>>) {
+        self.tag = tag.map(|t| t.into());
     }
     #[inline]
     pub fn as_any(&self) -> &dyn Any {
@@ -174,6 +182,12 @@ impl<T: MemberInner> controls::Member for Member<T> {
     #[inline]
     fn id(&self) -> ids::Id {
         self.base.id
+    }
+    fn tag(&self) -> Option<Cow<str>> {
+        self.base.tag()
+    }
+    fn set_tag(&mut self, tag: Option<Cow<str>>) {
+        self.base.set_tag(tag)
     }
     #[cfg(feature = "type_check")]
     unsafe fn type_id(&self) -> TypeId {
@@ -583,17 +597,17 @@ impl<T: ControlInner> Member<Control<T>> {
 // ===============================================================================================================
 
 pub trait ContainerInner: MemberInner {
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control>;
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control>;
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control>;
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control>;
 }
 impl<T: ContainerInner> controls::Container for Member<T> {
     #[inline]
-    default fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
-        self.inner.find_control_by_id_mut(id)
+    default fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        self.inner.find_control_mut(arg)
     }
     #[inline]
-    default fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
-        self.inner.find_control_by_id(id)
+    default fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        self.inner.find_control(arg)
     }
 
     #[inline]
@@ -655,12 +669,12 @@ impl<T: SingleContainerInner> MemberInner for SingleContainer<T> {}
 
 impl<T: SingleContainerInner + ContainerInner> ContainerInner for SingleContainer<T> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
-        self.inner.find_control_by_id_mut(id)
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        self.inner.find_control_mut(arg)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
-        self.inner.find_control_by_id(id)
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        self.inner.find_control(arg)
     }
 }
 impl<T: SingleContainerInner + ControlInner + Drawable> Drawable for SingleContainer<T> {
@@ -815,20 +829,40 @@ impl<T: SingleContainerInner + ControlInner> controls::MaybeContainer for Member
 }
 impl<T: SingleContainerInner + ControlInner> controls::Container for Member<Control<SingleContainer<T>>> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
-        if self.base.id == id {
-            Some(self)
-        } else {
-            self.inner.inner.find_control_by_id_mut(id)
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        match arg {
+            types::FindBy::Id(id) => {
+                if self.base.id == id {
+                    return Some(self);
+                }
+            }
+            types::FindBy::Tag(ref tag) => {
+                if let Some(mytag) = self.base.tag() {
+                    if tag.as_str() == mytag {
+                        return Some(self);
+                    }
+                }
+            }
         }
+        self.inner.inner.find_control_mut(arg)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
-        if self.base.id == id {
-            Some(self)
-        } else {
-            self.inner.inner.find_control_by_id(id)
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        match arg {
+            types::FindBy::Id(id) => {
+                if self.base.id == id {
+                    return Some(self);
+                }
+            }
+            types::FindBy::Tag(ref tag) => {
+                if let Some(mytag) = self.base.tag() {
+                    if tag.as_str() == mytag {
+                        return Some(self);
+                    }
+                }
+            }
         }
+        self.inner.inner.find_control(arg)
     }
 
     #[inline]
@@ -925,12 +959,12 @@ impl<T: MultiContainerInner> HasInner for MultiContainer<T> {
 }
 impl<T: MultiContainerInner + ContainerInner> ContainerInner for MultiContainer<T> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
-        self.inner.find_control_by_id_mut(id)
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        self.inner.find_control_mut(arg)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
-        self.inner.find_control_by_id(id)
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        self.inner.find_control(arg)
     }
 }
 impl<T: MultiContainerInner + ControlInner + Drawable> Drawable for MultiContainer<T> {
@@ -1055,20 +1089,40 @@ impl<T: MultiContainerInner> controls::Container for Member<MultiContainer<T>> {
 }
 impl<T: MultiContainerInner + ControlInner> controls::Container for Member<Control<MultiContainer<T>>> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
-        if self.base.id == id {
-            Some(self)
-        } else {
-            self.inner.inner.find_control_by_id_mut(id)
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        match arg {
+            types::FindBy::Id(id) => {
+                if self.base.id == id {
+                    return Some(self);
+                }
+            }
+            types::FindBy::Tag(ref tag) => {
+                if let Some(mytag) = self.base.tag() {
+                    if tag.as_str() == mytag {
+                        return Some(self);
+                    }
+                }
+            }
         }
+        self.inner.inner.find_control_mut(arg)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
-        if self.base.id == id {
-            Some(self)
-        } else {
-            self.inner.inner.find_control_by_id(id)
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        match arg {
+            types::FindBy::Id(id) => {
+                if self.base.id == id {
+                    return Some(self);
+                }
+            }
+            types::FindBy::Tag(ref tag) => {
+                if let Some(mytag) = self.base.tag() {
+                    if tag.as_str() == mytag {
+                        return Some(self);
+                    }
+                }
+            }
         }
+        self.inner.inner.find_control(arg)
     }
 
     #[inline]
@@ -1669,8 +1723,8 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn name(&self) -> Cow<'_, str>;
     fn start(&mut self);
 
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member>;
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member>;
+    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Member>;
+    fn find_member(&self, arg: types::FindBy) -> Option<&dyn controls::Member>;
 
     fn exit(&mut self, skip_on_close: bool) -> bool;
 
@@ -1736,12 +1790,12 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
         self.as_inner_mut().start()
     }
     #[inline]
-    fn find_member_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Member> {
-        self.as_inner_mut().find_member_by_id_mut(id)
+    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Member> {
+        self.as_inner_mut().find_member_mut(arg)
     }
     #[inline]
-    fn find_member_by_id(&self, id: ids::Id) -> Option<&dyn controls::Member> {
-        self.as_inner().find_member_by_id(id)
+    fn find_member(&self, arg: types::FindBy) -> Option<&dyn controls::Member> {
+        self.as_inner().find_member(arg)
     }
     #[inline]
     fn exit(mut self: Box<Self>, skip_on_close: bool) -> bool {
@@ -1891,12 +1945,12 @@ impl<T: WindowInner> MemberInner for Window<T> {}
 
 impl<T: WindowInner> ContainerInner for Window<T> {
     #[inline]
-    fn find_control_by_id_mut(&mut self, id: ids::Id) -> Option<&mut dyn controls::Control> {
-        self.inner.find_control_by_id_mut(id)
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        self.inner.find_control_mut(arg)
     }
     #[inline]
-    fn find_control_by_id(&self, id: ids::Id) -> Option<&dyn controls::Control> {
-        self.inner.find_control_by_id(id)
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        self.inner.find_control(arg)
     }
 }
 impl<T: WindowInner> SingleContainerInner for Window<T> {
