@@ -1476,7 +1476,7 @@ impl<T: ClickableInner + MemberInner> controls::Clickable for Member<T> {
         self.inner.on_click(cb)
     }
     #[inline]
-    fn click(&mut self, skip_callbacks: bool) -> bool {
+    fn click(&mut self, skip_callbacks: bool) {
         self.inner.click(skip_callbacks)
     }
 
@@ -1499,7 +1499,7 @@ impl<T: ClickableInner + ControlInner> controls::Clickable for Member<Control<T>
         self.inner.inner.on_click(cb)
     }
     #[inline]
-    fn click(&mut self, skip_callbacks: bool) -> bool {
+    fn click(&mut self, skip_callbacks: bool) {
         self.inner.inner.click(skip_callbacks)
     }
 
@@ -1522,7 +1522,7 @@ impl<T: ClickableInner + ControlInner + SingleContainerInner> controls::Clickabl
         self.inner.inner.inner.on_click(cb)
     }
     #[inline]
-    fn click(&mut self, skip_callbacks: bool) -> bool {
+    fn click(&mut self, skip_callbacks: bool) {
         self.inner.inner.inner.click(skip_callbacks)
     }
 
@@ -1545,7 +1545,7 @@ impl<T: ClickableInner + ControlInner + MultiContainerInner> controls::Clickable
         self.inner.inner.inner.on_click(cb)
     }
     #[inline]
-    fn click(&mut self, skip_callbacks: bool) -> bool {
+    fn click(&mut self, skip_callbacks: bool) {
         self.inner.inner.inner.click(skip_callbacks)
     }
 

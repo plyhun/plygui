@@ -16,7 +16,7 @@ pub trait HasNativeId: 'static {
     unsafe fn native_id(&self) -> usize;
 }
 
-able_to!(Close);
+able_to!(Close -> bool);
 able_to!(Click);
 
 has!(Label(Cow<'_, str>): Member);
