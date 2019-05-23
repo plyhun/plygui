@@ -234,7 +234,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
 }
 
 pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<dyn super::controls::Control> {
-    let markup: Markup = super::serde_json::from_str(json).unwrap();
+    let markup: Markup = serde_json::from_str(json).unwrap();
 
     let mut control = registry.member(&markup.member_type).unwrap()();
     control.fill_from_markup(&markup, registry);
@@ -257,7 +257,7 @@ macro_rules! fill_from_markup_base {
 			}
 		}
     	if let Some(ref id) = $mrk.id {
-    		$reg.store_id(&id, $mem.id).unwrap();
+    		$reg.store_id(&id, $mem.id()).unwrap();
     	}
 	}
 }
@@ -265,7 +265,7 @@ macro_rules! fill_from_markup_base {
 macro_rules! fill_from_markup_label {
     ($this: expr, $mem: expr, $mrk: ident) => {
         use plygui_api::development::HasLabelInner;
-        $this.set_label($mem, &$mrk.attributes.get("label").unwrap().as_attribute());
+        $this.set_label($mem, &$mrk.attributes.get("label").unwrap().as_attribute().into());
     };
 }
 #[macro_export]

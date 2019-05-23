@@ -92,6 +92,9 @@ impl MemberBase {
             _no_threads: PhantomData,
         }
     }
+    pub fn id(&self) -> ids::Id {
+        self.id
+    }
     pub fn tag(&self) -> Option<Cow<str>> {
         self.tag.as_ref().map(|t| t.as_str().into())
     }
