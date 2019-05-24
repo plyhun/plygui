@@ -20,6 +20,7 @@ able_to!(Close -> bool);
 able_to!(Click);
 
 has!(Label(Cow<'_, str>): Member);
+has!(Image(Cow<'_, image::DynamicImage>): Member);
 has_reacted!(Size(u16, u16): Member);
 has_reacted!(Visibility(types::Visibility): Member);
 

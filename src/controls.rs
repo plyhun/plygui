@@ -1,4 +1,4 @@
-pub use crate::auto::{AsAny, Clickable, Closeable, HasLabel, HasNativeId, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
+pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
 use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
@@ -174,7 +174,7 @@ pub trait Message: Member + HasLabel {
 }
 //impl <T: Message> development::Final for T {}
 
-pub trait Tray: Member + HasLabel + Closeable {}
+pub trait Tray: Member + HasLabel + HasImage + Closeable {}
 //impl <T: Tray> development::Final for T {}
 
 pub trait Image: Control {

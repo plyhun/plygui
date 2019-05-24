@@ -1,4 +1,4 @@
-pub use crate::auto::{ClickableInner, CloseableInner, HasLabelInner, HasSizeInner, HasVisibilityInner};
+pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasSizeInner, HasVisibilityInner};
 
 use crate::{callbacks, controls, ids, layout, runtime, types};
 
@@ -2250,7 +2250,7 @@ impl<T: ImageInner + Sized> Member<Control<T>> {
 
 // ===============================================================================================================
 
-pub trait TrayInner: MemberInner + HasLabelInner + CloseableInner {
+pub trait TrayInner: MemberInner + HasImageInner + HasLabelInner + CloseableInner {
     fn with_params(title: &str, menu: types::Menu) -> Box<Member<Self>>;
 }
 
@@ -2263,6 +2263,54 @@ impl<T: TrayInner> Member<T> {
     }
 }*/
 
+// ===============================================================================================================
+
+impl <T: HasImageInner> controls::HasImage for Member<T> {
+    #[inline]
+    fn image(&self) -> Cow<image::DynamicImage> {
+        self.inner.image(&self.base)
+    }
+    #[inline]
+    fn set_image(&mut self, i: Cow<image::DynamicImage>) {
+        self.inner.set_image(&mut self.base, i)
+    }
+
+    #[inline]
+    fn as_has_image(&self) -> &dyn controls::HasImage {
+        self
+    }
+    #[inline]
+    fn as_has_image_mut(&mut self) -> &mut dyn controls::HasImage {
+        self
+    }
+    #[inline]
+    fn into_has_image(self: Box<Self>) -> Box<dyn controls::HasImage> {
+        self
+    }	
+}
+impl <T: HasImageInner + ControlInner> controls::HasImage for Member<Control<T>> {
+    #[inline]
+    fn image(&self) -> Cow<image::DynamicImage> {
+        self.inner.inner.image(&self.base)
+    }
+    #[inline]
+    fn set_image(&mut self, i: Cow<image::DynamicImage>) {
+        self.inner.inner.set_image(&mut self.base, i)
+    }
+
+    #[inline]
+    fn as_has_image(&self) -> &dyn controls::HasImage {
+        self
+    }
+    #[inline]
+    fn as_has_image_mut(&mut self) -> &mut dyn controls::HasImage {
+        self
+    }
+    #[inline]
+    fn into_has_image(self: Box<Self>) -> Box<dyn controls::HasImage> {
+        self
+    }	
+}
 // ===============================================================================================================
 
 pub trait OuterDrawable: seal::Sealed {
