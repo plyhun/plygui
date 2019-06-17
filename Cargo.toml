@@ -1,20 +1,6 @@
-[package]
-name = "plygui-api"
-version = "0.0.1"
-authors = ["Serhii Plyhun <snuk188@gmail.com>"]
-edition = "2018"
-
-[lib]
-name = "plygui_api"
-path = "src/lib.rs"
-
-[dependencies]
-image = { version = "~0.21" }
-serde = { version = "^1.0", optional = true }
-serde_json = { version = "^1.0", optional = true }
-typemap = { version = "^0.3", optional = true }
-able = { version = "*", path = "../able" }
-
-[features]
-markup = ["serde", "serde_json", "typemap"]
-type_check = []
+[workspace]
+members = [
+	"macros",
+	"api",
+	"testable"
+]

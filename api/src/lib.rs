@@ -6,7 +6,7 @@
 #![feature(specialization)]
 
 #[macro_use]
-extern crate able;
+extern crate plygui_macros;
 
 pub mod controls;
 pub mod defaults;
