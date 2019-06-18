@@ -4,13 +4,13 @@ extern crate plygui_api;
 pub mod common;
 
 mod application;
-mod button;
-mod frame;
-mod image;
-mod layout_linear;
-mod message;
-mod splitted;
-mod text;
+//mod button;
+//mod frame;
+//mod image;
+//mod layout_linear;
+//mod message;
+//mod splitted;
+//mod text;
 mod tray;
 mod window;
 

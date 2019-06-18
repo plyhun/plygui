@@ -7,10 +7,12 @@ pub use std::ffi::{CString, IntoStringError, OsStr};
 pub use std::marker::PhantomData;
 pub use std::os::windows::ffi::OsStrExt;
 pub use std::{cmp, mem, ops, ptr, str, sync::mpsc};
+pub use std::rc::Rc;
+pub use std::cell::RefCell;
 
 pub const DEFAULT_PADDING: i32 = 2;
 
-pub type InnerId = ids::Id;
+pub type InnerId = *mut MemberBase;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TestableId(InnerId);
@@ -30,7 +32,7 @@ impl From<TestableId> for InnerId {
 impl From<TestableId> for usize {
     #[inline]
     fn from(a: TestableId) -> usize {
-        unsafe { a.0.into_raw() }
+        a.0 as usize
     }
 }
 impl NativeId for TestableId {}
@@ -38,26 +40,21 @@ impl NativeId for TestableId {}
 #[repr(C)]
 pub struct TestableControlBase<T: controls::Control + Sized> {
     pub id: InnerId,
+    parent: Option<InnerId>,
     _marker: PhantomData<T>,
 }
 
 impl<T: controls::Control + Sized> TestableControlBase<T> {
     pub fn new() -> TestableControlBase<T> {
         TestableControlBase {
-            id: unsafe { InnerId::from_raw(0) },
+            id: ptr::null_mut(),
+            parent: None,
             _marker: PhantomData,
         }
     }
 
     pub fn parent_id(&self) -> Option<InnerId> {
-        unsafe {
-            let parent_id = winuser::GetParent(self.id);
-            if parent_id == self.id {
-                None
-            } else {
-                Some(parent_id)
-            }
-        }
+        self.parent
     }
     pub fn parent(&self) -> Option<&MemberBase> {
         unsafe {

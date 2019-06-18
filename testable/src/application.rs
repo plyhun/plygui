@@ -5,78 +5,53 @@ use plygui_api::controls;
 use plygui_api::types;
 
 pub struct TestableApplication {
-    pub(crate) root: windef::HWND,
+    pub(crate) root: *mut Application,
     name: String,
-    windows: Vec<windef::HWND>,
-    trays: Vec<*mut crate::tray::Tray>,
+    windows: Vec<Rc<RefCell<window::TestableWindow>>>,
+    trays: Vec<Rc<RefCell<tray::TestableTray>>>,
 }
 
 pub type Application = ::plygui_api::development::Application<TestableApplication>;
 
 impl ApplicationInner for TestableApplication {
     fn get() -> Box<Application> {
-        init_comctl();
-
-        let mut a = Box::new(Application::with_inner(
+        let mut w = Box::new(Application::with_inner(
             TestableApplication {
+            	root: ptr::null_mut(),
                 name: String::new(), //name.into(), // TODO later
                 windows: Vec::with_capacity(1),
                 trays: Vec::with_capacity(0),
-                root: 0 as windef::HWND,
             },
             (),
         ));
-
-        let name = OsStr::new(a.as_inner().name.as_str()).encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-        let hwnd = unsafe {
-            winuser::CreateWindowExW(
-                0,
-                WINDOW_CLASS.as_ptr(),
-                name.as_ptr() as ntdef::LPCWSTR,
-                0,
-                winuser::CW_USEDEFAULT,
-                winuser::CW_USEDEFAULT,
-                1,
-                1,
-                ptr::null_mut(),
-                ptr::null_mut(),
-                hinstance(),
-                a.as_mut() as *mut _ as *mut c_void,
-            )
-        };
-        a.as_inner_mut().root = hwnd;
-        a
+        w.as_inner_mut().root = w.as_ptr();
+        w
     }
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         let w = window::TestableWindow::with_params(title, size, menu);
-        unsafe {
-            self.windows.push(w.native_id() as windef::HWND);
-        }
+        self.windows.push(w.as_inner().as_inner().clone());
         w
     }
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
         let mut tray = tray::TestableTray::with_params(title, menu);
-        self.trays.push(tray.as_mut() as *mut crate::tray::Tray);
+        self.trays.push(tray.as_inner().clone());
         tray
     }
-    fn remove_window(&mut self, _: Self::Id) {
-        // Better not to remove directly, as is breaks the wndproc loop.
+    fn remove_window(&mut self, id: Self::Id) {
+        self.windows.retain(|t| t.borrow().id() != id);
     }
     fn remove_tray(&mut self, id: Self::Id) {
-        let id = windef::HWND::from(id) as *mut tray::Tray;
-        self.trays.retain(|t| *t != id);
+        self.trays.retain(|t| t.borrow().id() != id);
     }
     fn name<'a>(&'a self) -> Cow<'a, str> {
         Cow::Borrowed(self.name.as_str())
     }
     fn start(&mut self) {
-        let mut msg: winuser::MSG = unsafe { mem::zeroed() };
-        let mut i;
         loop {
             let mut frame_callbacks = 0;
             if let Some(w) = unsafe { cast_hwnd::<Application>(self.root) } {
                 let w = w.base_mut();
-                while !self.root.is_null() && frame_callbacks < defaults::MAX_FRAME_CALLBACKS {
+                while frame_callbacks < defaults::MAX_FRAME_CALLBACKS {
                     match w.queue().try_recv() {
                         Ok(mut cmd) => {
                             if (cmd.as_mut())(unsafe { cast_hwnd::<Application>(self.root) }.unwrap()) {
@@ -91,6 +66,7 @@ impl ApplicationInner for TestableApplication {
                     }
                 }
             }
+            /*
             unsafe {
                 synchapi::Sleep(10);
 
@@ -114,6 +90,7 @@ impl ApplicationInner for TestableApplication {
                 }
                 break;
             }
+            */
         }
     }
     fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Member> {
