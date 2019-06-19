@@ -19,3 +19,19 @@ where
 pub fn coord_to_size(a: i32) -> u16 {
     ::std::cmp::max(0, a) as u16
 }
+
+/*#[inline]
+pub unsafe fn member_to_base(this: &controls::Member) -> &MemberBase
+where
+    T: controls::Member + Sized,
+{
+    &*(this as *const _ as *const T)
+}
+#[inline]
+pub unsafe fn member_to_base_mut<T>(this: &mut controls::Member) -> &mut MemberBase
+where
+    T: controls::Member + Sized,
+{
+    &mut *(this as *mut _ as *mut T)
+}
+*/
