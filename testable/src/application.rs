@@ -1,7 +1,7 @@
 use super::common::*;
 use super::*;
 
-use plygui_api::controls;
+use plygui_api::controls::{self, *};
 use plygui_api::types;
 
 pub struct TestableApplication {
@@ -29,12 +29,12 @@ impl ApplicationInner for TestableApplication {
     }
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         let w = window::TestableWindow::with_params(title, size, menu);
-        self.windows.push(w.as_inner().as_inner().native_id());
+        self.windows.push(unsafe { w.as_inner().as_inner().native_id() });
         w
     }
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
-    	let mut tray = tray::TestableTray::with_params(title, menu);
-        self.trays.push(tray.as_inner().native_id());
+    	let tray = tray::TestableTray::with_params(title, menu);
+        self.trays.push(unsafe { tray.as_inner().native_id() });
         tray
     }
     fn remove_window(&mut self, id: Self::Id) {
@@ -49,11 +49,11 @@ impl ApplicationInner for TestableApplication {
     fn start(&mut self) {
         loop {
             let mut frame_callbacks = 0;
-            let w = (&mut *self.root).base_mut();
+            let w = unsafe {&mut *self.root}.base_mut();
             while frame_callbacks < defaults::MAX_FRAME_CALLBACKS {
                 match w.queue().try_recv() {
                     Ok(mut cmd) => {
-                        if (cmd.as_mut())(&mut *self.root) {
+                        if (cmd.as_mut())(unsafe { &mut *self.root } ) {
                             let _ = w.sender().send(cmd);
                         }
                         frame_callbacks += 1;
@@ -95,7 +95,7 @@ impl ApplicationInner for TestableApplication {
         use plygui_api::controls::Member;
 
         for window in self.windows.as_mut_slice() {
-            if let Some(window) = common::member_from_id::<window::Window>(*window) {
+            if let Some(window) = common::member_from_id::<window::Window>((*window).into()) {
                 match arg {
                     types::FindBy::Id(id) => {
                         if window.id() == id {
@@ -117,7 +117,7 @@ impl ApplicationInner for TestableApplication {
             }
         }
         for tray in self.trays.as_mut_slice() {
-        	if let Some(tray) = common::member_from_id::<tray::Tray>(*tray) {
+        	if let Some(tray) = common::member_from_id::<tray::Tray>((*tray).into()) {
 	            match arg {
 	                types::FindBy::Id(ref id) => {
 	                    if tray.id() == *id {
@@ -140,7 +140,7 @@ impl ApplicationInner for TestableApplication {
         use plygui_api::controls::Member;
 
         for window in self.windows.as_slice() {
-            if let Some(window) = common::member_from_id::<window::Window>(*window) {
+            if let Some(window) = common::member_from_id::<window::Window>((*window).into()) {
                 match arg {
                     types::FindBy::Id(id) => {
                         if window.id() == id {
@@ -162,7 +162,7 @@ impl ApplicationInner for TestableApplication {
             }
         }
         for tray in self.trays.as_slice() {
-            if let Some(tray) = common::member_from_id::<tray::Tray>(*tray) {
+            if let Some(tray) = common::member_from_id::<tray::Tray>((*tray).into()) {
 	            match arg {
 	                types::FindBy::Id(ref id) => {
 	                    if tray.id() == *id {
@@ -183,12 +183,12 @@ impl ApplicationInner for TestableApplication {
     }
     fn exit(&mut self, skip_on_close: bool) -> bool {
         for window in self.windows.as_mut_slice() {
-            if !common::member_from_id::<window::Window>(*window).unwrap().close(skip_on_close) {
+            if !common::member_from_id::<window::Window>((*window).into()).unwrap().close(skip_on_close) {
                 return false;
             }
         }
         for tray in self.trays.as_mut_slice() {
-            if !common::member_from_id::<tray::Tray>(*tray).unwrap().close(skip_on_close) {
+            if !common::member_from_id::<tray::Tray>((*tray).into()).unwrap().close(skip_on_close) {
                 return false;
             }
         }
@@ -245,9 +245,9 @@ impl<'a> Iterator for MemberIterator<'a> {
             self.index = 0;
         }
         let ret = if self.needs_tray && self.is_tray {
-            self.inner.trays.get(self.index).map(|tray| common::member_from_id::<tray::Tray>(*tray).unwrap() as &dyn controls::Member)
+            self.inner.trays.get(self.index).map(|tray| common::member_from_id::<tray::Tray>((*tray).into()).unwrap() as &dyn controls::Member)
         } else if self.needs_window {
-            self.inner.windows.get(self.index).map(|window| common::member_from_id::<window::Window>(*window).unwrap() as &dyn controls::Member)
+            self.inner.windows.get(self.index).map(|window| common::member_from_id::<window::Window>((*window).into()).unwrap() as &dyn controls::Member)
         } else {
             return None;
         };
@@ -272,9 +272,9 @@ impl<'a> Iterator for MemberIteratorMut<'a> {
             self.index = 0;
         }
         let ret = if self.needs_tray && self.is_tray {
-            self.inner.trays.get_mut(self.index).map(|tray| common::member_from_id::<tray::Tray>(*tray).unwrap() as &mut dyn controls::Member)
+            self.inner.trays.get_mut(self.index).map(|tray| common::member_from_id::<tray::Tray>((*tray).into()).unwrap() as &mut dyn controls::Member)
         } else if self.needs_window {
-            self.inner.windows.get_mut(self.index).map(|window| common::member_from_id::<window::Window>(*window).unwrap() as &mut dyn controls::Member)
+            self.inner.windows.get_mut(self.index).map(|window| common::member_from_id::<window::Window>((*window).into()).unwrap() as &mut dyn controls::Member)
         } else {
             return None;
         };

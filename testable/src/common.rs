@@ -59,10 +59,10 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
         self.parent
     }
     pub fn parent(&self) -> Option<&MemberBase> {
-    	self.parent.map(|p| &*(p as *const MemberBase))
+    	self.parent.map(|p| unsafe { &*(p as *const MemberBase) } )
     }
     pub fn parent_mut(&mut self) -> Option<&mut MemberBase> {
-       self.parent.map(|p| &mut *(p as *mut MemberBase))
+       self.parent.map(|p| unsafe { &mut *(p as *mut MemberBase) } )
     }
     /*pub fn root(&self) -> Option<&MemberBase> {
     	let mut p = self.parent().map(|p| p.as_member());
@@ -135,15 +135,15 @@ where
     }
 }
 #[inline]
-pub fn member_from_id<'a, T>(id: TestableId) -> Option<&'a mut T>
+pub fn member_from_id<'a, T>(id: InnerId) -> Option<&'a mut T>
 where
     T: Sized + controls::Member,
 {
-    unsafe { cast_id(id.into()) }
+    unsafe { cast_id(id) }
 }
 #[inline]
-pub fn member_base_from_id<'a>(id: TestableId) -> Option<&'a mut MemberBase> {
-    unsafe { cast_id(id.into()) }
+pub fn member_base_from_id<'a>(id: InnerId) -> Option<&'a mut MemberBase> {
+    unsafe { cast_id(id) }
 }
 
 /*pub unsafe fn make_menu(menu: windef::HMENU, mut items: Vec<types::MenuItem>, storage: &mut Vec<callbacks::Action>) {

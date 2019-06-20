@@ -16,7 +16,7 @@ pub type Window = Member<SingleContainer<plygui_api::development::Window<Testabl
 
 impl HasLabelInner for TestableWindow {
     fn label(&self, _base: &MemberBase) -> Cow<str> {
-        self.label.into()
+        Cow::Borrowed(&self.label)
     }
     fn set_label(&mut self, _: &mut MemberBase, label: Cow<str>) {
         self.label = label.into();
@@ -132,8 +132,11 @@ impl SingleContainerInner for TestableWindow {
 
 impl CloseableInner for TestableWindow {
     fn close(&mut self, skip_callbacks: bool) -> bool {
-        if let Some(on_close) = self.on_close {
-        	
+    	if skip_callbacks { return true; }
+    	
+        if let Some(on_close) = self.on_close.as_mut() {
+        	let this = common::member_from_id::<Window>(self.id).unwrap();
+        	(on_close.as_mut())(this)
         } else {
         	true
         }
@@ -156,82 +159,7 @@ impl Drop for TestableWindow {
         if let Some(self2) = common::member_from_id::<Window>(self.id) {
             self.set_child(self2.base_mut(), None);
         }
-        destroy_id(self.id, 0, None);
     }
-}
-
-unsafe fn register_window_class() -> Vec<u16> {
-    let class_name = OsStr::new("PlyguiWin32Window").encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-
-    let class = winuser::WNDCLASSEXW {
-        cbSize: mem::size_of::<winuser::WNDCLASSEXW>() as minwindef::UINT,
-        style: winuser::CS_DBLCLKS,
-        lpfnWndProc: Some(handler),
-        cbClsExtra: 0,
-        cbWndExtra: 0,
-        hInstance: libloaderapi::GetModuleHandleW(ptr::null()),
-        hIcon: winuser::LoadIconW(ptr::null_mut(), winuser::IDI_APPLICATION),
-        hCursor: winuser::LoadCursorW(ptr::null_mut(), winuser::IDC_ARROW),
-        hbrBackground: (winuser::COLOR_BTNFACE + 1) as windef::HBRUSH,
-        lpszMenuName: ptr::null(),
-        lpszClassName: class_name.as_ptr(),
-        hIconSm: ptr::null_mut(),
-    };
-    winuser::RegisterClassExW(&class);
-    class_name
-}
-
-unsafe extern "system" fn handler(id: InnerId, msg: minwindef::UINT, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
-    let ww = winuser::GetWindowLongPtrW(id, winuser::GWLP_USERDATA);
-    if ww == 0 {
-        if winuser::WM_CREATE == msg {
-            let cs: &mut winuser::CREATESTRUCTW = mem::transmute(lparam);
-            winuser::SetWindowLongPtrW(id, winuser::GWLP_USERDATA, cs.lpCreateParams as isize);
-        }
-        return winuser::DefWindowProcW(id, msg, wparam, lparam);
-    }
-
-    match msg {
-        winuser::WM_SIZE => {
-            let width = minwindef::LOWORD(lparam as u32);
-            let height = minwindef::HIWORD(lparam as u32);
-            let w: &mut Window = mem::transmute(ww);
-
-            w.as_inner_mut().as_inner_mut().as_inner_mut().redraw();
-
-            winuser::InvalidateRect(w.as_inner().as_inner().as_inner().id, ptr::null_mut(), minwindef::TRUE);
-
-            w.call_on_size(width, height);
-            return 0;
-        }
-        winuser::WM_DESTROY => {
-            let w: &mut Window = mem::transmute(ww);
-            w.as_inner_mut().as_inner_mut().as_inner_mut().id = ptr::null_mut();
-            //return 0;
-        }
-        winuser::WM_CLOSE => {
-            let w: &mut Window = mem::transmute(ww);
-            if !w.as_inner_mut().as_inner_mut().as_inner_mut().skip_callbacks {
-                if let Some(ref mut on_close) = w.as_inner_mut().as_inner_mut().as_inner_mut().on_close {
-                    let w2: &mut Window = mem::transmute(ww);
-                    if !(on_close.as_mut())(w2) {
-                        return 0;
-                    }
-                }
-            }
-        }
-        winuser::WM_COMMAND => {
-            let id = minwindef::LOWORD(wparam as u32);
-            let _evt = minwindef::HIWORD(wparam as u32);
-            let w: &mut Window = mem::transmute(ww);
-            let w2: &mut Window = mem::transmute(ww);
-            if let Some(a) = w.as_inner_mut().as_inner_mut().as_inner_mut().menu.get_mut(id as usize) {
-                (a.as_mut())(w2);
-            }
-        }
-        _ => {}
-    }
-    winuser::DefWindowProcW(id, msg, wparam, lparam)
 }
 
 default_impls_as!(Window);
