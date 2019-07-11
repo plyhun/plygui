@@ -40,7 +40,7 @@ impl NativeId for TestableId {}
 #[repr(C)]
 pub struct TestableControlBase<T: controls::Control + Sized> {
     pub id: InnerId,
-    parent: Option<InnerId>,
+    pub parent: Option<InnerId>,
     visibility: types::Visibility,
     _marker: PhantomData<T>,
 }
@@ -64,29 +64,31 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
     pub fn parent_mut(&mut self) -> Option<&mut MemberBase> {
        self.parent.map(|p| unsafe { &mut *(p as *mut MemberBase) } )
     }
-    /*pub fn root(&self) -> Option<&MemberBase> {
+    pub fn root(&self) -> Option<&MemberBase> {
     	let mut p = self.parent().map(|p| p.as_member());
     	while let Some(pp) = p {
     		let c = pp.is_control();
     		if c.is_none() {
-    			return Some(pp.base());
+    			return Some(unsafe { &* (pp.native_id() as *const MemberBase) });
     		} else {
-    			pp = c.unwrap().parent();
+    			p = c.unwrap().parent();
     		}
     	}
     	None
     }
     pub fn root_mut(&mut self) -> Option<&mut MemberBase> {
-        unsafe {
-            let parent_id = winuser::GetAncestor(self.id, 2); //GA_ROOT
-            if parent_id == self.id {
-                return None;
-            }
-
-            let parent_ptr = winuser::GetWindowLongPtrW(parent_id, winuser::GWLP_USERDATA);
-            mem::transmute(parent_ptr as *mut c_void)
-        }
-    }*/
+        let mut p = self.parent_mut().map(|p| p.as_member_mut());
+    	while let Some(pp) = p {
+    		let id = unsafe {pp.native_id()};
+    		let c = pp.is_control_mut();
+    		if c.is_none() {
+    			return Some(unsafe { &mut * (id as *mut MemberBase) });
+    		} else {
+    			p = c.unwrap().parent_mut();
+    		}
+    	}
+    	None
+    }
     pub fn as_outer(&self) -> &T {
         member_from_id::<T>(self.id.into()).unwrap()
     }

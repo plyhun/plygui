@@ -265,7 +265,7 @@ macro_rules! fill_from_markup_base {
 macro_rules! fill_from_markup_label {
     ($this: expr, $mem: expr, $mrk: ident) => {
         use plygui_api::development::HasLabelInner;
-        $this.set_label($mem, &$mrk.attributes.get("label").unwrap().as_attribute().into());
+        $this.set_label($mem, $mrk.attributes.get("label").unwrap().as_attribute().into());
     };
 }
 #[macro_export]
