@@ -3,10 +3,6 @@ use crate::common::{self, *};
 const DEFAULT_BOUND: i32 = DEFAULT_PADDING;
 const HALF_BOUND: i32 = DEFAULT_BOUND / 2;
 
-lazy_static! {
-    pub static ref WINDOW_CLASS: Vec<u16> = unsafe { register_window_class() };
-}
-
 pub type Splitted = Member<Control<MultiContainer<TestableSplitted>>>;
 
 #[repr(C)]
@@ -17,8 +13,7 @@ pub struct TestableSplitted {
 
     splitter: f32,
     moving: bool,
-    cursor: windef::HCURSOR,
-
+    
     first: Box<dyn controls::Control>,
     second: Box<dyn controls::Control>,
 }
@@ -53,24 +48,8 @@ impl TestableSplitted {
             }
         }
     }
-    fn reload_cursor(&mut self) {
-        unsafe {
-            if !self.cursor.is_null() && winuser::DestroyCursor(self.cursor) == 0 {
-                common::log_error();
-            }
-        }
-        self.cursor = unsafe {
-            winuser::LoadCursorW(
-                ptr::null_mut(),
-                match self.orientation {
-                    layout::Orientation::Horizontal => winuser::IDC_SIZEWE,
-                    layout::Orientation::Vertical => winuser::IDC_SIZENS,
-                },
-            )
-        };
-    }
     fn update_children_layout(&mut self, base: &ControlBase) {
-        if self.base.hwnd.is_null() {
+        if self.base.parent.is_none() {
             return;
         }
 
@@ -100,7 +79,6 @@ impl SplittedInner for TestableSplitted {
                         orientation: orientation,
 
                         splitter: 0.5,
-                        cursor: ptr::null_mut(),
                         moving: false,
 
                         first: first,
@@ -136,10 +114,10 @@ impl SplittedInner for TestableSplitted {
 }
 
 impl HasNativeIdInner for TestableSplitted {
-    type Id = common::Hwnd;
+    type Id = common::TestableId;
 
     unsafe fn native_id(&self) -> Self::Id {
-        self.base.hwnd.into()
+        self.base.id.into()
     }
 }
 
@@ -175,32 +153,11 @@ impl ControlInner for TestableSplitted {
     fn root_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
-        let selfptr = member as *mut _ as *mut c_void;
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, _parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
         let (width, height, _) = self.measure(member, control, pw, ph);
-        let (hwnd, id) = unsafe {
-            self.base.hwnd = parent.native_id() as windef::HWND; // required for measure, as we don't have own hwnd yet
-            common::create_control_hwnd(
-                px as i32,
-                py as i32,
-                width as i32,
-                height as i32,
-                parent.native_id() as windef::HWND,
-                winuser::WS_EX_CONTROLPARENT,
-                WINDOW_CLASS.as_ptr(),
-                "",
-                0,
-                selfptr,
-                None,
-            )
-        };
-        self.base.hwnd = hwnd;
-        self.base.subclass_id = id;
         control.coords = Some((px as i32, py as i32));
-        self.reload_cursor();
-        //self.update_children_layout();
-
-        let self2: &mut Splitted = unsafe { mem::transmute(selfptr) };
+        
+        let self2: &mut Splitted = unsafe { mem::transmute(member) };
         let (first_size, second_size) = self.children_sizes(control);
 
         match self.orientation {
@@ -221,14 +178,8 @@ impl ControlInner for TestableSplitted {
 
         self.first.on_removed_from_container(self2);
         self.second.on_removed_from_container(self2);
-
-        common::destroy_hwnd(self.base.hwnd, self.base.subclass_id, None);
-        self.base.hwnd = 0 as windef::HWND;
-        self.base.subclass_id = 0;
-        self.cursor = ptr::null_mut();
     }
 
-    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_SPLITTED;
 
@@ -333,7 +284,7 @@ impl MultiContainerInner for TestableSplitted {
     fn set_child_to(&mut self, _: &mut MemberBase, index: usize, mut child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
         match index {
             0 => {
-                if !self.base.hwnd.is_null() {
+                if self.base.parent.is_some() {
                     let self2 = self.base.as_outer_mut();
                     let sizes = self.first.size();
                     self.first.on_removed_from_container(self2);
@@ -342,7 +293,7 @@ impl MultiContainerInner for TestableSplitted {
                 mem::swap(&mut self.first, &mut child);
             }
             1 => {
-                if !self.base.hwnd.is_null() {
+                if self.base.parent.is_some() {
                     let self2 = self.base.as_outer_mut();
 
                     let mut x = DEFAULT_PADDING;
@@ -396,16 +347,14 @@ impl HasOrientationInner for TestableSplitted {
     fn set_layout_orientation(&mut self, _base: &mut MemberBase, orientation: layout::Orientation) {
         if orientation != self.orientation {
             self.orientation = orientation;
-            self.reload_cursor();
             self.base.invalidate();
         }
     }
 }
 
 impl Drawable for TestableSplitted {
-    fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
-        //self.draw_children();
+    fn draw(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
+        //self.base.draw(control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         use std::cmp::max;
@@ -480,118 +429,6 @@ impl Drawable for TestableSplitted {
 #[allow(dead_code)]
 pub(crate) fn spawn() -> Box<dyn controls::Control> {
     Splitted::with_content(super::text::spawn(), super::text::spawn(), layout::Orientation::Vertical).into_control()
-}
-
-unsafe fn register_window_class() -> Vec<u16> {
-    let class_name = OsStr::new("PlyguiWin32Splitted").encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-    let class = winuser::WNDCLASSEXW {
-        cbSize: mem::size_of::<winuser::WNDCLASSEXW>() as minwindef::UINT,
-        style: winuser::CS_DBLCLKS,
-        lpfnWndProc: Some(whandler),
-        cbClsExtra: 0,
-        cbWndExtra: 0,
-        hInstance: libloaderapi::GetModuleHandleW(ptr::null()),
-        hIcon: winuser::LoadIconW(ptr::null_mut(), winuser::IDI_APPLICATION),
-        hCursor: winuser::LoadCursorW(ptr::null_mut(), winuser::IDC_ARROW),
-        hbrBackground: ptr::null_mut(),
-        lpszMenuName: ptr::null(),
-        lpszClassName: class_name.as_ptr(),
-        hIconSm: ptr::null_mut(),
-    };
-    winuser::RegisterClassExW(&class);
-    class_name
-}
-
-unsafe extern "system" fn whandler(hwnd: windef::HWND, msg: minwindef::UINT, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
-    use plygui_api::controls::HasOrientation;
-
-    let ww = winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA);
-    if ww == 0 {
-        if winuser::WM_CREATE == msg {
-            let cs: &mut winuser::CREATESTRUCTW = mem::transmute(lparam);
-            winuser::SetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA, cs.lpCreateParams as isize);
-        }
-        return winuser::DefWindowProcW(hwnd, msg, wparam, lparam);
-    }
-    match msg {
-        winuser::WM_SIZE | common::WM_UPDATE_INNER => {
-            let width = lparam as u16;
-            let height = (lparam >> 16) as u16;
-            let ll: &mut Splitted = mem::transmute(ww);
-            {
-                ll.set_skip_draw(true);
-                {
-                    let base = mem::transmute::<isize, &Splitted>(ww).as_inner().base();
-                    let ll = ll.as_inner_mut().as_inner_mut().as_inner_mut();
-                    ll.update_children_layout(base);
-                    ll.draw_children();
-                }
-                ll.set_skip_draw(false);
-            }
-
-            if msg != common::WM_UPDATE_INNER {
-                ll.call_on_size(width, height);
-            } else {
-                winuser::InvalidateRect(hwnd, ptr::null_mut(), minwindef::TRUE);
-            }
-            return 0;
-        }
-        winuser::WM_MOUSEMOVE => {
-            let x = lparam as u16;
-            let y = (lparam >> 16) as u16;
-            let mut updated = false;
-
-            let ll: &mut Splitted = mem::transmute(ww);
-            let (width, height) = ll.as_inner().base().measured;
-
-            match ll.layout_orientation() {
-                layout::Orientation::Horizontal => {
-                    if width >= DEFAULT_BOUND as u16 && x > DEFAULT_BOUND as u16 && x < (width - DEFAULT_BOUND as u16) {
-                        winuser::SetCursor(ll.as_inner_mut().as_inner_mut().as_inner_mut().cursor);
-
-                        if wparam == winuser::MK_LBUTTON && true {
-                            ll.as_inner_mut().as_inner_mut().as_inner_mut().splitter = x as f32 / width as f32;
-                            updated = true;
-                        }
-                    }
-                }
-                layout::Orientation::Vertical => {
-                    if height >= DEFAULT_BOUND as u16 && y > DEFAULT_BOUND as u16 && y < (height - DEFAULT_BOUND as u16) {
-                        winuser::SetCursor(ll.as_inner_mut().as_inner_mut().as_inner_mut().cursor);
-
-                        if wparam == winuser::MK_LBUTTON && ll.as_inner_mut().as_inner_mut().as_inner_mut().moving {
-                            ll.as_inner_mut().as_inner_mut().as_inner_mut().splitter = y as f32 / height as f32;
-                            updated = true;
-                        }
-                    }
-                }
-            }
-
-            if updated {
-                let packed = ((height as i32) << 16) + width as i32;
-                winuser::SendMessageW(hwnd, common::WM_UPDATE_INNER, 0, packed as isize);
-            }
-            return 0;
-        }
-        winuser::WM_LBUTTONDOWN => {
-            let ll: &mut Splitted = mem::transmute(ww);
-
-            winuser::SetCursor(ll.as_inner_mut().as_inner_mut().as_inner_mut().cursor);
-            ll.as_inner_mut().as_inner_mut().as_inner_mut().moving = true;
-            winuser::SetCapture(hwnd);
-            return 0;
-        }
-        winuser::WM_LBUTTONUP => {
-            let ll: &mut Splitted = mem::transmute(ww);
-
-            winuser::ReleaseCapture();
-            ll.as_inner_mut().as_inner_mut().as_inner_mut().moving = false;
-            return 0;
-        }
-        _ => {}
-    }
-
-    winuser::DefWindowProcW(hwnd, msg, wparam, lparam)
 }
 
 default_impls_as!(Splitted);

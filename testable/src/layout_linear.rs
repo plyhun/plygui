@@ -1,10 +1,5 @@
 use crate::common::{self, *};
 
-lazy_static! {
-    pub static ref WINDOW_CLASS: Vec<u16> = unsafe { register_window_class() };
-    //pub static ref INSTANCE: winuser::HINSTANCE = unsafe { kernel32::GetModuleHandleW(ptr::null()) };
-}
-
 pub type LinearLayout = Member<Control<MultiContainer<TestableLinearLayout>>>;
 
 #[repr(C)]
@@ -53,7 +48,7 @@ impl MultiContainerInner for TestableLinearLayout {
         let old = self.remove_child_from(base, index);
 
         self.children.insert(index, child);
-        if !self.base.hwnd.is_null() {
+        if self.base.parent.is_some() {
             let (w, h) = base.as_any().downcast_ref::<LinearLayout>().unwrap().as_inner().base().measured;
             self.children.get_mut(index).unwrap().on_added_to_container(
                 self.base.as_outer_mut(),
@@ -69,7 +64,7 @@ impl MultiContainerInner for TestableLinearLayout {
     fn remove_child_from(&mut self, _base: &mut MemberBase, index: usize) -> Option<Box<dyn controls::Control>> {
         if index < self.children.len() {
             let mut old = self.children.remove(index);
-            if !self.base.hwnd.is_null() {
+            if self.base.parent.is_some() {
                 old.on_removed_from_container(self.base.as_outer_mut());
                 self.base.invalidate();
             }
@@ -104,26 +99,6 @@ impl ControlInner for TestableLinearLayout {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
-        let selfptr = member as *mut _ as *mut c_void;
-        let (width, height, _) = self.measure(member, control, pw, ph);
-        let (hwnd, id) = unsafe {
-            self.base.hwnd = parent.native_id() as windef::HWND; // required for measure, as we don't have own hwnd yet
-            common::create_control_hwnd(
-                px as i32,
-                py as i32,
-                width as i32,
-                height as i32,
-                parent.native_id() as windef::HWND,
-                winuser::WS_EX_CONTROLPARENT,
-                WINDOW_CLASS.as_ptr(),
-                "",
-                0,
-                selfptr,
-                None,
-            )
-        };
-        self.base.hwnd = hwnd;
-        self.base.subclass_id = id;
         control.coords = Some((px as i32, py as i32));
         let mut x = DEFAULT_PADDING;
         let mut y = DEFAULT_PADDING;
@@ -148,12 +123,8 @@ impl ControlInner for TestableLinearLayout {
             let self2: &mut LinearLayout = unsafe { utils::base_to_impl_mut(member) };
             child.on_removed_from_container(self2);
         }
-        common::destroy_hwnd(self.base.hwnd, self.base.subclass_id, None);
-        self.base.hwnd = 0 as windef::HWND;
-        self.base.subclass_id = 0;
     }
 
-    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_LINEAR_LAYOUT;
 
@@ -163,20 +134,17 @@ impl ControlInner for TestableLinearLayout {
 }
 impl HasLayoutInner for TestableLinearLayout {
     fn on_layout_changed(&mut self, _base: &mut MemberBase) {
-        let hwnd = self.base.hwnd;
-        if !hwnd.is_null() {
-            self.base.invalidate();
-        }
+        self.base.invalidate();
     }
     fn layout_margin(&self, _member: &MemberBase) -> layout::BoundarySize {
         layout::BoundarySize::AllTheSame(DEFAULT_PADDING)
     }
 }
 impl HasNativeIdInner for TestableLinearLayout {
-    type Id = common::Hwnd;
+    type Id = common::TestableId;
 
     unsafe fn native_id(&self) -> Self::Id {
-        self.base.hwnd.into()
+        self.base.id.into()
     }
 }
 impl MemberInner for TestableLinearLayout {}
@@ -256,17 +224,7 @@ impl ContainerInner for TestableLinearLayout {
 
 impl Drawable for TestableLinearLayout {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
-        /*let mut x = DEFAULT_PADDING;
-        let mut y = DEFAULT_PADDING;
-        for ref mut child in self.children.as_mut_slice() {
-            child.draw(Some((x, y)));
-            let (xx, yy) = child.size();
-            match self.orientation {
-                layout::Orientation::Horizontal => x += xx as i32,
-                layout::Orientation::Vertical => y += yy as i32,
-            }
-        }*/
+        //self.base.draw(control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         use std::cmp::max;
@@ -336,72 +294,6 @@ impl Drawable for TestableLinearLayout {
 #[allow(dead_code)]
 pub(crate) fn spawn() -> Box<dyn controls::Control> {
     LinearLayout::with_orientation(layout::Orientation::Vertical).into_control()
-}
-
-unsafe fn register_window_class() -> Vec<u16> {
-    let class_name = OsStr::new("PlyguiWin32LinearLayout").encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-    let class = winuser::WNDCLASSW {
-        style: winuser::CS_DBLCLKS,
-        lpfnWndProc: Some(whandler),
-        cbClsExtra: 0,
-        cbWndExtra: 0,
-        hInstance: libloaderapi::GetModuleHandleW(ptr::null()),
-        hIcon: winuser::LoadIconW(ptr::null_mut(), winuser::IDI_APPLICATION),
-        hCursor: winuser::LoadCursorW(ptr::null_mut(), winuser::IDC_ARROW),
-        hbrBackground: ptr::null_mut(),
-        lpszMenuName: ptr::null(),
-        lpszClassName: class_name.as_ptr(),
-    };
-    winuser::RegisterClassW(&class);
-    class_name
-}
-
-unsafe extern "system" fn whandler(hwnd: windef::HWND, msg: minwindef::UINT, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
-    let ww = winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA);
-    if ww == 0 {
-        if winuser::WM_CREATE == msg {
-            let cs: &mut winuser::CREATESTRUCTW = mem::transmute(lparam);
-            winuser::SetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA, cs.lpCreateParams as isize);
-        }
-        return winuser::DefWindowProcW(hwnd, msg, wparam, lparam);
-    }
-
-    match msg {
-        winuser::WM_SIZE => {
-            use std::cmp::max;
-
-            let mut width = lparam as u16;
-            let mut height = (lparam >> 16) as u16;
-            let ll: &mut LinearLayout = mem::transmute(ww);
-            let o = ll.as_inner().as_inner().as_inner().orientation;
-            let hp = DEFAULT_PADDING + DEFAULT_PADDING;
-            let vp = DEFAULT_PADDING + DEFAULT_PADDING;
-
-            let mut x = 0;
-            let mut y = 0;
-            for child in ll.as_inner_mut().as_inner_mut().as_inner_mut().children.as_mut_slice() {
-                let (cw, ch, _) = child.measure(max(0, width as i32 - hp) as u16, max(0, height as i32 - vp) as u16);
-                child.draw(Some((x + DEFAULT_PADDING, y + DEFAULT_PADDING)));
-                match o {
-                    layout::Orientation::Horizontal if width >= cw => {
-                        x += cw as i32;
-                        width -= cw;
-                    }
-                    layout::Orientation::Vertical if height >= ch => {
-                        y += ch as i32;
-                        height -= ch;
-                    }
-                    _ => {}
-                }
-            }
-
-            ll.call_on_size(width, height);
-            return 0;
-        }
-        _ => {}
-    }
-
-    winuser::DefWindowProcW(hwnd, msg, wparam, lparam)
 }
 
 default_impls_as!(LinearLayout);

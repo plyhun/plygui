@@ -1,11 +1,5 @@
 use crate::common::{self, *};
 
-const CLASS_ID: &str = "static";
-
-lazy_static! {
-    pub static ref WINDOW_CLASS: Vec<u16> = OsStr::new(CLASS_ID).encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-}
-
 pub type Text = Member<Control<TestableText>>;
 
 #[repr(C)]
@@ -20,14 +14,7 @@ impl HasLabelInner for TestableText {
     }
     fn set_label(&mut self, _base: &mut MemberBase, label: Cow<str>) {
         self.text = label.into();
-        let hwnd = self.base.hwnd;
-        if !hwnd.is_null() {
-            let control_name = OsStr::new(&self.text).encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-            unsafe {
-                winuser::SetWindowTextW(self.base.hwnd, control_name.as_ptr());
-            }
-            self.base.invalidate();
-        }
+        self.base.invalidate();
     }
 }
 
@@ -49,19 +36,10 @@ impl TextInner for TestableText {
 
 impl ControlInner for TestableText {
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, pw: u16, ph: u16) {
-        let selfptr = member as *mut _ as *mut c_void;
-        let (hwnd, id) = unsafe {
-            self.base.hwnd = parent.native_id() as windef::HWND; // required for measure, as we don't have own hwnd yet
-            let (w, h, _) = self.measure(member, control, pw, ph);
-            common::create_control_hwnd(x as i32, y as i32, w as i32, h as i32, self.base.hwnd, 0, WINDOW_CLASS.as_ptr(), self.text.as_str(), winuser::WS_TABSTOP, selfptr, Some(handler))
-        };
-        self.base.hwnd = hwnd;
-        self.base.subclass_id = id;
+	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
     }
     fn on_removed_from_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, _: &dyn controls::Container) {
-        common::destroy_hwnd(self.base.hwnd, self.base.subclass_id, Some(handler));
-        self.base.hwnd = 0 as windef::HWND;
-        self.base.subclass_id = 0;
+	    self.base.parent = None;
     }
     fn parent(&self) -> Option<&dyn controls::Member> {
         self.base.parent().map(|p| p.as_member())
@@ -76,7 +54,6 @@ impl ControlInner for TestableText {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
 
-    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_BUTTON;
         fill_from_markup_base!(self, member, markup, registry, Text, [MEMBER_TYPE_BUTTON]);
@@ -108,10 +85,10 @@ impl HasVisibilityInner for TestableText {
 }
 
 impl HasNativeIdInner for TestableText {
-    type Id = common::Hwnd;
+    type Id = common::TestableId;
 
     unsafe fn native_id(&self) -> Self::Id {
-        self.base.hwnd.into()
+        self.base.id.into()
     }
 }
 
@@ -119,7 +96,7 @@ impl MemberInner for TestableText {}
 
 impl Drawable for TestableText {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
+        //self.base.draw(control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         let old_size = control.measured;
@@ -127,7 +104,7 @@ impl Drawable for TestableText {
         control.measured = match control.visibility {
             types::Visibility::Gone => (0, 0),
             _ => {
-                let mut label_size: windef::SIZE = unsafe { mem::zeroed() };
+                /*let mut label_size: windef::SIZE = unsafe { mem::zeroed() };
                 let w = match control.layout.width {
                     layout::Size::MatchParent => parent_width as i32,
                     layout::Size::Exact(w) => w as i32,
@@ -154,7 +131,8 @@ impl Drawable for TestableText {
                         label_size.cy as i32 + DEFAULT_PADDING + DEFAULT_PADDING
                     }
                 };
-                (cmp::max(0, w) as u16, cmp::max(0, h) as u16)
+                (cmp::max(0, w) as u16, cmp::max(0, h) as u16)*/
+                (0,0)
             }
         };
         (control.measured.0, control.measured.1, control.measured != old_size)
@@ -167,26 +145,6 @@ impl Drawable for TestableText {
 #[allow(dead_code)]
 pub(crate) fn spawn() -> Box<dyn controls::Control> {
     Text::empty().into_control()
-}
-
-unsafe extern "system" fn handler(hwnd: windef::HWND, msg: minwindef::UINT, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM, _: usize, param: usize) -> isize {
-    let ww = winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA);
-    if ww == 0 {
-        winuser::SetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA, param as isize);
-    }
-    match msg {
-        winuser::WM_SIZE => {
-            let width = lparam as u16;
-            let height = (lparam >> 16) as u16;
-
-            let text: &mut Text = mem::transmute(param);
-            text.call_on_size(width, height);
-            return 0;
-        }
-        _ => {}
-    }
-
-    commctrl::DefSubclassProc(hwnd, msg, wparam, lparam)
 }
 
 default_impls_as!(Text);
