@@ -1,3 +1,5 @@
+#![feature(core_intrinsics)]
+
 #[macro_use]
 extern crate plygui_api;
 #[macro_use]

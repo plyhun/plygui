@@ -8,7 +8,7 @@ pub struct TestableTray {
 	id: InnerId,
     label: String,
 //    cfg: shellapi::NOTIFYICONDATAW,
-//    menu: (windef::HMENU, Vec<callbacks::Action>, isize),
+	menu: types::Menu,
 	image: image::DynamicImage,
     on_close: Option<callbacks::OnClose>,
 }
@@ -98,7 +98,7 @@ impl TrayInner for TestableTray {
             TestableTray {
             	id: 0 as InnerId,
                 label: title.into(),
-                //menu: (ptr::null_mut(), if menu.is_some() { Vec::new() } else { vec![] }, -2),
+                menu: menu,
                 image: image::DynamicImage::ImageRgba8(image::ImageBuffer::new(1,1)),
                 on_close: None,
             },

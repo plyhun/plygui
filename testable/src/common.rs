@@ -41,7 +41,9 @@ impl NativeId for TestableId {}
 pub struct TestableControlBase<T: controls::Control + Sized> {
     pub id: InnerId,
     pub parent: Option<InnerId>,
-    visibility: types::Visibility,
+    pub size: (u16, u16),
+    pub position: (i32, i32),
+    pub visibility: types::Visibility,
     _marker: PhantomData<T>,
 }
 
@@ -49,7 +51,9 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
     pub fn new() -> TestableControlBase<T> {
         TestableControlBase {
             id: ptr::null_mut(),
-            parent: None,
+            size: (0, 0),
+		    position: (0, 0),
+		    parent: None,
             visibility: types::Visibility::Visible,
             _marker: PhantomData,
         }
@@ -119,8 +123,12 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
             }
         }
     }
-    pub fn draw(&mut self, coords: Option<(i32, i32)>, (width, height): (u16, u16)) -> bool {
-        println!(" drawn ({} px, {} px) at {:?}", width, height, coords);
+    pub fn draw(&mut self, coords: Option<(i32, i32)>, size: (u16, u16)) -> bool {
+    	self.size = size;
+    	if let Some(coords) = coords {
+    		self.position = coords;
+    	}
+        println!("{} {:?} drawn ({} px, {} px) at {:?}", unsafe { ::std::intrinsics::type_name::<T>() }, self.id, self.size.0, self.size.1, self.position);
         true
     }
     pub fn on_set_visibility(&mut self, visibility: types::Visibility) -> bool {

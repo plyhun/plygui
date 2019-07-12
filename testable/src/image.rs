@@ -26,7 +26,7 @@ impl Drop for TestableImage {
 }
 
 impl ImageInner for TestableImage {
-    fn with_content(content: image::DynamicImage) -> Box<controls::Image> {
+    fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image> {
         let mut i = Box::new(Member::with_inner(
             Control::with_inner(
                 TestableImage {
@@ -55,8 +55,9 @@ impl ImageInner for TestableImage {
 }
 
 impl ControlInner for TestableImage {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, pw: u16, ph: u16) {
+    fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
+        self.base.position = (x, y);
     }
     fn on_removed_from_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, _: &dyn controls::Container) {
 	    self.base.parent = None;
@@ -75,7 +76,7 @@ impl ControlInner for TestableImage {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
 
-    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
+    fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_IMAGE;
         fill_from_markup_base!(self, member, markup, registry, Image, [MEMBER_TYPE_IMAGE]);
         //TODO image source
@@ -118,37 +119,30 @@ impl MemberInner for TestableImage {}
 
 impl Drawable for TestableImage {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        //self.base.draw(control.coords, control.measured);
+        self.base.draw(control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
         let old_size = control.measured;
         control.measured = match control.visibility {
             types::Visibility::Gone => (0, 0),
             _ => {
-                /*let w = match control.layout.width {
+            	use crate::plygui_api::external::image::GenericImageView;
+            	
+            	let w = match control.layout.width {
                     layout::Size::MatchParent => w,
                     layout::Size::Exact(w) => w,
                     layout::Size::WrapContent => {
-                        let mut bm: wingdi::BITMAP = unsafe { mem::zeroed() };
-                        unsafe {
-                            wingdi::GetObjectW(self.bmp as *mut c_void, mem::size_of::<wingdi::BITMAP>() as i32, &mut bm as *mut _ as *mut c_void);
-                        }
-                        bm.bmWidth as u16
+                        if let Some(ref bmp) = self.bmp {bmp.dimensions().0 as u16 } else { 0 }
                     }
                 };
                 let h = match control.layout.height {
                     layout::Size::MatchParent => h,
                     layout::Size::Exact(h) => h,
                     layout::Size::WrapContent => {
-                        let mut bm: wingdi::BITMAP = unsafe { mem::zeroed() };
-                        unsafe {
-                            wingdi::GetObjectW(self.bmp as *mut c_void, mem::size_of::<wingdi::BITMAP>() as i32, &mut bm as *mut _ as *mut c_void);
-                        }
-                        bm.bmHeight as u16
+                        if let Some(ref bmp) = self.bmp {bmp.dimensions().1 as u16 } else { 0 }
                     }
                 };
-                (cmp::max(0, w as i32) as u16, cmp::max(0, h as i32) as u16)*/
-                (0,0)
+                (cmp::max(0, w as i32) as u16, cmp::max(0, h as i32) as u16)
             }
         };
         (control.measured.0, control.measured.1, control.measured != old_size)

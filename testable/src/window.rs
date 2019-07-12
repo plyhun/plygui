@@ -8,7 +8,7 @@ pub struct TestableWindow {
     size: (u16, u16),
     position: (i32, i32),
     visibility: types::Visibility,
-    menu: Vec<callbacks::Action>,
+    menu: types::Menu,
     on_close: Option<callbacks::OnClose>,
 }
 
@@ -31,7 +31,6 @@ impl HasVisibilityInner for TestableWindow {
 }
 impl HasSizeInner for TestableWindow {
     fn on_size_set(&mut self, _base: &mut MemberBase, value: (u16, u16)) -> bool {
-        //common::draw(self.id, Some(common::pos_id(self.id)), value)
         self.size = value;
         true
     }
@@ -39,37 +38,35 @@ impl HasSizeInner for TestableWindow {
 
 impl WindowInner for TestableWindow {
     fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Window> {
-        unsafe {
-            let mut w: Box<Window> = Box::new(Member::with_inner(
-                SingleContainer::with_inner(
-                    plygui_api::development::Window::with_inner(
-                        TestableWindow {
-                            id: 0 as InnerId,
-                            label: title.into(),
-                            size: (0, 0),
-						    position: (0, 0),
-						    visibility: types::Visibility::Visible,
-                            child: None,
-                            menu: if menu.is_some() { Vec::new() } else { vec![] },
-                            on_close: None,
-                        },
-                        (),
-                    ),
+        let mut w: Box<Window> = Box::new(Member::with_inner(
+            SingleContainer::with_inner(
+                plygui_api::development::Window::with_inner(
+                    TestableWindow {
+                        id: 0 as InnerId,
+                        label: title.into(),
+                        size: (0, 0),
+					    position: (0, 0),
+					    visibility: types::Visibility::Visible,
+                        child: None,
+                        menu: menu,
+                        on_close: None,
+                    },
                     (),
                 ),
-                MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-            ));
+                (),
+            ),
+            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+        ));
 
-            w.as_inner_mut().as_inner_mut().as_inner_mut().id = w.base_mut();
+        w.as_inner_mut().as_inner_mut().as_inner_mut().id = w.base_mut();
 
-            /*if let Some(items) = menu {
-                let menu = winuser::CreateMenu();
-                common::make_menu(menu, items, &mut w.as_inner_mut().as_inner_mut().as_inner_mut().menu);
-                winuser::SetMenu(id, menu);
-            }*/
+        /*if let Some(items) = menu {
+            let menu = winuser::CreateMenu();
+            common::make_menu(menu, items, &mut w.as_inner_mut().as_inner_mut().as_inner_mut().menu);
+            winuser::SetMenu(id, menu);
+        }*/
 
-            w
-        }
+        w
     }
     fn size(&self) -> (u16, u16) {
         self.size

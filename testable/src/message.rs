@@ -25,6 +25,7 @@ impl From<(String, callbacks::Action)> for TestableMessageAction {
 #[repr(C)]
 pub struct TestableMessage {
     id: common::InnerId,
+    parent: Option<ids::Id>,
     label: String,
     text: String,
     severity: types::MessageSeverity,
@@ -48,9 +49,10 @@ impl MessageInner for TestableMessage {
             types::TextContent::Plain(text) => (String::new(/* TODO app name here? */), text),
             types::TextContent::LabelDescription(label, description) => (label, description),
         };
-        let mut a: Box<Message> = Box::new(Member::with_inner(
+        let a: Box<Message> = Box::new(Member::with_inner(
             TestableMessage {
                 id: ptr::null_mut(),
+                parent: parent.map(|p|p.id()),
                 label: label,
                 text: text,
                 severity: severity,

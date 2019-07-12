@@ -35,8 +35,9 @@ impl TextInner for TestableText {
 }
 
 impl ControlInner for TestableText {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, pw: u16, ph: u16) {
+    fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
+	    self.base.position = (px, py);
     }
     fn on_removed_from_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, _: &dyn controls::Container) {
 	    self.base.parent = None;
@@ -104,35 +105,22 @@ impl Drawable for TestableText {
         control.measured = match control.visibility {
             types::Visibility::Gone => (0, 0),
             _ => {
-                /*let mut label_size: windef::SIZE = unsafe { mem::zeroed() };
+                let label_size = (self.text.len(), 1);
                 let w = match control.layout.width {
                     layout::Size::MatchParent => parent_width as i32,
                     layout::Size::Exact(w) => w as i32,
                     layout::Size::WrapContent => {
-                        if label_size.cx < 1 {
-                            let label = OsStr::new(self.text.as_str()).encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-                            unsafe {
-                                wingdi::GetTextExtentPointW(winuser::GetDC(self.base.hwnd), label.as_ptr(), self.text.len() as i32, &mut label_size);
-                            }
-                        }
-                        label_size.cx as i32 + DEFAULT_PADDING + DEFAULT_PADDING
+                        label_size.0 as i32 + DEFAULT_PADDING + DEFAULT_PADDING
                     }
                 };
                 let h = match control.layout.height {
                     layout::Size::MatchParent => parent_height as i32,
                     layout::Size::Exact(h) => h as i32,
                     layout::Size::WrapContent => {
-                        if label_size.cy < 1 {
-                            let label = OsStr::new(self.text.as_str()).encode_wide().chain(Some(0).into_iter()).collect::<Vec<_>>();
-                            unsafe {
-                                wingdi::GetTextExtentPointW(winuser::GetDC(self.base.hwnd), label.as_ptr(), self.text.len() as i32, &mut label_size);
-                            }
-                        }
-                        label_size.cy as i32 + DEFAULT_PADDING + DEFAULT_PADDING
+                        label_size.1 as i32 + DEFAULT_PADDING + DEFAULT_PADDING
                     }
                 };
-                (cmp::max(0, w) as u16, cmp::max(0, h) as u16)*/
-                (0,0)
+                (cmp::max(0, w) as u16, cmp::max(0, h) as u16)
             }
         };
         (control.measured.0, control.measured.1, control.measured != old_size)

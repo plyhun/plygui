@@ -146,7 +146,8 @@ impl ContainerInner for TestableFrame {
 impl ControlInner for TestableFrame {
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, _pw: u16, _ph: u16) {
         control.coords = Some((px, py));
-        self.base.parent = Some(unsafe {parent.native_id() as InnerId});
+        self.base.position = (px, py);
+	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
         if let Some(ref mut child) = self.child {
             let self2: &mut Frame = unsafe { utils::base_to_impl_mut(member) };
             child.on_added_to_container(
@@ -218,6 +219,7 @@ impl MemberInner for TestableFrame {}
 
 impl Drawable for TestableFrame {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
+    	self.base.draw(control.coords, control.measured);
         if control.coords.is_some() {
             if let Some(ref mut child) = self.child {
                 child.draw(Some((DEFAULT_PADDING, DEFAULT_PADDING)));

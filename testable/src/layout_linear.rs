@@ -100,7 +100,8 @@ impl ControlInner for TestableLinearLayout {
     }
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
         self.base.parent = Some(unsafe {parent.native_id() as InnerId});
-        control.coords = Some((px as i32, py as i32));
+        self.base.position = (px, py);
+	    control.coords = Some((px as i32, py as i32));
         let mut x = DEFAULT_PADDING;
         let mut y = DEFAULT_PADDING;
         for ref mut child in self.children.as_mut_slice() {
@@ -226,7 +227,7 @@ impl ContainerInner for TestableLinearLayout {
 
 impl Drawable for TestableLinearLayout {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        //self.base.draw(control.coords, control.measured);
+        self.base.draw(control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         use std::cmp::max;

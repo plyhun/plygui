@@ -155,7 +155,8 @@ impl ControlInner for TestableSplitted {
     }
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
         self.base.parent = Some(unsafe {parent.native_id() as InnerId});
-        
+        self.base.position = (px, py);
+	    
         let (width, height, _) = self.measure(member, control, pw, ph);
         control.coords = Some((px as i32, py as i32));
         
