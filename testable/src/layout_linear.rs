@@ -99,6 +99,7 @@ impl ControlInner for TestableLinearLayout {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
+        self.base.parent = Some(unsafe {parent.native_id() as InnerId});
         control.coords = Some((px as i32, py as i32));
         let mut x = DEFAULT_PADDING;
         let mut y = DEFAULT_PADDING;
@@ -123,6 +124,7 @@ impl ControlInner for TestableLinearLayout {
             let self2: &mut LinearLayout = unsafe { utils::base_to_impl_mut(member) };
             child.on_removed_from_container(self2);
         }
+        self.base.parent = None;
     }
 
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {

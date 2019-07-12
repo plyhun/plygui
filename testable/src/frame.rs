@@ -144,8 +144,9 @@ impl ContainerInner for TestableFrame {
 }
 
 impl ControlInner for TestableFrame {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, _parent: &dyn controls::Container, px: i32, py: i32, _pw: u16, _ph: u16) {
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, _pw: u16, _ph: u16) {
         control.coords = Some((px, py));
+        self.base.parent = Some(unsafe {parent.native_id() as InnerId});
         if let Some(ref mut child) = self.child {
             let self2: &mut Frame = unsafe { utils::base_to_impl_mut(member) };
             child.on_added_to_container(
@@ -162,6 +163,7 @@ impl ControlInner for TestableFrame {
             let self2: &mut Frame = unsafe { utils::base_to_impl_mut(member) };
             child.on_removed_from_container(self2);
         }
+        self.base.parent = None;
     }
 
     fn parent(&self) -> Option<&dyn controls::Member> {

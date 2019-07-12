@@ -53,7 +53,7 @@ impl ButtonInner for TestableButton {
 }
 
 impl ControlInner for TestableButton {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, pw: u16, ph: u16) {
+    fn on_added_to_container(&mut self, member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, pw: u16, ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
     }
     fn on_removed_from_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, _: &dyn controls::Container) {
@@ -116,7 +116,7 @@ impl MemberInner for TestableButton {}
 
 impl Drawable for TestableButton {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        //self.base.draw(control.coords, control.measured);
+        self.base.draw(control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         let old_size = control.measured;

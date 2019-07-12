@@ -119,6 +119,10 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
             }
         }
     }
+    pub fn draw(&mut self, coords: Option<(i32, i32)>, (width, height): (u16, u16)) -> bool {
+        println!(" drawn ({} px, {} px) at {:?}", width, height, coords);
+        true
+    }
     pub fn on_set_visibility(&mut self, visibility: types::Visibility) -> bool {
         self.visibility = visibility;
         true

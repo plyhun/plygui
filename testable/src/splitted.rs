@@ -153,7 +153,9 @@ impl ControlInner for TestableSplitted {
     fn root_mut(&mut self) -> Option<&mut dyn controls::Member> {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, _parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
+        self.base.parent = Some(unsafe {parent.native_id() as InnerId});
+        
         let (width, height, _) = self.measure(member, control, pw, ph);
         control.coords = Some((px as i32, py as i32));
         
@@ -178,6 +180,8 @@ impl ControlInner for TestableSplitted {
 
         self.first.on_removed_from_container(self2);
         self.second.on_removed_from_container(self2);
+        
+        self.base.parent = None;
     }
 
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {

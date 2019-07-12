@@ -85,9 +85,7 @@ impl HasImageInner for TestableTray {
     fn set_image(&mut self, _base: &mut MemberBase, i: Cow<image::DynamicImage>) {
     	use plygui_api::external::image::GenericImageView;
     	
-    	let i = unsafe {
-    		i.resize(SIZE, SIZE, image::FilterType::Lanczos3)
-    	};
+    	let i = i.resize(SIZE, SIZE, image::FilterType::Lanczos3);
     	
     	let (w,h) = i.dimensions();
     	self.image = i.into();
@@ -100,7 +98,6 @@ impl TrayInner for TestableTray {
             TestableTray {
             	id: 0 as InnerId,
                 label: title.into(),
-                //cfg: unsafe { mem::zeroed() },
                 //menu: (ptr::null_mut(), if menu.is_some() { Vec::new() } else { vec![] }, -2),
                 image: image::DynamicImage::ImageRgba8(image::ImageBuffer::new(1,1)),
                 on_close: None,
