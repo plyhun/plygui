@@ -30,8 +30,11 @@ impl HasVisibilityInner for TestableWindow {
     }
 }
 impl HasSizeInner for TestableWindow {
-    fn on_size_set(&mut self, _base: &mut MemberBase, value: (u16, u16)) -> bool {
+    fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool {
         self.size = value;
+        
+        unsafe { utils::base_to_impl_mut::<Window>(base) }.call_on_size(value.0, value.1);
+        
         true
     }
 }

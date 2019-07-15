@@ -160,6 +160,9 @@ impl HasSizeInner for TestableLinearLayout {
         this.set_layout_width(layout::Size::Exact(width));
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
+        
+        unsafe { utils::base_to_impl_mut::<LinearLayout>(base) }.call_on_size(width, height);
+        
         true
     }
 }
