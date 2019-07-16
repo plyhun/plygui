@@ -123,12 +123,28 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
             }
         }
     }
+    pub fn parent_offset(&self) -> isize {
+    	let mut num = 0;
+    	let mut parent = self.parent().map(|parent| parent.as_member());
+    	while let Some(iparent) = parent {
+    		num += 1;
+    		parent = if let Some(control) = iparent.is_control() {
+		    		control.parent()
+	    		} else { 
+	    			None 
+	    		};
+    	}
+    	num
+    }
     pub fn draw(&mut self, coords: Option<(i32, i32)>, size: (u16, u16)) -> bool {
     	self.size = size;
     	if let Some(coords) = coords {
     		self.position = coords;
     	}
-        println!("{} {:?} drawn ({} px, {} px) at {:?}", unsafe { ::std::intrinsics::type_name::<T>() }, self.id, self.size.0, self.size.1, self.position);
+    	for _ in 0..self.parent_offset() {
+    		print!(" ");
+    	}
+        println!("{:?} drawn ({} px, {} px) at {:?}", self.id, self.size.0, self.size.1, self.position);
         true
     }
     pub fn on_set_visibility(&mut self, visibility: types::Visibility) -> bool {
