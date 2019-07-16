@@ -47,6 +47,10 @@ impl ApplicationInner for TestableApplication {
         Cow::Borrowed(self.name.as_str())
     }
     fn start(&mut self) {
+    	for window in self.windows.as_slice() {
+    		let window = common::member_from_id::<window::Window>(window.clone().into()).unwrap();
+    		window.as_inner_mut().as_inner_mut().as_inner_mut().draw();
+    	}
         loop {
             let mut frame_callbacks = 0;
             let w = unsafe {&mut *self.root}.base_mut();
@@ -64,31 +68,9 @@ impl ApplicationInner for TestableApplication {
                     },
                 }
             }
-            /*
-            unsafe {
-                synchapi::Sleep(10);
-
-                if winuser::PeekMessageW(&mut msg, ptr::null_mut(), 0, 0, winuser::PM_REMOVE) > 0 {
-                    winuser::TranslateMessage(&mut msg);
-                    winuser::DispatchMessageW(&mut msg);
-                }
-            }
-
-            i = 0;
-            while i < self.windows.len() {
-                if dispatch_window(self.windows[i]) < 0 {
-                    self.windows.remove(i);
-                } else {
-                    i += 1;
-                }
-            }
             if self.windows.len() < 1 && self.trays.len() < 1 {
-                unsafe {
-                    winuser::DestroyWindow(self.root);
-                }
                 break;
             }
-            */
         }
     }
     fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Member> {

@@ -361,8 +361,9 @@ impl HasOrientationInner for TestableSplitted {
 }
 
 impl Drawable for TestableSplitted {
-    fn draw(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
-        //self.base.draw(control.coords, control.measured);
+    fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
+        self.base.draw(control.coords, control.measured);
+        self.draw_children();
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         use std::cmp::max;

@@ -14,6 +14,14 @@ pub struct TestableWindow {
 
 pub type Window = Member<SingleContainer<plygui_api::development::Window<TestableWindow>>>;
 
+impl TestableWindow {
+	pub fn draw(&mut self) {
+		if let Some(ref mut child) = self.child {
+			child.draw(Some((0, 0)));
+		}
+	}
+}
+
 impl HasLabelInner for TestableWindow {
     fn label(&self, _base: &MemberBase) -> Cow<str> {
         Cow::Borrowed(&self.label)
