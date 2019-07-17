@@ -144,14 +144,19 @@ impl SingleContainerInner for TestableWindow {
 
 impl CloseableInner for TestableWindow {
     fn close(&mut self, skip_callbacks: bool) -> bool {
-    	if skip_callbacks { return true; }
-    	
-        if let Some(on_close) = self.on_close.as_mut() {
-        	let this = common::member_from_id::<Window>(self.id).unwrap();
-        	(on_close.as_mut())(this)
-        } else {
-        	true
+    	if !skip_callbacks {
+            if let Some(ref mut on_close) = self.on_close {
+                if !(on_close.as_mut())(unsafe { &mut *(self.id as *mut Window) }) {
+                    return false;
+                }
+            }
         }
+        let mut app = super::application::Application::get().unwrap();
+        let app = app.as_any_mut().downcast_mut::<super::application::Application>().unwrap();
+        app.as_inner_mut().remove_window(self.id.into());
+
+        println!("Window closed ({:?})", self.id);
+        true
     }
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.on_close = callback;
