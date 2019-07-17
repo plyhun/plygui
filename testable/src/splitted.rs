@@ -71,7 +71,7 @@ impl TestableSplitted {
 
 impl SplittedInner for TestableSplitted {
     fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<Splitted> {
-        let b = Box::new(Member::with_inner(
+        let mut b = Box::new(Member::with_inner(
             Control::with_inner(
                 MultiContainer::with_inner(
                     TestableSplitted {
@@ -90,6 +90,7 @@ impl SplittedInner for TestableSplitted {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
+        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
         b
     }
     fn set_splitter(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, pos: f32) {
@@ -159,7 +160,7 @@ impl ControlInner for TestableSplitted {
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, pw: u16, ph: u16) {
         self.base.parent = Some(unsafe {parent.native_id() as InnerId});
         self.base.position = (px, py);
-	    
+	    control.measured = (pw, ph); // for the measurement sake
         let (width, height, _) = self.measure(member, control, pw, ph);
         control.coords = Some((px as i32, py as i32));
         
@@ -352,9 +353,10 @@ impl HasOrientationInner for TestableSplitted {
     fn layout_orientation(&self) -> layout::Orientation {
         self.orientation
     }
-    fn set_layout_orientation(&mut self, _base: &mut MemberBase, orientation: layout::Orientation) {
+    fn set_layout_orientation(&mut self, base: &mut MemberBase, orientation: layout::Orientation) {
         if orientation != self.orientation {
             self.orientation = orientation;
+            self.update_children_layout(unsafe { utils::base_to_impl_mut::<Splitted>(base) }.as_inner().base());
             self.base.invalidate();
         }
     }
@@ -362,7 +364,7 @@ impl HasOrientationInner for TestableSplitted {
 
 impl Drawable for TestableSplitted {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
+        self.base.draw("Splitted", control.coords, control.measured);
         self.draw_children();
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {

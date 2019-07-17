@@ -16,6 +16,7 @@ pub type Window = Member<SingleContainer<plygui_api::development::Window<Testabl
 
 impl TestableWindow {
 	pub fn draw(&mut self) {
+		println!("Window drawn ({} px, {} px) at {:?} ({:?})", self.size.0, self.size.1, self.position, self.id);
 		if let Some(ref mut child) = self.child {
 			child.draw(Some((0, 0)));
 		}
@@ -55,7 +56,10 @@ impl WindowInner for TestableWindow {
                     TestableWindow {
                         id: 0 as InnerId,
                         label: title.into(),
-                        size: (0, 0),
+                        size: match window_size {
+	                        types::WindowStartSize::Exact(w, h) => (w, h), 
+						    types::WindowStartSize::Fullscreen => (1280, 800)
+                        },
 					    position: (0, 0),
 					    visibility: types::Visibility::Visible,
                         child: None,

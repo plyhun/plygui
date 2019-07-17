@@ -12,7 +12,7 @@ pub struct TestableFrame {
 
 impl FrameInner for TestableFrame {
     fn with_label(label: &str) -> Box<Frame> {
-        let b = Box::new(Member::with_inner(
+        let mut b = Box::new(Member::with_inner(
             Control::with_inner(
                 SingleContainer::with_inner(
                     TestableFrame {
@@ -27,6 +27,7 @@ impl FrameInner for TestableFrame {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
+        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
         b
     }
 }
@@ -222,7 +223,7 @@ impl MemberInner for TestableFrame {}
 
 impl Drawable for TestableFrame {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-    	self.base.draw(control.coords, control.measured);
+    	self.base.draw("Frame", control.coords, control.measured);
         if control.coords.is_some() {
             if let Some(ref mut child) = self.child {
                 child.draw(Some((DEFAULT_PADDING, DEFAULT_PADDING)));

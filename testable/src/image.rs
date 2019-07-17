@@ -39,7 +39,7 @@ impl ImageInner for TestableImage {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-
+		i.as_inner_mut().as_inner_mut().base.id = i.base_mut();
         i.as_inner_mut().as_inner_mut().install_image(content);
         i
     }
@@ -122,7 +122,7 @@ impl MemberInner for TestableImage {}
 
 impl Drawable for TestableImage {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
+        self.base.draw("Image", control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
         let old_size = control.measured;

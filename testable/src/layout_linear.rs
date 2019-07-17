@@ -11,7 +11,7 @@ pub struct TestableLinearLayout {
 
 impl LinearLayoutInner for TestableLinearLayout {
     fn with_orientation(orientation: layout::Orientation) -> Box<LinearLayout> {
-        let b = Box::new(Member::with_inner(
+        let mut b = Box::new(Member::with_inner(
             Control::with_inner(
                 MultiContainer::with_inner(
                     TestableLinearLayout {
@@ -25,6 +25,7 @@ impl LinearLayoutInner for TestableLinearLayout {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
+        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
         b
     }
 }
@@ -230,7 +231,7 @@ impl ContainerInner for TestableLinearLayout {
 
 impl Drawable for TestableLinearLayout {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
+        self.base.draw("LinearLayout", control.coords, control.measured);
         let mut x = DEFAULT_PADDING;
         let mut y = DEFAULT_PADDING;
         for ref mut child in self.children.as_mut_slice() {

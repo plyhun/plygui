@@ -136,15 +136,15 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
     	}
     	num
     }
-    pub fn draw(&mut self, coords: Option<(i32, i32)>, size: (u16, u16)) -> bool {
+    pub fn draw(&mut self, name: &str, coords: Option<(i32, i32)>, size: (u16, u16)) -> bool {
     	self.size = size;
     	if let Some(coords) = coords {
     		self.position = coords;
     	}
     	for _ in 0..self.parent_offset() {
-    		print!(" ");
+    		print!("-");
     	}
-        println!("{:?} drawn ({} px, {} px) at {:?}", self.id, self.size.0, self.size.1, self.position);
+        println!("{} drawn ({} px, {} px) at {:?} ({:?})", name, self.size.0, self.size.1, self.position, self.id);
         true
     }
     pub fn on_set_visibility(&mut self, visibility: types::Visibility) -> bool {

@@ -20,7 +20,7 @@ impl HasLabelInner for TestableText {
 
 impl TextInner for TestableText {
     fn with_text(text: &str) -> Box<Text> {
-        let b: Box<Text> = Box::new(Member::with_inner(
+        let mut b: Box<Text> = Box::new(Member::with_inner(
             Control::with_inner(
                 TestableText {
                     base: common::TestableControlBase::new(),
@@ -30,6 +30,7 @@ impl TextInner for TestableText {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
+        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
         b
     }
 }
@@ -100,7 +101,7 @@ impl MemberInner for TestableText {}
 
 impl Drawable for TestableText {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw(control.coords, control.measured);
+        self.base.draw("Text", control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         let old_size = control.measured;
