@@ -1,4 +1,4 @@
-pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasSizeInner, HasVisibilityInner};
+pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
 
 use crate::{callbacks, controls, ids, layout, runtime, types};
 
@@ -2311,6 +2311,30 @@ impl <T: HasImageInner + ControlInner> controls::HasImage for Member<Control<T>>
         self
     }	
 }
+// ===============================================================================================================
+
+pub trait ProgressBarInner: ControlInner + HasProgressInner {
+	fn with_progress(progress: types::Progress) -> Box<Member<Self>>;
+}
+impl<T: HasProgressInner + ControlInner + Sized + 'static> controls::HasProgress for Member<Control<T>> {
+    fn progress(&self) -> types::Progress {
+	    self.inner.inner.progress()
+    }
+    fn set_progress(&mut self, arg0: types::Progress) {} 
+    fn on_progress(&mut self, callback: Option<OnProgress>) {} 
+    fn as_has_progress(& self) -> & dyn controls::HasProgress {}
+    fn as_has_progress_mut(& mut self) -> &mut dyn controls::HasProgress {} 
+    fn into_has_progress(self : Box<Self>) -> Box <dyn controls::HasProgress> {}
+}
+impl<T: ProgressBarInner + Sized + 'static> controls::ProgressBar for Member<Control<T>> {
+    
+}
+impl<T: ProgressBarInner + Sized> Member<Control<T>> {
+    pub fn with_progress(progress: types::Progress) -> Box<dyn controls::ProgressBar> {
+        T::with_progress(progress)
+    }
+}
+
 // ===============================================================================================================
 
 pub trait OuterDrawable: seal::Sealed {
