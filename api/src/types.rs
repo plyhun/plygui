@@ -12,6 +12,12 @@ pub enum WindowStartSize {
     Fullscreen,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Progress {
+    Value(u32, u32),
+    Undefined,
+}
+
 pub type Menu = Option<Vec<MenuItem>>;
 
 #[derive(Debug, PartialEq)]

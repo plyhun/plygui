@@ -7,11 +7,10 @@ use syn::{braced, parenthesized, parse_macro_input, token, Ident, Path, TypePath
 
 use std::iter::FromIterator;
 
-pub fn make(item: proc_macro::TokenStream, use_reactor: bool) -> proc_macro::TokenStream {
+pub fn make(item: proc_macro::TokenStream, use_reactor: bool, use_get_set: bool) -> proc_macro::TokenStream {
     let mut parsed = parse_macro_input!(item as Has);
-    if use_reactor {
-        parsed.inner = InnerType::Reactor;
-    }
+    parsed.use_reactor = use_reactor;
+    parsed.use_get_set = use_get_set;
     let t = quote!(#parsed);
     dbg!(format!("{:#}", t));
     proc_macro::TokenStream::from(t)
@@ -31,11 +30,6 @@ impl<'a> ToTokens for HasReturnParams<'a> {
     }
 }
 
-enum InnerType {
-    GetterSetter,
-    Reactor,
-}
-
 pub(crate) struct Has {
     name: Ident,
     _paren: token::Paren,
@@ -44,7 +38,8 @@ pub(crate) struct Has {
     extends: Option<Punctuated<Ident, Token![+]>>,
     _brace: Option<token::Brace>,
     custom: Option<proc_macro2::TokenStream>,
-    inner: InnerType,
+    use_reactor: bool, 
+    use_get_set: bool,
 }
 
 impl Parse for Has {
@@ -93,7 +88,8 @@ impl Parse for Has {
                 }
             },
             custom: custom.map(|content| content.parse().unwrap()),
-            inner: InnerType::GetterSetter,
+            use_reactor: true, 
+            use_get_set: true,
         })
     }
 }
@@ -188,28 +184,36 @@ impl ToTokens for Has {
         self.params.iter().for_each(|i| on.params.push(i.clone()));
         
         let custom = &self.custom;
-
-        let inner = match self.inner {
-            InnerType::GetterSetter => quote! {
+        
+        let reactor = if self.use_reactor {
+            quote! {
+                fn #on_ident_set_fn(&mut self #(,#extends_base_names: &mut #extends_base)*, value: #return_params) -> bool;
+            }
+        } else { quote! {} };
+        let getsetter = if self.use_get_set {
+            quote! {
                 fn #ident_fn(&self #(,#extends_base_names: &#extends_base)*) -> #return_params ;
                 fn #set_ident_fn(&mut self #(,#extends_base_names: &mut #extends_base)* #(,#param_names: #params)*);
-                //fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
-            },
-            InnerType::Reactor => quote! {
-                fn #on_ident_set_fn(&mut self #(,#extends_base_names: &mut #extends_base)*, value: #return_params) -> bool;
-            },
-        };
-        let on_ident_fn = match self.inner {
-            InnerType::GetterSetter => quote! {},
-            InnerType::Reactor => {
-                let on_ident_fn = Ident::new(&format!("on_{}", ident).to_snake_case(), Span::call_site());
-                let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
-
-                quote! {
-                    fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
-                }
             }
-        };
+        } else { quote! {} };
+
+        let on_ident_fn = if self.use_reactor {
+            let on_ident_fn = Ident::new(&format!("on_{}", ident).to_snake_case(), Span::call_site());
+            let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
+
+            quote! {
+                fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
+            }
+        } else { quote! {} };
+        
+        let on_ident_inner_fn = if self.use_reactor && self.use_get_set {
+            let on_ident_fn = Ident::new(&format!("on_{}", ident).to_snake_case(), Span::call_site());
+            let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
+
+            quote! {
+                fn #on_ident_fn(&mut self #(,#extends_base_names: &mut #extends_base)* ,callback: Option<#on_ident>);
+            }
+        } else { quote! {} };
 
         let expr = quote! {
             pub trait #has_ident: AsAny + 'static #(+#extends)* {
@@ -221,7 +225,9 @@ impl ToTokens for Has {
                 #as_into
             }
             pub trait #has_ident_inner: 'static #(+#extends_inner)* {
-                #inner
+                #getsetter
+                #on_ident_inner_fn
+                #reactor
                 #custom
             }
 

@@ -2265,7 +2265,7 @@ impl<T: TrayInner> Member<T> {
 
 // ===============================================================================================================
 
-impl <T: HasImageInner> controls::HasImage for Member<T> {
+impl<T: HasImageInner> controls::HasImage for Member<T> {
     #[inline]
     fn image(&self) -> Cow<image::DynamicImage> {
         self.inner.image(&self.base)
@@ -2286,9 +2286,9 @@ impl <T: HasImageInner> controls::HasImage for Member<T> {
     #[inline]
     fn into_has_image(self: Box<Self>) -> Box<dyn controls::HasImage> {
         self
-    }	
+    }
 }
-impl <T: HasImageInner + ControlInner> controls::HasImage for Member<Control<T>> {
+impl<T: HasImageInner + ControlInner> controls::HasImage for Member<Control<T>> {
     #[inline]
     fn image(&self) -> Cow<image::DynamicImage> {
         self.inner.inner.image(&self.base)
@@ -2309,27 +2309,59 @@ impl <T: HasImageInner + ControlInner> controls::HasImage for Member<Control<T>>
     #[inline]
     fn into_has_image(self: Box<Self>) -> Box<dyn controls::HasImage> {
         self
-    }	
+    }
 }
+
 // ===============================================================================================================
 
-pub trait ProgressBarInner: ControlInner + HasProgressInner {
-	fn with_progress(progress: types::Progress) -> Box<Member<Self>>;
+impl<T: HasProgressInner> controls::HasProgress for Member<T> {
+    fn progress(&self) -> types::Progress {
+        self.inner.progress(&self.base)
+    }
+    fn set_progress(&mut self, arg0: types::Progress) {
+        self.inner.set_progress(&mut self.base, arg0)
+    }
+    fn on_progress(&mut self, callback: Option<callbacks::OnProgress>) {
+        self.inner.on_progress(&mut self.base, callback)
+    }
+    fn as_has_progress(&self) -> &dyn controls::HasProgress {
+        self
+    }
+    fn as_has_progress_mut(&mut self) -> &mut dyn controls::HasProgress {
+        self
+    }
+    fn into_has_progress(self: Box<Self>) -> Box<dyn controls::HasProgress> {
+        self
+    }
 }
 impl<T: HasProgressInner + ControlInner + Sized + 'static> controls::HasProgress for Member<Control<T>> {
     fn progress(&self) -> types::Progress {
-	    self.inner.inner.progress()
+        self.inner.inner.progress(&self.base)
     }
-    fn set_progress(&mut self, arg0: types::Progress) {} 
-    fn on_progress(&mut self, callback: Option<OnProgress>) {} 
-    fn as_has_progress(& self) -> & dyn controls::HasProgress {}
-    fn as_has_progress_mut(& mut self) -> &mut dyn controls::HasProgress {} 
-    fn into_has_progress(self : Box<Self>) -> Box <dyn controls::HasProgress> {}
+    fn set_progress(&mut self, arg0: types::Progress) {
+        self.inner.inner.set_progress(&mut self.base, arg0)
+    }
+    fn on_progress(&mut self, callback: Option<callbacks::OnProgress>) {
+        self.inner.inner.on_progress(&mut self.base, callback)
+    }
+    fn as_has_progress(&self) -> &dyn controls::HasProgress {
+        self
+    }
+    fn as_has_progress_mut(&mut self) -> &mut dyn controls::HasProgress {
+        self
+    }
+    fn into_has_progress(self: Box<Self>) -> Box<dyn controls::HasProgress> {
+        self
+    }
 }
-impl<T: ProgressBarInner + Sized + 'static> controls::ProgressBar for Member<Control<T>> {
-    
+
+// ===============================================================================================================
+
+pub trait ProgressBarInner: ControlInner + HasProgressInner {
+    fn with_progress(progress: types::Progress) -> Box<Member<Control<Self>>>;
 }
-impl<T: ProgressBarInner + Sized> Member<Control<T>> {
+impl<T: ProgressBarInner + Sized + 'static> controls::ProgressBar for Member<Control<T>> {}
+impl<T: ProgressBarInner + Sized + 'static> Member<Control<T>> {
     pub fn with_progress(progress: types::Progress) -> Box<dyn controls::ProgressBar> {
         T::with_progress(progress)
     }
