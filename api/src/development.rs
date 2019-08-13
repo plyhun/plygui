@@ -2321,9 +2321,6 @@ impl<T: HasProgressInner> controls::HasProgress for Member<T> {
     fn set_progress(&mut self, arg0: types::Progress) {
         self.inner.set_progress(&mut self.base, arg0)
     }
-    fn on_progress(&mut self, callback: Option<callbacks::OnProgress>) {
-        self.inner.on_progress(&mut self.base, callback)
-    }
     fn as_has_progress(&self) -> &dyn controls::HasProgress {
         self
     }
@@ -2340,9 +2337,6 @@ impl<T: HasProgressInner + ControlInner + Sized + 'static> controls::HasProgress
     }
     fn set_progress(&mut self, arg0: types::Progress) {
         self.inner.inner.set_progress(&mut self.base, arg0)
-    }
-    fn on_progress(&mut self, callback: Option<callbacks::OnProgress>) {
-        self.inner.inner.on_progress(&mut self.base, callback)
     }
     fn as_has_progress(&self) -> &dyn controls::HasProgress {
         self

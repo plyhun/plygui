@@ -185,7 +185,7 @@ impl ToTokens for Has {
         
         let custom = &self.custom;
         
-        let reactor = if self.use_reactor {
+        let reactor = if self.use_reactor && !self.use_get_set {
             quote! {
                 fn #on_ident_set_fn(&mut self #(,#extends_base_names: &mut #extends_base)*, value: #return_params) -> bool;
             }

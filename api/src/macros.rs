@@ -20,6 +20,7 @@ macro_rules! default_pub_use {
             pub use crate::text::Text;
             pub use crate::tray::Tray;
             pub use crate::window::Window;
+            pub use crate::progress_bar::ProgressBar;
         }
     };
 }
