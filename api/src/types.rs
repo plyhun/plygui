@@ -16,7 +16,6 @@ pub enum WindowStartSize {
 pub enum Progress {
     Value(u32, u32),
     Undefined,
-    Error,
     None
 }
 
