@@ -85,10 +85,7 @@ impl HasImageInner for TestableTray {
     #[inline]
     fn set_image(&mut self, _base: &mut MemberBase, i: Cow<image::DynamicImage>) {
     	use plygui_api::external::image::GenericImageView;
-    	
     	let i = i.resize(SIZE, SIZE, image::FilterType::Lanczos3);
-    	
-    	let (w,h) = i.dimensions();
     	self.image = i.into();
     }
 }
@@ -108,15 +105,14 @@ impl TrayInner for TestableTray {
         let this = t.as_mut();
         t.as_inner_mut().id = this as *mut _ as *mut MemberBase;
 
-        let app = super::application::Application::get();
-		/*if let Some(items) = menu {
+        /*let app = super::application::Application::get();
+		if let Some(items) = menu {
             unsafe {
                 let menu = winuser::CreatePopupMenu();
                 common::make_menu(menu, items, &mut t.as_inner_mut().menu.1);
                 t.as_inner_mut().menu.0 = menu;
             }
         }*/
-
         t
     }
 }

@@ -164,14 +164,14 @@ pub(crate) fn spawn() -> Box<controls::Control> {
 }
 */
 
-fn fmin(a: f32, b: f32) -> f32 {
+/*fn fmin(a: f32, b: f32) -> f32 {
     if a < b {
         a
     } else {
         b
     }
 }
-/*fn fmax(a: f32, b: f32) -> f32 {
+fn fmax(a: f32, b: f32) -> f32 {
     // leave for future non-centered fit
     if a > b {
         a
