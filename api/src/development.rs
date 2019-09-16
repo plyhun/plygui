@@ -2386,6 +2386,91 @@ impl<T: ProgressBarInner + Sized + 'static> Member<Control<T>> {
 
 // ===============================================================================================================
 
+pub trait TableInner: ControlInner + MultiContainerInner {
+    fn with_dimensions(rows: usize, cols: usize) -> Box<Member<Control<MultiContainer<Self>>>>;
+    
+    fn row_len(&self) -> usize;
+    fn column_len(&self) -> usize;
+    fn table_child_at(&self, row: usize, col: usize) -> Option<&dyn controls::Control>;
+    fn table_child_at_mut(&mut self, row: usize, col: usize) -> Option<&mut dyn controls::Control>;
+    
+    fn set_table_child_to(&mut self, base: &mut MemberBase, row: usize, col: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>>;
+    fn remove_table_child_from(&mut self, base: &mut MemberBase, row: usize, col: usize) -> Option<Box<dyn controls::Control>>;
+    
+    fn add_row(&mut self) -> usize;
+    fn add_column(&mut self) -> usize;
+    fn insert_row(&mut self, row: usize) -> usize;
+    fn insert_column(&mut self, col: usize) -> usize;
+    fn delete_row(&mut self, row: usize) -> usize;
+    fn delete_column(&mut self, col: usize) -> usize;
+}
+
+impl <T: TableInner + Sized + 'static> MultiContainerInner for T {
+    fn len(&self) -> usize {
+        self.row_len() * self.column_len()
+    }
+    fn set_child_to(&mut self, base: &mut MemberBase, index: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
+        self.set_table_child_to(base, index / self.column_len(), index % self.column_len(), child)
+    }
+    fn remove_child_from(&mut self, base: &mut MemberBase, index: usize) -> Option<Box<dyn controls::Control>> {
+        self.remove_table_child_from(base, index / self.column_len(), index % self.column_len())
+    }
+    fn child_at(&self, index: usize) -> Option<&dyn controls::Control> {
+        self.table_child_at(index / self.column_len(), index % self.column_len())
+    }
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn controls::Control> {
+        self.table_child_at_mut(index / self.column_len(), index % self.column_len())
+    }
+}
+
+impl <T: TableInner + Sized + 'static> controls::Table for Member<Control<MultiContainer<T>>> {
+    fn row_len(&self) -> usize {
+        self.inner.inner.inner.row_len()
+    }
+    fn column_len(&self) -> usize {
+        self.inner.inner.inner.column_len()
+    }
+    fn table_child_at(&self, row: usize, col: usize) -> Option<&dyn controls::Control> {
+        self.inner.inner.inner.table_child_at(row, col)
+    }
+    fn table_child_at_mut(&mut self, row: usize, col: usize) -> Option<&mut dyn controls::Control> {
+        self.inner.inner.inner.table_child_at_mut(row, col)
+    }
+    
+    fn set_table_child_to(&mut self, row: usize, col: usize, child: Box<dyn controls::Control>) -> Option<Box<dyn controls::Control>> {
+        self.inner.inner.inner.set_table_child_to(&mut self.base, row, col, child)
+    }
+    fn remove_table_child_from(&mut self, row: usize, col: usize) -> Option<Box<dyn controls::Control>> {
+        self.inner.inner.inner.remove_table_child_from(&mut self.base, row, col)
+    }
+    
+    fn add_row(&mut self) -> usize {
+        self.inner.inner.inner.add_row()
+    }
+    fn add_column(&mut self) -> usize {
+        self.inner.inner.inner.add_column()
+    }
+    fn insert_row(&mut self, row: usize) -> usize {
+        self.inner.inner.inner.insert_row(row)
+    }
+    fn insert_column(&mut self, col: usize) -> usize {
+        self.inner.inner.inner.insert_column(col)
+    }
+    fn delete_row(&mut self, row: usize) -> usize {
+        self.inner.inner.inner.delete_row(row)
+    }
+    fn delete_column(&mut self, col: usize) -> usize {
+        self.inner.inner.inner.delete_column(col)
+    }
+}
+impl<T: TableInner + Sized + 'static> Member<Control<MultiContainer<T>>> {
+    pub fn with_dimensions(rows: usize, cols: usize) -> Box<dyn controls::Table> {
+        T::with_dimensions(rows, cols)
+    }
+}
+
+// ===============================================================================================================
+
 pub trait OuterDrawable: seal::Sealed {
     fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);

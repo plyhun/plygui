@@ -185,3 +185,22 @@ pub trait Image: Control {
 
 pub trait ProgressBar: Control + HasProgress {}
 //impl <T: ProgressBar> development::Final for T {}
+
+pub trait Table: Control + MultiContainer {
+    fn row_len(&self) -> usize;
+    fn column_len(&self) -> usize;
+    fn table_child_at(&self, row: usize, col: usize) -> Option<&dyn Control>;
+    fn table_child_at_mut(&mut self, row: usize, col: usize) -> Option<&mut dyn Control>;
+    
+    fn set_table_child_to(&mut self, row: usize, col: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>>;
+    fn remove_table_child_from(&mut self, row: usize, col: usize) -> Option<Box<dyn Control>>;
+    
+    fn add_row(&mut self) -> usize;
+    fn add_column(&mut self) -> usize;
+    fn insert_row(&mut self, row: usize) -> usize;
+    fn insert_column(&mut self, col: usize) -> usize;
+    fn delete_row(&mut self, row: usize) -> usize;
+    fn delete_column(&mut self, col: usize) -> usize;
+}
+//impl <T: Table> development::Final for T {}
+
