@@ -1,5 +1,5 @@
 pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
-use crate::{callbacks, development, ids, layout, types};
+use crate::{callbacks, development, ids, layout, types, adapter};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -201,6 +201,22 @@ pub trait Table: Control + MultiContainer {
     fn insert_column(&mut self, col: usize) -> usize;
     fn delete_row(&mut self, row: usize) -> usize;
     fn delete_column(&mut self, col: usize) -> usize;
+}
+//impl <T: Table> development::Final for T {}
+
+pub trait AdapterView: Control {
+    fn adapter(&self) -> &dyn adapter::Adapter;
+    fn adapter_mut(&mut self) -> &mut dyn adapter::Adapter;
+    
+    fn as_adapter_view(&self) -> &dyn AdapterView;
+    fn as_adapter_view_mut(&mut self) -> &mut dyn AdapterView;
+    fn into_adapter_view(self: Box<Self>) -> Box<dyn AdapterView>;
+}
+
+pub trait List: AdapterView {
+    fn len(&self) -> usize {
+        self.adapter().len()
+    }
 }
 //impl <T: Table> development::Final for T {}
 
