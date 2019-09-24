@@ -10,4 +10,7 @@ path = "src/lib.rs"
 
 [dependencies.plygui-api]
 path = "../api"
-features = ["markup"]
+
+
+[features]
+markup = ["plygui-api/markup"]

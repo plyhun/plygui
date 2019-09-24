@@ -1,5 +1,5 @@
 pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
-use crate::{callbacks, development, ids, layout, types, adapter};
+use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -74,6 +74,12 @@ pub trait Container: Member {
         None
     }
     fn is_single(&self) -> Option<&dyn SingleContainer> {
+        None
+    }
+    fn is_adapter_mut(&mut self) -> Option<&mut dyn AdapterView> {
+        None
+    }
+    fn is_adapter(&self) -> Option<&dyn AdapterView> {
         None
     }
 
@@ -204,19 +210,20 @@ pub trait Table: Control + MultiContainer {
 }
 //impl <T: Table> development::Final for T {}
 
-pub trait AdapterView: Control {
-    fn adapter(&self) -> &dyn adapter::Adapter;
-    fn adapter_mut(&mut self) -> &mut dyn adapter::Adapter;
+pub trait AdapterView: Control + Container {
+    fn adapter(&self) -> &dyn types::Adapter;
+    fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
     
     fn as_adapter_view(&self) -> &dyn AdapterView;
     fn as_adapter_view_mut(&mut self) -> &mut dyn AdapterView;
     fn into_adapter_view(self: Box<Self>) -> Box<dyn AdapterView>;
-}
-
-pub trait List: AdapterView {
+    
     fn len(&self) -> usize {
         self.adapter().len()
     }
 }
-//impl <T: Table> development::Final for T {}
+
+pub trait List: AdapterView {
+}
+//impl <T: List> development::Final for T {}
 

@@ -1,6 +1,6 @@
 pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
 
-use crate::{callbacks, controls, ids, layout, runtime, types, adapter};
+use crate::{callbacks, controls, ids, layout, runtime, types, defaults};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -10,6 +10,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::mpsc;
+use std::cmp;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -128,25 +129,6 @@ impl<T: MemberInner> HasBase for Member<T> {
     #[inline]
     fn base_mut(&mut self) -> &mut Self::Base {
         &mut self.base
-    }
-}
-impl<T: ControlInner> Member<Control<T>> {
-    pub fn call_on_size(&mut self, w: u16, h: u16) {
-        let self2 = self as *mut Self;
-        if let Some(ref mut cb) = self.inner.base_mut().on_size {
-            (cb.as_mut())(unsafe { &mut *self2 }, w, h);
-        }
-    }
-    pub fn call_on_visibility(&mut self, v: types::Visibility) {
-        let self2 = self as *mut Self;
-        if let Some(ref mut cb) = self.inner.base_mut().on_visibility {
-            (cb.as_mut())(unsafe { &mut *self2 }, v);
-        }
-    }
-    pub fn as_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut T) {
-        let self2 = self as *mut Self;
-        let self3 = self as *mut Self;
-        (unsafe { &mut *self2 }.base_mut(), unsafe { &mut *self3 }.as_inner_mut().base_mut(), self.as_inner_mut().as_inner_mut())
     }
 }
 
@@ -303,8 +285,27 @@ impl<T: ControlInner> controls::HasLayout for Member<Control<T>> {
 
 pub trait Drawable: Sized + 'static {
     fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase);
-    fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase);
+    fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
+        let old_size = control.measured;
+        control.measured = match control.visibility {
+            types::Visibility::Gone => (0, 0),
+            _ => {
+                let w = match control.layout.width {
+                    layout::Size::MatchParent => parent_width,
+                    layout::Size::Exact(w) => w,
+                    layout::Size::WrapContent => defaults::THE_ULTIMATE_ANSWER_TO_EVERYTHING,
+                };
+                let h = match control.layout.height {
+                    layout::Size::MatchParent => parent_height,
+                    layout::Size::Exact(h) => h,
+                    layout::Size::WrapContent => defaults::THE_ULTIMATE_ANSWER_TO_EVERYTHING,
+                };
+                (cmp::max(0, w as i32) as u16, cmp::max(0, h as i32) as u16)
+            }
+        };
+        (control.measured.0, control.measured.1, control.measured != old_size)
+    }
 }
 
 // ===============================================================================================================
@@ -585,6 +586,33 @@ impl<T: ControlInner> Member<Control<T>> {
     #[inline]
     pub fn control_mut(&mut self) -> &mut Control<T> {
         &mut self.inner
+    }
+
+    #[inline]
+    pub fn call_on_size(&mut self, w: u16, h: u16) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.inner.base_mut().on_size {
+            (cb.as_mut())(unsafe { &mut *self2 }, w, h);
+        }
+    }
+    #[inline]
+    pub fn call_on_visibility(&mut self, v: types::Visibility) {
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.inner.base_mut().on_visibility {
+            (cb.as_mut())(unsafe { &mut *self2 }, v);
+        }
+    }
+    #[inline]
+    pub fn as_base_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut T) {
+        let self2 = self as *mut Self;
+        let self3 = self as *mut Self;
+        (unsafe { &mut *self2 }.base_mut(), unsafe { &mut *self3 }.as_inner_mut().base_mut(), self.as_inner_mut().as_inner_mut())
+    }
+    
+    #[inline]
+    pub fn control_base_parts_mut(base: &mut MemberBase) -> (&mut MemberBase, &mut ControlBase) {
+        let this = base as *mut _ as *mut Self;
+        (base, unsafe { &mut *this }.as_inner_mut().base_mut())
     }
 }
 
@@ -2121,7 +2149,7 @@ impl<T: FrameInner> Member<Control<SingleContainer<T>>> {
 
 pub trait SplittedInner: MultiContainerInner + ControlInner + HasOrientationInner {
     fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<Member<Control<MultiContainer<Self>>>>;
-    fn set_splitter(&mut self, member: &mut MemberBase, control: &mut ControlBase, pos: f32);
+    fn set_splitter(&mut self, base: &mut MemberBase, pos: f32);
     fn splitter(&self) -> f32;
 
     fn first(&self) -> &dyn controls::Control;
@@ -2132,7 +2160,7 @@ pub trait SplittedInner: MultiContainerInner + ControlInner + HasOrientationInne
 
 impl<T: SplittedInner> controls::Splitted for Member<Control<MultiContainer<T>>> {
     fn set_splitter(&mut self, pos: f32) {
-        self.inner.inner.inner.set_splitter(&mut self.base, &mut self.inner.base, pos)
+        self.inner.inner.inner.set_splitter(&mut self.base, pos)
     }
     fn splitter(&self) -> f32 {
         self.inner.inner.inner.splitter()
@@ -2219,15 +2247,14 @@ impl<T: MessageInner> Member<T> {
 
 pub trait ImageInner: ControlInner {
     fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image>;
-    fn set_scale(&mut self, member: &mut MemberBase, control: &mut ControlBase, policy: types::ImageScalePolicy);
+    fn set_scale(&mut self, base: &mut MemberBase, policy: types::ImageScalePolicy);
     fn scale(&self) -> types::ImageScalePolicy;
 }
 
 impl<T: ImageInner + Sized + 'static> controls::Image for Member<Control<T>> {
     fn set_scale(&mut self, policy: types::ImageScalePolicy) {
         let base1 = self as *mut _ as *mut Member<Control<T>>;
-        let base2 = self as *mut _ as *mut Member<Control<T>>;
-        self.as_inner_mut().as_inner_mut().set_scale(unsafe { (&mut *base1).base_mut() }, unsafe { (&mut *base2).as_inner_mut().base_mut() }, policy)
+        self.as_inner_mut().as_inner_mut().set_scale(unsafe { (&mut *base1).base_mut() }, policy)
     }
     fn scale(&self) -> types::ImageScalePolicy {
         self.as_inner().as_inner().scale()
@@ -2455,16 +2482,13 @@ impl<T: TableInner + Sized + 'static> Member<Control<MultiContainer<T>>> {
 
 // ===============================================================================================================
 
-pub trait AdapterViewInner: ControlInner {
-    fn with_adapter(adapter: Box<dyn adapter::Adapter>) -> Box<Member<Control<Adapter<Self>>>>;
-    
-    fn adapter(&self) -> &dyn adapter::Adapter;
-    fn adapter_mut(&mut self) -> &mut dyn adapter::Adapter;
+pub trait AdapterViewInner: ControlInner + ContainerInner {
+    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<Member<Control<Adapter<Self>>>>;
 }
 
 #[repr(C)]
 pub struct AdapterBase {
-    pub adapter: Box<dyn adapter::Adapter>,
+    pub adapter: Box<dyn types::Adapter>,
 }
 #[repr(C)]
 pub struct Adapter<T: AdapterViewInner> {
@@ -2496,7 +2520,7 @@ impl<T: AdapterViewInner> HasBase for Adapter<T> {
 
 impl<T: AdapterViewInner> HasInner for Adapter<T> {
     type Inner = T;
-    type Params = Box<dyn adapter::Adapter>;
+    type Params = Box<dyn types::Adapter>;
 
     #[inline]
     fn with_inner(inner: Self::Inner, adapter: Self::Params) -> Self {
@@ -2582,12 +2606,12 @@ impl<T: AdapterViewInner> ControlInner for Adapter<T> {
 }
 impl<T: AdapterViewInner> controls::AdapterView for Member<Control<Adapter<T>>> {
     #[inline]
-    fn adapter(&self) -> &dyn adapter::Adapter {
-        self.inner.inner.inner.adapter()
+    fn adapter(&self) -> &dyn types::Adapter {
+        self.inner.inner.base.adapter.as_ref()
     }
     #[inline]
-    fn adapter_mut(&mut self) -> &mut dyn adapter::Adapter {
-        self.inner.inner.inner.adapter_mut()
+    fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
+        self.inner.inner.base.adapter.as_mut()
     }
 
     #[inline]
@@ -2603,11 +2627,82 @@ impl<T: AdapterViewInner> controls::AdapterView for Member<Control<Adapter<T>>> 
         self
     }
 }
+impl<T: AdapterViewInner> controls::Container for Member<Control<Adapter<T>>> {
+    #[inline]
+    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+        match arg {
+            types::FindBy::Id(id) => {
+                if self.base.id == id {
+                    return Some(self);
+                }
+            }
+            types::FindBy::Tag(ref tag) => {
+                if let Some(mytag) = self.base.tag() {
+                    if tag.as_str() == mytag {
+                        return Some(self);
+                    }
+                }
+            }
+        }
+        self.inner.inner.inner.find_control_mut(arg)
+    }
+    #[inline]
+    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+        match arg {
+            types::FindBy::Id(id) => {
+                if self.base.id == id {
+                    return Some(self);
+                }
+            }
+            types::FindBy::Tag(ref tag) => {
+                if let Some(mytag) = self.base.tag() {
+                    if tag.as_str() == mytag {
+                        return Some(self);
+                    }
+                }
+            }
+        }
+        self.inner.inner.inner.find_control(arg)
+    }
 
+    #[inline]
+    fn is_adapter_mut(&mut self) -> Option<&mut dyn controls::AdapterView> {
+        Some(self)
+    }
+    #[inline]
+    fn is_adapter(&self) -> Option<&dyn controls::AdapterView> {
+        Some(self)
+    }
+
+    #[inline]
+    fn as_container(&self) -> &dyn controls::Container {
+        self
+    }
+    #[inline]
+    fn as_container_mut(&mut self) -> &mut dyn controls::Container {
+        self
+    }
+    #[inline]
+    fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
+        self
+    }
+}
 impl<T: AdapterViewInner> Member<Control<Adapter<T>>> {
-    pub fn with_adapter(adapter: Box<dyn adapter::Adapter>) -> Box<Self> {
+    #[inline]
+    pub fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<Self> {
         T::with_adapter(adapter)
     }
+    
+    #[inline]
+    pub fn adapter_base_parts_mut(base: &mut MemberBase) -> (&mut MemberBase, &mut ControlBase, &mut AdapterBase) {
+        let this = base as *mut _ as *mut Self;
+        (base, unsafe { &mut *this }.as_inner_mut().base_mut(), unsafe { &mut *this }.as_inner_mut().as_inner_mut().base_mut())
+    }
+}
+
+// ===============================================================================================================
+
+pub trait ListInner: AdapterViewInner {
 }
 
 // ===============================================================================================================
