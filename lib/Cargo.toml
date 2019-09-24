@@ -20,6 +20,9 @@ plygui-win32 = { version = "0.0.1", path = "../../plygui-win32", optional = true
 [target.'cfg(target_os = "macos")'.dependencies]
 plygui-cocoa = { version = "0.0.1", path = "../../plygui-cocoa", optional = true }
 
+[target.'cfg(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")))'.dependencies]
+plygui-testable = { version = "0.0.1", path = "../testable" }
+
 [features]
 gtk3 = ["plygui-gtk"]
 win32 = ["plygui-win32"]
