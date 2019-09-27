@@ -428,6 +428,10 @@ impl<T: ControlInner> OuterDrawable for Member<Control<T>> {
         }
     }
     #[inline]
+    fn coords(&self) -> Option<(i32, i32)> {
+        self.inner.base.coords
+    }
+    #[inline]
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool) {
         self.inner.inner.measure(&mut self.base, &mut self.inner.base, w, h)
     }
@@ -2711,6 +2715,7 @@ pub trait OuterDrawable: seal::Sealed {
     fn draw(&mut self, coords: Option<(i32, i32)>);
     fn measure(&mut self, w: u16, h: u16) -> (u16, u16, bool);
     fn invalidate(&mut self);
+    fn coords(&self) -> Option<(i32, i32)>;
     fn set_skip_draw(&mut self, skip: bool);
     fn is_skip_draw(&self) -> bool;
 
