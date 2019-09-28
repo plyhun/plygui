@@ -1,4 +1,4 @@
-pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
+pub use crate::auto::{ClickableInner, CloseableInner, ItemClickableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
 
 use crate::{callbacks, controls, ids, layout, runtime, types, defaults};
 
@@ -2516,6 +2516,7 @@ pub trait AdapterViewInner: ControlInner + ContainerInner {
 #[repr(C)]
 pub struct AdapterBase {
     pub adapter: Box<dyn types::Adapter>,
+    pub on_item_click: Option<callbacks::OnItemClick>,
 }
 #[repr(C)]
 pub struct Adapter<T: AdapterViewInner> {
@@ -2551,7 +2552,7 @@ impl<T: AdapterViewInner> HasInner for Adapter<T> {
 
     #[inline]
     fn with_inner(inner: Self::Inner, adapter: Self::Params) -> Self {
-        Adapter { inner, base: AdapterBase { adapter } }
+        Adapter { inner, base: AdapterBase { adapter, on_item_click: None } }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -2631,6 +2632,34 @@ impl<T: AdapterViewInner> ControlInner for Adapter<T> {
         self.inner.fill_from_markup(member, control, markup, registry)
     }
 }
+impl<T: AdapterViewInner> controls::ItemClickable for Member<Control<Adapter<T>>> {
+    #[inline]
+    fn on_item_click(&mut self, cb: Option<callbacks::OnItemClick>) {
+        self.inner.inner.base.on_item_click = cb;
+    }
+    #[inline]
+    fn item_click(&mut self, arg: usize, item_view: &mut dyn controls::Control, skip_callbacks: bool) {
+        if !skip_callbacks{
+            let self2 = self as *mut Self;
+            if let Some(ref mut callback) = self.inner.inner.base.on_item_click {
+                (callback.as_mut())(unsafe { &mut *self2 }, arg, item_view)
+            }
+        }
+    }
+    
+    #[inline]
+    fn as_item_clickable(&self) -> &dyn controls::ItemClickable {
+        self
+    }
+    #[inline]
+    fn as_item_clickable_mut(&mut self) -> &mut dyn controls::ItemClickable {
+        self
+    }
+    #[inline]
+    fn into_item_clickable(self: Box<Self>) -> Box<dyn controls::ItemClickable> {
+        self
+    }
+}
 impl<T: AdapterViewInner> controls::AdapterView for Member<Control<Adapter<T>>> {
     #[inline]
     fn adapter(&self) -> &dyn types::Adapter {
@@ -2640,7 +2669,6 @@ impl<T: AdapterViewInner> controls::AdapterView for Member<Control<Adapter<T>>> 
     fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
         self.inner.inner.base.adapter.as_mut()
     }
-
     #[inline]
     fn as_adapter_view(&self) -> &dyn controls::AdapterView {
         self
