@@ -1,4 +1,4 @@
-pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
+pub use crate::auto::{AsAny, Clickable, Closeable, ItemClickable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
 use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
@@ -210,7 +210,7 @@ pub trait Table: Control + MultiContainer {
 }
 //impl <T: Table> development::Final for T {}
 
-pub trait AdapterView: Control + Container {
+pub trait AdapterView: Control + Container + ItemClickable {
     fn adapter(&self) -> &dyn types::Adapter;
     fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
     

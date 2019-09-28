@@ -21,11 +21,14 @@ impl SimpleTextAdapter {
     }
 }
 impl SimpleTextAdapter {
-    pub fn item_at(&self, i: usize) -> Option<&String> {
+    pub fn text_at(&self, i: usize) -> Option<&String> {
         self.items.get(i)    
     }
-    pub fn item_at_mut(&mut self, i: usize) -> Option<&mut String> {
+    pub fn text_at_mut(&mut self, i: usize) -> Option<&mut String> {
         self.items.get_mut(i)    
+    }
+    pub fn push<T: AsRef<str>>(&mut self, arg: T) {
+        self.items.push(String::from(arg.as_ref()));
     }
 }
 impl Adapter for SimpleTextAdapter {
@@ -34,5 +37,7 @@ impl Adapter for SimpleTextAdapter {
     }
 	fn spawn_item_view(&mut self, i: usize, _parent: &dyn AdapterView) -> Box<dyn Control> {
     	imp::Text::with_text(self.items[i].as_str()).into_control()
+    	//imp::Button::with_label(self.items[i].as_str()).into_control()
 	}
 }
+
