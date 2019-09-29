@@ -6,6 +6,7 @@ pub use crate::auto::{
     OnFrame,
     OnProgress,
     OnItemClick,
+    OnItemChange,
 };
 
 use std::sync::atomic::{AtomicUsize, Ordering};

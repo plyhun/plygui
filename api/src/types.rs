@@ -1,4 +1,4 @@
-use crate::controls;
+use crate::{development, controls};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -78,9 +78,9 @@ impl ApplicationResult {
     }
 }
 
-pub trait Adapter {
+pub trait Adapter: development::AdapterInner {
 	fn len(&self) -> usize;
-	//fn spawn_group_view(&mut self) -> Box<dyn Control>;
+	
 	fn spawn_item_view(&mut self, i: usize, parent: &dyn controls::AdapterView) -> Box<dyn controls::Control>;
 }
 

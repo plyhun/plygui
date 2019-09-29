@@ -1,13 +1,14 @@
 use crate::{AdapterView, Adapter, Control};
-use crate::imp;
+use crate::{imp, callbacks, development};
 
 pub struct SimpleTextAdapter {
-    items: Vec<String>
+    items: Vec<String>,
+    on_item_change: Option<callbacks::OnItemChange>
 }
 
 impl SimpleTextAdapter {
     pub fn new() -> Self {
-        SimpleTextAdapter { items: Vec::new() }
+        SimpleTextAdapter { items: Vec::new(), on_item_change: None }
     }
     pub fn with_iterator<'a, T, I>(i: I) -> Self where T: AsRef<str>, I: Iterator<Item=T> {
         let mut t = Self::new();
@@ -29,6 +30,11 @@ impl SimpleTextAdapter {
     }
     pub fn push<T: AsRef<str>>(&mut self, arg: T) {
         self.items.push(String::from(arg.as_ref()));
+        let i = self.items.len() - 1;
+        let self2 = self as *mut Self;
+        if let Some(ref mut cb) = self.on_item_change.as_mut() {
+            (cb.as_mut())(i)
+        }
     }
 }
 impl Adapter for SimpleTextAdapter {
@@ -40,4 +46,8 @@ impl Adapter for SimpleTextAdapter {
     	//imp::Button::with_label(self.items[i].as_str()).into_control()
 	}
 }
-
+impl development::AdapterInner for SimpleTextAdapter {
+    fn on_item_change(&mut self, cb: Option<callbacks::OnItemChange>) {
+        self.on_item_change = cb;
+    }
+}
