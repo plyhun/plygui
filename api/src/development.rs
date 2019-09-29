@@ -2511,6 +2511,7 @@ impl<T: TableInner + Sized + 'static> Member<Control<MultiContainer<T>>> {
 
 pub trait AdapterViewInner: ControlInner + ContainerInner {
     fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<Member<Control<Adapter<Self>>>>;
+    fn on_item_change(&mut self, base: &mut MemberBase, i: usize);
 }
 
 #[repr(C)]
@@ -2548,11 +2549,14 @@ impl<T: AdapterViewInner> HasBase for Adapter<T> {
 
 impl<T: AdapterViewInner> HasInner for Adapter<T> {
     type Inner = T;
-    type Params = Box<dyn types::Adapter>;
+    type Params = (Box<dyn types::Adapter>, callbacks::OnItemChange);
 
     #[inline]
-    fn with_inner(inner: Self::Inner, adapter: Self::Params) -> Self {
-        Adapter { inner, base: AdapterBase { adapter, on_item_click: None } }
+    fn with_inner(inner: Self::Inner, params: Self::Params) -> Self {
+        let (mut adapter, on_item_change) = params;
+        adapter.on_item_change(Some(on_item_change));
+        let base = AdapterBase { adapter, on_item_click: None };
+        Adapter { inner, base }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -2742,7 +2746,7 @@ impl<T: AdapterViewInner> controls::Container for Member<Control<Adapter<T>>> {
         self
     }
 }
-impl<T: AdapterViewInner> Member<Control<Adapter<T>>> {
+impl<T: AdapterViewInner + 'static> Member<Control<Adapter<T>>> {
     #[inline]
     pub fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<Self> {
         T::with_adapter(adapter)
@@ -2753,6 +2757,20 @@ impl<T: AdapterViewInner> Member<Control<Adapter<T>>> {
         let this = base as *mut _ as *mut Self;
         (base, unsafe { &mut *this }.as_inner_mut().base_mut(), unsafe { &mut *this }.as_inner_mut().as_inner_mut().base_mut())
     }
+    
+    #[inline]
+    pub fn on_item_change(this: &mut dyn controls::AdapterView, i: usize) {
+        let this = this.as_any_mut().downcast_mut::<Self>().unwrap();
+        let this2 = this as *mut Self; // bck is stupid;
+        let base = this.base_mut();
+        let inner = unsafe {&mut *this2}.as_inner_mut().as_inner_mut().as_inner_mut();
+        inner.on_item_change(base, i)
+    }
+}
+
+
+pub trait AdapterInner {
+    fn on_item_change(&mut self, cb: Option<callbacks::OnItemChange>);
 }
 
 // ===============================================================================================================

@@ -17,13 +17,16 @@ impl AdapterViewInner for TestableList {
                         base: TestableControlBase::new(),
                         children: Vec::with_capacity(adapter.len()),
                     },
-                    adapter,
+                    (adapter, List::on_item_change.into()),
                 ),
                 (),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
         b
+    }
+    fn on_item_change(&mut self, base: &mut MemberBase, i: usize) {
+        
     }
 }
 
@@ -191,5 +194,8 @@ impl Drawable for TestableList {
 pub(crate) fn spawn() -> Box<dyn controls::Control> {
     List::with_dimensions(0, 0).into_control()
 }*/
+fn on_item_change(this: &mut dyn controls::AdapterView, i: usize) {
+    
+}
 
 default_impls_as!(List);
