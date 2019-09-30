@@ -199,7 +199,7 @@ impl<T: MemberInner> controls::Member for Member<T> {
         self
     }
 }
-impl<T: MemberInner> controls::AsAny for Member<T> {
+impl<T: MemberInner> types::AsAny for Member<T> {
     #[inline]
     fn as_any(&self) -> &dyn Any {
         self
@@ -1873,7 +1873,7 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
         self.as_inner_mut().members_mut()
     }
 }
-impl<T: ApplicationInner> controls::AsAny for Application<T> {
+impl<T: ApplicationInner> types::AsAny for Application<T> {
     #[inline]
     fn as_any(&self) -> &dyn Any {
         self
@@ -2549,14 +2549,11 @@ impl<T: AdapterViewInner> HasBase for Adapter<T> {
 
 impl<T: AdapterViewInner> HasInner for Adapter<T> {
     type Inner = T;
-    type Params = (Box<dyn types::Adapter>, callbacks::OnItemChange);
+    type Params = Box<dyn types::Adapter>;
 
     #[inline]
-    fn with_inner(inner: Self::Inner, params: Self::Params) -> Self {
-        let (mut adapter, on_item_change) = params;
-        adapter.on_item_change(Some(on_item_change));
-        let base = AdapterBase { adapter, on_item_click: None };
-        Adapter { inner, base }
+    fn with_inner(inner: Self::Inner, adapter: Self::Params) -> Self {
+        Adapter { inner, base: AdapterBase { adapter, on_item_click: None } }
     }
     #[inline]
     fn as_inner(&self) -> &Self::Inner {
@@ -2749,7 +2746,13 @@ impl<T: AdapterViewInner> controls::Container for Member<Control<Adapter<T>>> {
 impl<T: AdapterViewInner + 'static> Member<Control<Adapter<T>>> {
     #[inline]
     pub fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<Self> {
-        T::with_adapter(adapter)
+        let mut t = T::with_adapter(adapter);
+        let base = t.base_mut() as *mut MemberBase;
+        t.as_inner_mut().as_inner_mut().base_mut().adapter.on_item_change(Some(AdapterInnerCallback {
+            target: base,
+            on_item_change: Self::on_item_change.into(),
+        }));
+        t
     }
     
     #[inline]
@@ -2759,18 +2762,29 @@ impl<T: AdapterViewInner + 'static> Member<Control<Adapter<T>>> {
     }
     
     #[inline]
-    pub fn on_item_change(this: &mut dyn controls::AdapterView, i: usize) {
-        let this = this.as_any_mut().downcast_mut::<Self>().unwrap();
+    pub(crate) fn on_item_change(base: &mut MemberBase, i: usize) {
+        let this = base.as_any_mut().downcast_mut::<Self>().unwrap();
         let this2 = this as *mut Self; // bck is stupid;
-        let base = this.base_mut();
         let inner = unsafe {&mut *this2}.as_inner_mut().as_inner_mut().as_inner_mut();
         inner.on_item_change(base, i)
     }
 }
 
+// ===============================================================================================================
 
+pub struct AdapterInnerCallback {
+    target: *mut MemberBase,
+    on_item_change: callbacks::OnItemChange,
+}
+impl AdapterInnerCallback {
+    pub fn on_item_change(&mut self, i: usize) {
+        if !self.target.is_null() {
+            (self.on_item_change.as_mut())(unsafe {&mut *self.target}, i)
+        }
+    }
+}
 pub trait AdapterInner {
-    fn on_item_change(&mut self, cb: Option<callbacks::OnItemChange>);
+    fn on_item_change(&mut self, cb: Option<AdapterInnerCallback>);
 }
 
 // ===============================================================================================================

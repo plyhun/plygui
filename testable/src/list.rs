@@ -17,7 +17,7 @@ impl AdapterViewInner for TestableList {
                         base: TestableControlBase::new(),
                         children: Vec::with_capacity(adapter.len()),
                     },
-                    (adapter, List::on_item_change.into()),
+                    adapter,
                 ),
                 (),
             ),

@@ -1,9 +1,11 @@
 use crate::{AdapterView, Adapter, Control};
-use crate::{imp, callbacks, development};
+use crate::{imp, development};
+use crate::AsAny;
+use std::any::Any;
 
 pub struct SimpleTextAdapter {
     items: Vec<String>,
-    on_item_change: Option<callbacks::OnItemChange>
+    on_item_change: Option<development::AdapterInnerCallback>
 }
 
 impl SimpleTextAdapter {
@@ -31,10 +33,23 @@ impl SimpleTextAdapter {
     pub fn push<T: AsRef<str>>(&mut self, arg: T) {
         self.items.push(String::from(arg.as_ref()));
         let i = self.items.len() - 1;
-        let self2 = self as *mut Self;
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
-            (cb.as_mut())(i)
+            cb.on_item_change(i)
         }
+    }
+}
+impl AsAny for SimpleTextAdapter {
+    #[inline]
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    #[inline]
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+    #[inline]
+    fn into_any(self: Box<Self>) -> Box<dyn Any> {
+        self
     }
 }
 impl Adapter for SimpleTextAdapter {
@@ -47,7 +62,7 @@ impl Adapter for SimpleTextAdapter {
 	}
 }
 impl development::AdapterInner for SimpleTextAdapter {
-    fn on_item_change(&mut self, cb: Option<callbacks::OnItemChange>) {
+    fn on_item_change(&mut self, cb: Option<development::AdapterInnerCallback>) {
         self.on_item_change = cb;
     }
 }
