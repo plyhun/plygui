@@ -1,6 +1,6 @@
 use crate::callbacks::*;
 use crate::types;
-use crate::controls::{Member, Control, Container, Application, AdapterView};
+use crate::controls::{Member, Control, Container, Application};
 use crate::development::{MemberInner, ControlInner, MemberBase};
 
 use std::any::Any;
@@ -34,4 +34,4 @@ maybe!(HasSize);
 maybe!(HasVisibility);
 
 on!(Frame (&mut dyn Application) -> bool);
-on!(ItemChange (&mut dyn AdapterView, usize));
+on!(ItemChange (&mut MemberBase, usize));

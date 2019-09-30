@@ -1,4 +1,4 @@
-pub use crate::auto::{AsAny, Clickable, Closeable, ItemClickable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
+pub use crate::auto::{Clickable, Closeable, ItemClickable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
 use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
@@ -7,7 +7,7 @@ use std::borrow::Cow;
 
 // ===============================================================================================================
 
-pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + development::seal::Sealed {
+pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + types::AsAny + development::seal::Sealed {
     fn id(&self) -> ids::Id;
     fn tag(&self) -> Option<Cow<str>>;
     fn set_tag(&mut self, tag: Option<Cow<str>>);
@@ -132,7 +132,7 @@ pub trait MultiContainer: Container {
     fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer>;
 }
 
-pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
+pub trait Application: HasNativeId + types::AsAny + development::seal::Sealed {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;

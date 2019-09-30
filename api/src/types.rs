@@ -1,5 +1,7 @@
 use crate::{development, controls};
 
+pub use crate::auto::AsAny;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Visibility {
@@ -78,7 +80,7 @@ impl ApplicationResult {
     }
 }
 
-pub trait Adapter: development::AdapterInner {
+pub trait Adapter: development::AdapterInner + AsAny {
 	fn len(&self) -> usize;
 	
 	fn spawn_item_view(&mut self, i: usize, parent: &dyn controls::AdapterView) -> Box<dyn controls::Control>;
