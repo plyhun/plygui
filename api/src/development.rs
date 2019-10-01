@@ -1776,6 +1776,9 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn find_member(&self, arg: types::FindBy) -> Option<&dyn controls::Member>;
 
     fn exit(&mut self, skip_on_close: bool) -> bool;
+    
+    fn frame_sleep(&self) -> u32;
+    fn set_frame_sleep(&mut self, value: u32);
 
     fn on_frame_async_feeder(&mut self, feeder: callbacks::AsyncFeeder<callbacks::OnFrame>) -> callbacks::AsyncFeeder<callbacks::OnFrame> {
         feeder
@@ -1863,6 +1866,14 @@ impl<T: ApplicationInner> controls::Application for Application<T> {
     fn on_frame(&mut self, cb: callbacks::OnFrame) {
         let mut feeder = self.base_mut().sender().clone().into();
         self.as_inner_mut().on_frame(&mut feeder, cb)
+    }
+    #[inline]
+    fn frame_sleep(&self) -> u32 {
+        self.as_inner().frame_sleep()
+    }
+    #[inline]
+    fn set_frame_sleep(&mut self, value: u32) {
+        self.as_inner_mut().set_frame_sleep(value)
     }
     #[inline]
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn controls::Member)> + 'a> {
