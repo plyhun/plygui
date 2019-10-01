@@ -142,6 +142,9 @@ pub trait Application: HasNativeId + types::AsAny + development::seal::Sealed {
     fn exit(self: Box<Self>, skip_on_close: bool) -> bool;
     fn on_frame(&mut self, cb: callbacks::OnFrame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
+    
+    fn frame_sleep(&self) -> u32;
+    fn set_frame_sleep(&mut self, value: u32);
 
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a>; //E0562 :(
     fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a>; //E0562 :(
