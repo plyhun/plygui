@@ -2522,7 +2522,7 @@ impl<T: TableInner + Sized + 'static> Member<Control<MultiContainer<T>>> {
 
 pub trait AdapterViewInner: ControlInner + ContainerInner {
     fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<Member<Control<Adapter<Self>>>>;
-    fn on_item_change(&mut self, base: &mut MemberBase, i: usize);
+    fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
 }
 
 #[repr(C)]
@@ -2773,11 +2773,11 @@ impl<T: AdapterViewInner + 'static> Member<Control<Adapter<T>>> {
     }
     
     #[inline]
-    pub(crate) fn on_item_change(base: &mut MemberBase, i: usize) {
+    pub(crate) fn on_item_change(base: &mut MemberBase, value: types::Change) {
         let this = base.as_any_mut().downcast_mut::<Self>().unwrap();
         let this2 = this as *mut Self; // bck is stupid;
         let inner = unsafe {&mut *this2}.as_inner_mut().as_inner_mut().as_inner_mut();
-        inner.on_item_change(base, i)
+        inner.on_item_change(base, value)
     }
 }
 
@@ -2788,9 +2788,9 @@ pub struct AdapterInnerCallback {
     on_item_change: callbacks::OnItemChange,
 }
 impl AdapterInnerCallback {
-    pub fn on_item_change(&mut self, i: usize) {
+    pub fn on_item_change(&mut self, value: types::Change) {
         if !self.target.is_null() {
-            (self.on_item_change.as_mut())(unsafe {&mut *self.target}, i)
+            (self.on_item_change.as_mut())(unsafe {&mut *self.target}, value)
         }
     }
 }
