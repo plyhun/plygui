@@ -34,4 +34,4 @@ maybe!(HasSize);
 maybe!(HasVisibility);
 
 on!(Frame (&mut dyn Application) -> bool);
-on!(ItemChange (&mut MemberBase, usize));
+on!(ItemChange (&mut MemberBase, types::Change));

@@ -25,7 +25,7 @@ impl AdapterViewInner for TestableList {
         ));
         b
     }
-    fn on_item_change(&mut self, base: &mut MemberBase, i: usize) {
+    fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         
     }
 }

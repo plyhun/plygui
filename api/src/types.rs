@@ -64,6 +64,13 @@ pub enum FindBy {
     Tag(String)
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Change {
+    Added(usize),
+    Removed(usize),
+    Edited(usize)
+}
+
 pub enum ApplicationResult {
     New(Box<dyn controls::Application>),
     Existing(Box<dyn controls::Application>),

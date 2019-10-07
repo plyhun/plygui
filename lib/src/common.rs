@@ -1,4 +1,4 @@
-use crate::{AdapterView, Adapter, Control};
+use crate::{AdapterView, Adapter, Control, Change};
 use crate::{imp, development};
 use crate::AsAny;
 use std::any::Any;
@@ -31,11 +31,19 @@ impl SimpleTextAdapter {
         self.items.get_mut(i)    
     }
     pub fn push<T: AsRef<str>>(&mut self, arg: T) {
+        let i = self.items.len();
         self.items.push(String::from(arg.as_ref()));
-        let i = self.items.len() - 1;
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
-            cb.on_item_change(i)
+            cb.on_item_change(Change::Added(i))
         }
+    }
+    pub fn pop(&mut self) -> Option<String> {
+        let t = self.items.pop();
+        let i = self.items.len();
+        if let Some(ref mut cb) = self.on_item_change.as_mut() {
+            cb.on_item_change(Change::Removed(i))
+        }
+        t
     }
 }
 impl AsAny for SimpleTextAdapter {
