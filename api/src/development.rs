@@ -178,7 +178,14 @@ impl<T: MemberInner> controls::MaybeContainer for Member<T> {
         None
     }
 }
-impl<T: MemberInner> controls::MaybeHasSize for Member<T> {}
+impl<T: MemberInner> controls::MaybeHasSize for Member<T> {
+    default fn is_has_size(&self) -> Option<&dyn controls::HasSize> {
+        None
+    }
+    default fn is_has_size_mut(&mut self) -> Option<&mut dyn controls::HasSize> {
+        None
+    }
+}
 impl<T: MemberInner> controls::MaybeHasVisibility for Member<T> {}
 
 impl<T: MemberInner> controls::Member for Member<T> {
@@ -614,16 +621,32 @@ impl<T: ContainerInner> controls::Container for Member<T> {
     }
 
     #[inline]
-    fn as_container(&self) -> &dyn controls::Container {
+    default fn as_container(&self) -> &dyn controls::Container {
         self
     }
     #[inline]
-    fn as_container_mut(&mut self) -> &mut dyn controls::Container {
+    default fn as_container_mut(&mut self) -> &mut dyn controls::Container {
         self
     }
     #[inline]
-    fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
+    default fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
         self
+    }
+    #[inline]
+    default fn is_single_mut(&mut self) -> Option<&mut dyn controls::SingleContainer> {
+        None
+    }
+    #[inline]
+    default fn is_single(&self) -> Option<&dyn controls::SingleContainer> {
+        None
+    }
+    #[inline]
+    default fn is_multi_mut(&mut self) -> Option<&mut dyn controls::MultiContainer> {
+        None
+    }
+    #[inline]
+    default fn is_multi(&self) -> Option<&dyn controls::MultiContainer> {
+        None
     }
 }
 

@@ -5,7 +5,6 @@ pub use plygui_api::external::image;
 pub use std::borrow::Cow;
 pub use std::ffi::{CString, IntoStringError, OsStr};
 pub use std::marker::PhantomData;
-pub use std::os::windows::ffi::OsStrExt;
 pub use std::{cmp, mem, ops, ptr, str, sync::mpsc};
 pub use std::rc::Rc;
 pub use std::cell::RefCell;
