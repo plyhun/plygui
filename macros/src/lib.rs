@@ -7,6 +7,7 @@ mod as_into;
 mod has;
 mod maybe;
 mod on;
+mod define;
 
 #[proc_macro]
 pub fn able_to(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -34,4 +35,9 @@ pub fn maybe(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 #[proc_macro]
 pub fn on(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     on::make(item)
+}
+
+#[proc_macro]
+pub fn define(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+	define::make(item)
 }
