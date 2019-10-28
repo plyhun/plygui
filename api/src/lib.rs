@@ -18,6 +18,7 @@ pub mod utils;
 
 mod runtime;
 mod auto;
+mod inner;
 
 #[macro_use]
 pub mod callbacks;
