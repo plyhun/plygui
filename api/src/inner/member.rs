@@ -1,11 +1,11 @@
-use crate::auto::{AsAny, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember, HasSize};
 use crate::{ids, runtime};
 
-use super::{HasBase, HasInner};
 use super::seal::Sealed;
 use super::native_id::{HasNativeId, HasNativeIdInner};
 use super::control::Control;
 use super::container::Container;
+use super::auto::{AsAny, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember, HasSize};
+
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -41,8 +41,8 @@ pub struct MemberBase {
 }
 #[repr(C)]
 pub struct AMember<T: MemberInner> {
-    base: MemberBase,
-    inner: T,
+    pub base: MemberBase,
+    pub inner: T,
 }
 #[repr(C)]
 pub struct MemberFunctions {
@@ -105,19 +105,6 @@ impl MemberBase {
         unsafe { (self.functions._as_member_mut)(self) }
     }
 }
-impl<T: MemberInner> HasBase for AMember<T> {
-    type Base = MemberBase;
-
-    #[inline]
-    fn base(&self) -> &Self::Base {
-        &self.base
-    }
-    #[inline]
-    fn base_mut(&mut self) -> &mut Self::Base {
-        &mut self.base
-    }
-}
-
 impl<T: MemberInner> HasNativeId for AMember<T> {
     #[inline]
     unsafe fn native_id(&self) -> usize {
@@ -207,28 +194,13 @@ impl<T: MemberInner> AsAny for AMember<T> {
         self
     }
 }
-impl<T: MemberInner> HasInner for AMember<T> {
-    type Inner = T;
-    type Params = MemberFunctions;
-
+impl<T: MemberInner> AMember<T> {
     #[inline]
-    fn with_inner(inner: Self::Inner, params: Self::Params) -> Self {
+    fn with_inner(inner: T, params: MemberFunctions) -> Self {
         AMember {
             inner: inner,
             base: MemberBase::with_functions(params),
         }
-    }
-    #[inline]
-    fn as_inner(&self) -> &Self::Inner {
-        &self.inner
-    }
-    #[inline]
-    fn as_inner_mut(&mut self) -> &mut Self::Inner {
-        &mut self.inner
-    }
-    #[inline]
-    fn into_inner(self) -> Self::Inner {
-        self.inner
     }
 }
 impl<T: MemberInner> Sealed for AMember<T> {}

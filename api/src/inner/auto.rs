@@ -2,9 +2,9 @@ use crate::callbacks::*;
 use crate::{types, layout};
 use crate::controls::{Application};
 
-use super::member::{Member, AMember, MemberInner, MemberBase};
-use super::control::{Control, ControlInner};
-use super::container::{Container, ContainerInner};
+use super::member::{Member, MemberInner, MemberBase};
+use super::control::{Control};
+use super::container::{Container};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -22,14 +22,25 @@ pub trait HasNativeId: 'static {
 able_to!(Close: Member {} -> bool);
 able_to!(Click: Member);
 
-has!(Label(Cow<'_, str>): Member);
-has!(Image(Cow<'_, image::DynamicImage>): Member);
-has!(Progress(types::Progress): Member);
+has_settable!(Label(Cow<'_, str>): Member);
+has_settable!(Image(Cow<'_, image::DynamicImage>): Member);
+has_settable_reacted!(Progress(types::Progress): Member);
 
 has_reacted!(Size(u16, u16): Member);
 has_reacted!(Visibility(types::Visibility): Member);
-has_reacted!(Layout(layout::Size, layout::Size): Member {
-    fn layout_margin(&self) -> layout::BoundarySize;
+
+has_private!(Layout(layout::Size, layout::Size): Member {
+    outer: {
+        fn layout_width(&self) -> layout::Size;
+        fn layout_height(&self) -> layout::Size;
+        fn set_layout_width(&mut self, value: layout::Size);
+        fn set_layout_height(&mut self, value: layout::Size);
+        fn layout_margin(&self) -> layout::BoundarySize;
+    },
+    inner: {
+        fn on_layout_changed(&mut self, base: &mut MemberBase);
+        fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize;
+    }
 });
 
 maybe!(Member);

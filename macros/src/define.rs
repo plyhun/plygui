@@ -1,3 +1,5 @@
+use crate::custom_code_block::{CodeBlock, Custom};
+
 use heck::*;
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
@@ -12,63 +14,7 @@ pub fn make(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     proc_macro::TokenStream::from(t)
 }
 
-struct CodeBlock {
-	name: Ident,
-	_colon: Token![:],
-	_brace: token::Brace,
-    custom: proc_macro2::TokenStream,
-    _comma: Option<Token![,]>
-}
-impl Parse for CodeBlock {
-	fn parse(input: ParseStream) -> Result<Self> {
-		let content;
-		Ok(Self {
-			name: input.parse()?,
-			_colon: input.parse()?,
-			_brace: braced!(content in input),
-			custom: content.parse().unwrap(),
-			_comma: input.parse()?
-		})
-	}
-}
-
-struct Custom {
-	block1: Option<CodeBlock>,
-    block2: Option<CodeBlock>,
-    block3: Option<CodeBlock>,
-}
-impl Parse for Custom {
-	fn parse(input: ParseStream) -> Result<Self> {
-		Ok(Self {
-			block1: {
-				let lookahead = input.lookahead1();
-                if lookahead.peek(Ident) {
-                    Some(input.parse()?)
-                } else {
-                    None
-                }
-			},
-			block2: {
-				let lookahead = input.lookahead1();
-                if lookahead.peek(Ident) {
-                    Some(input.parse()?)
-                } else {
-                    None
-                }
-			},
-			block3: {
-				let lookahead = input.lookahead1();
-                if lookahead.peek(Ident) {
-                    Some(input.parse()?)
-                } else {
-                    None
-                }
-			},
-		})
-	}
-}
-
-pub(crate) struct Define {
+pub struct Define {
 	name: Ident,
 	_colon: Option<Token![:]>,
     extends: Option<Punctuated<Ident, Token![+]>>,
@@ -150,7 +96,7 @@ impl ToTokens for Define {
 	        		if let Some(ref custom) = block {
 		        		match custom.name.to_string().as_str() {
 		        			"base" => {
-		        				type_base = quote! { base: #ident_base, };
+		        				type_base = quote! { pub base: #ident_base, };
 		        				let custom = custom.custom.clone();
 		        				custom_base = quote! {
 		        					#[repr(C)]
@@ -179,7 +125,7 @@ impl ToTokens for Define {
 			#[repr(C)]
 			pub struct #a_ident<T: #ident_inner> {
 				#type_base
-				inner: T
+				pub inner: T
 			}
 			
 			pub trait #ident: 'static #(+#extends)* {

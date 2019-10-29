@@ -19,9 +19,9 @@ pub trait HasNativeId: 'static {
 able_to!(Close: Member {} -> bool);
 able_to!(Click: Member);
 
-has!(Label(Cow<'_, str>): Member);
-has!(Image(Cow<'_, image::DynamicImage>): Member);
-has!(Progress(types::Progress): Member);
+has_settable!(Label(Cow<'_, str>): Member);
+has_settable!(Image(Cow<'_, image::DynamicImage>): Member);
+has_settable!(Progress(types::Progress): Member);
 
 has_reacted!(Size(u16, u16): Member);
 has_reacted!(Visibility(types::Visibility): Member);

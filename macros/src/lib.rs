@@ -8,6 +8,7 @@ mod has;
 mod maybe;
 mod on;
 mod define;
+mod custom_code_block;
 
 #[proc_macro]
 pub fn able_to(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -23,8 +24,16 @@ pub fn has_reacted(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     has::make(item, true, false)
 }
 #[proc_macro]
-pub fn has(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn has_settable(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     has::make(item, false, true)
+}
+#[proc_macro]
+pub fn has_private(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    has::make(item, false, false)
+}
+#[proc_macro]
+pub fn has_settable_reacted(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    has::make(item, true, true)
 }
 
 #[proc_macro]

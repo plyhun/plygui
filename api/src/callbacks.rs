@@ -4,17 +4,13 @@ pub use crate::auto::{
     OnVisibility,
     OnClick,
     OnFrame,
-    OnProgress,
+    //OnProgress,
+    OnClose, 
 };
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
 use std::fmt::{Display, Formatter, Result as FmtResult};
-
-pub use crate::auto::{
-	OnClose, 
-	OnLabel
-};
 
 static GLOBAL_COUNT: AtomicUsize = AtomicUsize::new(0);
 

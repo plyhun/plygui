@@ -1,4 +1,4 @@
-use crate::{controls, types};
+use crate::types;
 
 use super::control::Control;
 use super::member::{Member, AMember, MemberInner};
@@ -31,40 +31,40 @@ define! {
 
 impl<T: ContainerInner> Container for AMember<T> {
     #[inline]
-    default fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+    default fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
         self.inner.find_control_mut(arg)
     }
     #[inline]
-    default fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+    default fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control> {
         self.inner.find_control(arg)
     }
 
     #[inline]
-    default fn as_container(&self) -> &dyn controls::Container {
+    default fn as_container(&self) -> &dyn Container {
         self
     }
     #[inline]
-    default fn as_container_mut(&mut self) -> &mut dyn controls::Container {
+    default fn as_container_mut(&mut self) -> &mut dyn Container {
         self
     }
     #[inline]
-    default fn into_container(self: Box<Self>) -> Box<dyn controls::Container> {
+    default fn into_container(self: Box<Self>) -> Box<dyn Container> {
         self
     }
     /*#[inline]
-    default fn is_single_mut(&mut self) -> Option<&mut dyn controls::SingleContainer> {
+    default fn is_single_mut(&mut self) -> Option<&mut dyn SingleContainer> {
         None
     }
     #[inline]
-    default fn is_single(&self) -> Option<&dyn controls::SingleContainer> {
+    default fn is_single(&self) -> Option<&dyn SingleContainer> {
         None
     }
     #[inline]
-    default fn is_multi_mut(&mut self) -> Option<&mut dyn controls::MultiContainer> {
+    default fn is_multi_mut(&mut self) -> Option<&mut dyn MultiContainer> {
         None
     }
     #[inline]
-    default fn is_multi(&self) -> Option<&dyn controls::MultiContainer> {
+    default fn is_multi(&self) -> Option<&dyn MultiContainer> {
         None
     }*/
 }

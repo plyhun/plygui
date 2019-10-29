@@ -7,7 +7,6 @@ pub struct TestableButton {
     base: common::TestableControlBase<Button>,
     label: String,
     h_left_clicked: Option<callbacks::OnClick>,
-    h_on_label: Option<callbacks::OnLabel>,
 }
 
 impl HasLabelInner for TestableButton {
@@ -40,7 +39,6 @@ impl ButtonInner for TestableButton {
                 TestableButton {
                     base: common::TestableControlBase::new(),
                     h_left_clicked: None,
-                    h_on_label: None,
                     label: label.to_owned(),
                 },
                 (),
