@@ -1,11 +1,7 @@
 use crate::callbacks::*;
-//use crate::controls::{Application};
 
 use super::auto::{HasInner, AsAny};
 use super::member::{Member, AMember, MemberInner};
-
-#[cfg(feature = "type_check")]
-use std::any::TypeId;
 
 able_to!(Click: Member);
 
