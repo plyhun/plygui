@@ -1,5 +1,6 @@
 use crate::{layout, types};
 
+use super::HasInner;
 use super::native_id::HasNativeIdInner;
 use super::member::{Member, MemberInner, AMember, MemberBase};
 use super::container::Container;
@@ -65,16 +66,6 @@ impl Default for ControlBase {
             on_size: None,
             on_visibility: None,
         }
-    }
-}
-impl<T: ControlInner> AControl<T> {
-    #[inline]
-    pub fn base(&self) -> &ControlBase {
-        &self.base
-    }
-    #[inline]
-    pub fn base_mut(&mut self) -> &mut ControlBase {
-        &mut self.base
     }
 }
 impl<T: ControlInner> HasNativeIdInner for AControl<T> {
@@ -347,5 +338,16 @@ impl<T: ControlInner> AMember<AControl<T>> {
         let self2 = self as *mut Self;
         let self3 = self as *mut Self;
         (&mut unsafe { &mut *self2 }.base, &mut unsafe { &mut *self3 }.inner.base, &mut self.inner.inner)
+    }
+}
+
+impl<T: ControlInner> HasInner for AControl<T> {
+    type I = T;
+
+    fn inner(&self) -> &Self::I {
+        &self.inner
+    }
+    fn inner_mut(&mut self) -> &mut Self::I {
+        &mut self.inner
     }
 }

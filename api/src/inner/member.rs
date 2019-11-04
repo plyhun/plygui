@@ -1,11 +1,11 @@
 use crate::{ids, runtime};
 
+use super::HasInner;
 use super::seal::Sealed;
 use super::native_id::{HasNativeId, HasNativeIdInner};
 use super::control::Control;
 use super::container::Container;
 use super::auto::{AsAny, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember, HasSize};
-
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -203,5 +203,17 @@ impl<T: MemberInner> AMember<T> {
         }
     }
 }
+
+impl<T: MemberInner> HasInner for AMember<T> {
+    type I = T;
+
+    fn inner(&self) -> &Self::I {
+        &self.inner
+    }
+    fn inner_mut(&mut self) -> &mut Self::I {
+        &mut self.inner
+    }
+}
+
 impl<T: MemberInner> Sealed for AMember<T> {}
 

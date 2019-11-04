@@ -135,6 +135,17 @@ impl ToTokens for Define {
             pub trait #ident_inner: 'static #(+#extends_inner)* {
             	#custom_inner
             }
+            
+            impl<T: #ident_inner> HasInner for #a_ident<T> {
+                type I = T;
+            
+                fn inner(&self) -> &Self::I {
+                    &self.inner
+                }
+                fn inner_mut(&mut self) -> &mut Self::I {
+                    &mut self.inner
+                }
+            }
         };
         expr.to_tokens(tokens);
     }
