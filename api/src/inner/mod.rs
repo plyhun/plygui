@@ -9,7 +9,10 @@ mod container_multi;
 mod has_layout;
 mod has_size;
 mod has_visibility;
+mod has_label;
+mod clickable;
 
+//mod application;
 //mod button;
 
 pub(crate) mod seal {

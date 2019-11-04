@@ -1,14 +1,7 @@
-use crate::{layout, types};
-
 use super::auto::{HasInner};
-use super::control::{Control, ControlInner, AControl, ControlBase};
+use super::control::{Control, ControlInner, AControl};
 use super::container::{Container, AContainer, ContainerInner};
-use super::native_id::HasNativeIdInner;
-use super::drawable::{Drawable};
-use super::has_layout::{HasLayoutInner};
-use super::member::{Member, MemberBase, AMember, MemberInner};
-use super::has_size::HasSizeInner;
-use super::has_visibility::HasVisibilityInner;
+use super::member::{MemberBase, AMember, MemberInner};
 
 define! {
     MultiContainer: Container {
@@ -76,70 +69,24 @@ define! {
         }
     }
 }
-
-impl<T: MultiContainerInner + ControlInner + Drawable> Drawable for AMultiContainer<T> {
+impl<T: MultiContainerInner> MaybeMultiContainer for AMember<AContainer<AMultiContainer<T>>> {
     #[inline]
-    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
-        self.inner.draw(member, control)
+    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
+        Some(self)
     }
     #[inline]
-    fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, w: u16, h: u16) -> (u16, u16, bool) {
-        self.inner.measure(member, control, w, h)
-    }
-    #[inline]
-    fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
-        self.inner.invalidate(member, control)
+    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
+        Some(self)
     }
 }
-impl<T: MultiContainerInner + ControlInner> HasLayoutInner for AMultiContainer<T> {
+impl<T: MultiContainerInner + ControlInner> MaybeMultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {
     #[inline]
-    fn on_layout_changed(&mut self, base: &mut MemberBase) {
-        self.inner.on_layout_changed(base)
-    }
-    fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize {
-        self.inner.layout_margin(member)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> HasSizeInner for AMultiContainer<T> {
-    fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool {
-        self.inner.on_size_set(base, value)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> HasVisibilityInner for AMultiContainer<T> {
-    fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool {
-        self.inner.on_visibility_set(base, value)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> ControlInner for AMultiContainer<T> {
-    #[inline]
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
-        self.inner.on_added_to_container(member, control, parent, x, y, w, h)
+    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
+        Some(self)
     }
     #[inline]
-    fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container) {
-        self.inner.on_removed_from_container(member, control, parent)
-    }
-
-    #[inline]
-    fn parent(&self) -> Option<&dyn Member> {
-        self.inner.parent()
-    }
-    #[inline]
-    fn parent_mut(&mut self) -> Option<&mut dyn Member> {
-        self.inner.parent_mut()
-    }
-    #[inline]
-    fn root(&self) -> Option<&dyn Member> {
-        self.inner.root()
-    }
-    #[inline]
-    fn root_mut(&mut self) -> Option<&mut dyn Member> {
-        self.inner.root_mut()
-    }
-
-    #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry) {
-        self.inner.fill_from_markup(member, control, markup, registry)
+    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
+        Some(self)
     }
 }
 impl<T: MultiContainerInner> MultiContainer for AMember<AContainer<AMultiContainer<T>>> {
@@ -175,26 +122,6 @@ impl<T: MultiContainerInner> MultiContainer for AMember<AContainer<AMultiContain
     #[inline]
     fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer> {
         self
-    }
-}
-impl<T: MultiContainerInner> MaybeMultiContainer for AMember<AContainer<AMultiContainer<T>>> {
-    #[inline]
-    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
-        Some(self)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> MaybeMultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {
-    #[inline]
-    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
-        Some(self)
     }
 }
 impl<T: MultiContainerInner + ControlInner> MultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {

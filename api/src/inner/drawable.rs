@@ -21,7 +21,7 @@ pub trait Drawable: Sized + 'static {
     fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase);
 }
 
-impl<II: Drawable, T: HasInner<I=II> + Drawable + 'static> Drawable for T {
+impl<II: Drawable, T: HasInner<I=II> + 'static> Drawable for T {
     #[inline]
     fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
         self.inner_mut().draw(member, control)

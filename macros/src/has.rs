@@ -1,4 +1,5 @@
 use crate::custom_code_block::Custom;
+use crate::maybe::Maybe;
 
 use heck::*;
 use proc_macro2::{TokenStream, Span};
@@ -243,6 +244,10 @@ impl ToTokens for Has {
         	(custom_trait, custom_inner)
         };
 
+        let maybe = Maybe {
+            name: has_ident.clone()
+        };
+        
         let expr = quote! {
             pub trait #has_ident: AsAny + 'static #(+#extends)* {
                 fn #ident_fn(&self) -> #return_params ;
@@ -260,6 +265,7 @@ impl ToTokens for Has {
             }
 
             #on
+            #maybe
         };
         expr.to_tokens(tokens);
     }

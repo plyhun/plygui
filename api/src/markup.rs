@@ -234,7 +234,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
     }
 }
 
-pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<dyn super::controls::Control> {
+pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<dyn crate::controls::Control> {
     let markup: Markup = serde_json::from_str(json).unwrap();
 
     let mut control = registry.member(&markup.member_type).unwrap()();

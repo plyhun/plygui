@@ -1,6 +1,6 @@
 use crate::layout;
 
-use super::auto::AsAny;
+use super::auto::{HasInner, AsAny};
 use super::member::{Member, AMember, MemberInner, MemberBase};
 use super::control::{ControlInner, AControl};
 
@@ -62,5 +62,13 @@ impl<T: ControlInner> HasLayout for AMember<AControl<T>> {
     #[inline]
     fn into_has_layout(self: Box<Self>) -> Box<dyn HasLayout> {
         self
+    }
+}
+impl<II: HasLayoutInner, T: HasInner<I=II> + 'static> HasLayoutInner for T {
+    fn on_layout_changed(&mut self, base: &mut MemberBase) {
+        self.inner_mut().on_layout_changed(base)
+    }
+    fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize {
+        self.inner().layout_margin(member)
     }
 }

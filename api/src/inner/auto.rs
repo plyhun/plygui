@@ -1,8 +1,8 @@
 use crate::callbacks::*;
 use crate::{types};
-use crate::controls::{Application};
 
-use super::member::{Member, MemberInner, MemberBase};
+//use super::application::{Application};
+use super::member::{Member, MemberInner, AMember, MemberBase};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -24,10 +24,9 @@ pub trait HasInner {
 }
 
 able_to!(Close: Member {} -> bool);
-able_to!(Click: Member);
 
 has_settable!(Label(Cow<'_, str>): Member);
 has_settable!(Image(Cow<'_, image::DynamicImage>): Member);
 has_settable_reacted!(Progress(types::Progress): Member);
 
-on!(Frame (&mut dyn Application) -> bool);
+//on!(Frame (&mut dyn Application) -> bool);

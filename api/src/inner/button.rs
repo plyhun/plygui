@@ -1,10 +1,7 @@
-use super::native_id::HasNativeIdInner;
-use super::auto::{HasLabel, HasLabelInner, Clickable, ClickableInner, HasInner};
-use super::control::{Control, ControlBase, ControlInner, AControl};
-use super::member::{Member, MemberBase, MemberInner, AMember};
-use super::has_layout::{HasLayout, HasLayoutInner};
-use super::container::Container;
-use super::drawable::Drawable;
+use super::auto::{HasLabel, HasLabelInner, HasInner};
+use super::control::{Control, ControlInner, AControl};
+use super::member::{MemberInner, AMember};
+use super::clickable::{Clickable, ClickableInner};
 
 define! {
     Button: Control + Clickable + HasLabel {
@@ -12,37 +9,6 @@ define! {
             fn with_label(label: &str) -> Box<AMember<AControl<AButton<Self>>>>;
         }
     }
-}
-
-impl<T: ButtonInner> Drawable for AButton<T> {
-    
-}
-
-impl<T: ButtonInner> ControlInner for AButton<T> {
-    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
-        
-    }
-    fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container) {
-        
-    }
-
-    fn parent(&self) -> Option<&dyn Member> {
-        
-    }
-    fn parent_mut(&mut self) -> Option<&mut dyn Member> {
-        
-    }
-    fn root(&self) -> Option<&dyn Member> {
-        
-    }
-    fn root_mut(&mut self) -> Option<&mut dyn Member> {
-        
-    }
-
-    #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, mberarkup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry) {
-        
-    }  
 }
 
 impl<T: ButtonInner> Button for AMember<AControl<AButton<T>>> {}

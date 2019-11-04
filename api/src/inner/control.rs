@@ -79,24 +79,6 @@ impl<T: ControlInner> AControl<T> {
         AControl { inner: inner, base: Default::default() }
     }
 }
-impl<T: ControlInner> HasLayoutInner for AControl<T> {
-    #[inline]
-    fn on_layout_changed(&mut self, base: &mut MemberBase) {
-        self.inner.on_layout_changed(base)
-    }
-    #[inline]
-    fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize {
-        self.inner.layout_margin(member)
-    }
-}
-/*impl<T: ControlInner> MaybeHasSize for AMember<AControl<T>> {
-    fn is_has_size(&self) -> Option<&dyn HasSize> {
-        Some(self)
-    }
-    fn is_has_size_mut(&mut self) -> Option<&mut dyn HasSize> {
-        Some(self)
-    }
-}*/
 impl<T: ControlInner> OuterDrawable for AMember<AControl<T>> {
     #[inline]
     fn draw(&mut self, coords: Option<(i32, i32)>) {
@@ -246,16 +228,6 @@ impl<T: ControlInner> Control for AMember<AControl<T>> {
     #[inline]
     fn into_control(self: Box<Self>) -> Box<dyn Control> {
         self
-    }
-}
-impl<T: MemberInner> MaybeControl for AMember<T> {
-    #[inline]
-    default fn is_control(&self) -> Option<&dyn Control> {
-        None
-    }
-    #[inline]
-    default fn is_control_mut(&mut self) -> Option<&mut dyn Control> {
-        None
     }
 }
 impl<T: ControlInner> MaybeControl for AMember<AControl<T>> {

@@ -2,7 +2,7 @@ use heck::*;
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
-use syn::{parse_macro_input, Ident, Lifetime};
+use syn::{parse_macro_input, Ident};
 
 pub fn make(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let parsed = parse_macro_input!(item as Maybe);
@@ -41,16 +41,25 @@ impl ToTokens for Maybe {
         let is_ident_fn = Maybe::is_ident(ident);
         let is_ident_mut_fn = Maybe::is_ident_mut(ident);
 
-        let static_ = Lifetime::new("'static", Span::call_site());
-
         let ident = Ident::new(&ident.to_camel_case(), Span::call_site());
 
         let expr = quote! {
-            pub trait #maybe_ident: #static_ {
+            pub trait #maybe_ident: 'static {
                 fn #is_ident_fn(&self) -> Option<&dyn #ident> {
                     None
                 }
                 fn #is_ident_mut_fn(&mut self) -> Option<&mut dyn #ident> {
+                    None
+                }
+            }
+            
+            impl<T: MemberInner> #maybe_ident for AMember<T> {
+                #[inline]
+                default fn #is_ident_fn(&self) -> Option<&dyn #ident> {
+                    None
+                }
+                #[inline]
+                default fn #is_ident_mut_fn(&mut self) -> Option<&mut dyn #ident> {
                     None
                 }
             }

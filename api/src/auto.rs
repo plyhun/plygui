@@ -3,6 +3,8 @@ use crate::types;
 use crate::controls::{Member, Control, Container, Application};
 use crate::development::{MemberInner, MemberBase};
 
+use crate::inner::member::AMember;
+
 use std::any::Any;
 use std::borrow::Cow;
 
@@ -29,7 +31,5 @@ has_reacted!(Visibility(types::Visibility): Member);
 maybe!(Member);
 maybe!(Control);
 maybe!(Container);
-maybe!(HasSize);
-maybe!(HasVisibility);
 
 on!(Frame (&mut dyn Application) -> bool);

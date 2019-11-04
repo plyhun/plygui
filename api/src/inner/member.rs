@@ -115,17 +115,6 @@ impl<T: MemberInner> HasNativeId for AMember<T> {
         self.inner.native_id().into()
     }
 }
-impl<T: MemberInner> MaybeMember for AMember<T> {
-    #[inline]
-    default fn is_member(&self) -> Option<&dyn Member> {
-        Some(self)
-    }
-    #[inline]
-    default fn is_member_mut(&mut self) -> Option<&mut dyn Member> {
-        Some(self)
-    }
-}
-
 impl<T: MemberInner> Member for AMember<T> {
     #[inline]
     fn id(&self) -> ids::Id {
