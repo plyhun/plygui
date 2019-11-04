@@ -1,4 +1,5 @@
-use crate::custom_code_block::{CodeBlock, Custom};
+use crate::custom_code_block::Custom;
+use crate::maybe::Maybe;
 
 use heck::*;
 use proc_macro2::Span;
@@ -71,8 +72,14 @@ impl Parse for Define {
 
 impl ToTokens for Define {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let ident = Ident::new(&self.name.to_string().to_camel_case(), Span::call_site());
+        let ident = &self.name.to_string().to_camel_case();
+        
+        let maybe_ident = Maybe::maybe_ident(ident);
+        let is_ident = Maybe::is_ident(ident);
+        let is_ident_mut = Maybe::is_ident_mut(ident);
 
+        let ident = Ident::new(ident, Span::call_site());
+        
         let ident_base = Ident::new(&format!("{}Base", ident).to_camel_case(), Span::call_site());
         let a_ident = Ident::new(&format!("A{}", ident).to_camel_case(), Span::call_site());
         let ident_inner = Ident::new(&format!("{}Inner", ident).to_camel_case(), Span::call_site());
@@ -119,6 +126,10 @@ impl ToTokens for Define {
         	(type_base, custom_base, custom_trait, custom_inner)
         };
         
+        let maybe = Maybe {
+            name: ident.clone()
+        };
+        
 		let expr = quote! {
 			#custom_base
 			
@@ -144,6 +155,28 @@ impl ToTokens for Define {
                 }
                 fn inner_mut(&mut self) -> &mut Self::I {
                     &mut self.inner
+                }
+            }
+            /*impl<T: #ident_inner> HasNativeIdInner for #a_ident<T> {
+                type Id = T::Id;
+            
+                #[inline]
+                unsafe fn native_id(&self) -> Self::Id {
+                    self.inner.native_id()
+                }
+            }
+            impl<T: #ident_inner> MemberInner for #a_ident<T> {}*/
+            
+            #maybe
+            
+            impl<T: MemberInner> #maybe_ident for AMember<T> {
+                #[inline]
+                default fn #is_ident(&self) -> Option<&dyn #ident> {
+                    None
+                }
+                #[inline]
+                default fn #is_ident_mut(&mut self) -> Option<&mut dyn #ident> {
+                    None
                 }
             }
         };

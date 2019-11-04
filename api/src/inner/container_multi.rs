@@ -1,12 +1,14 @@
 use crate::{layout, types};
 
-use super::HasInner;
-use super::auto::{HasSizeInner, HasVisibilityInner, HasLayoutInner, MaybeContainer};
+use super::auto::{HasInner};
 use super::control::{Control, ControlInner, AControl, ControlBase};
-use super::container::{Container, ContainerInner};
+use super::container::{Container, AContainer, ContainerInner};
 use super::native_id::HasNativeIdInner;
 use super::drawable::{Drawable};
+use super::has_layout::{HasLayoutInner};
 use super::member::{Member, MemberBase, AMember, MemberInner};
+use super::has_size::HasSizeInner;
+use super::has_visibility::HasVisibilityInner;
 
 define! {
     MultiContainer: Container {
@@ -75,25 +77,6 @@ define! {
     }
 }
 
-impl<T: MultiContainerInner> HasNativeIdInner for AMultiContainer<T> {
-    type Id = T::Id;
-
-    unsafe fn native_id(&self) -> Self::Id {
-        self.inner.native_id()
-    }
-}
-impl<T: MultiContainerInner> MemberInner for AMultiContainer<T> {}
-
-impl<T: MultiContainerInner + ContainerInner> ContainerInner for AMultiContainer<T> {
-    #[inline]
-    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
-        self.inner.find_control_mut(arg)
-    }
-    #[inline]
-    fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control> {
-        self.inner.find_control(arg)
-    }
-}
 impl<T: MultiContainerInner + ControlInner + Drawable> Drawable for AMultiContainer<T> {
     #[inline]
     fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
@@ -159,132 +142,7 @@ impl<T: MultiContainerInner + ControlInner> ControlInner for AMultiContainer<T> 
         self.inner.fill_from_markup(member, control, markup, registry)
     }
 }
-impl<T: MultiContainerInner> MultiContainer for AMember<AMultiContainer<T>> {
-    #[inline]
-    fn len(&self) -> usize {
-        self.inner.inner.len()
-    }
-    #[inline]
-    fn set_child_to(&mut self, index: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>> {
-        self.inner.inner.set_child_to(&mut self.base, index, child)
-    }
-    #[inline]
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn Control>> {
-        self.inner.inner.remove_child_from(&mut self.base, index)
-    }
-    #[inline]
-    fn child_at(&self, index: usize) -> Option<&dyn Control> {
-        self.inner.inner.child_at(index)
-    }
-    #[inline]
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control> {
-        self.inner.inner.child_at_mut(index)
-    }
-
-    #[inline]
-    fn as_multi_container(&self) -> &dyn MultiContainer {
-        self
-    }
-    #[inline]
-    fn as_multi_container_mut(&mut self) -> &mut dyn MultiContainer {
-        self
-    }
-    #[inline]
-    fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer> {
-        self
-    }
-}
-impl<T: MultiContainerInner> MaybeContainer for AMember<AMultiContainer<T>> {
-    #[inline]
-    fn is_container(&self) -> Option<&dyn Container> {
-        Some(self)
-    }
-    #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        Some(self)
-    }
-}
-impl<T: MultiContainerInner> Container for AMember<AMultiContainer<T>> {
-    #[inline]
-    fn is_multi_mut(&mut self) -> Option<&mut dyn MultiContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_multi(&self) -> Option<&dyn MultiContainer> {
-        Some(self)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> Container for AMember<AControl<AMultiContainer<T>>> {
-    #[inline]
-    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
-        match arg {
-            types::FindBy::Id(id) => {
-                if self.base.id() == id {
-                    return Some(self);
-                }
-            }
-            types::FindBy::Tag(ref tag) => {
-                if let Some(mytag) = self.base.tag() {
-                    if tag.as_str() == mytag {
-                        return Some(self);
-                    }
-                }
-            }
-        }
-        self.inner.inner.find_control_mut(arg)
-    }
-    #[inline]
-    fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control> {
-        match arg {
-            types::FindBy::Id(id) => {
-                if self.base.id() == id {
-                    return Some(self);
-                }
-            }
-            types::FindBy::Tag(ref tag) => {
-                if let Some(mytag) = self.base.tag() {
-                    if tag.as_str() == mytag {
-                        return Some(self);
-                    }
-                }
-            }
-        }
-        self.inner.inner.find_control(arg)
-    }
-
-    #[inline]
-    fn is_multi_mut(&mut self) -> Option<&mut dyn MultiContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_multi(&self) -> Option<&dyn MultiContainer> {
-        Some(self)
-    }
-
-    #[inline]
-    fn as_container(&self) -> &dyn Container {
-        self
-    }
-    #[inline]
-    fn as_container_mut(&mut self) -> &mut dyn Container {
-        self
-    }
-    #[inline]
-    fn into_container(self: Box<Self>) -> Box<dyn Container> {
-        self
-    }
-}
-impl<T: MultiContainerInner + ControlInner> MaybeContainer for AMember<AControl<AMultiContainer<T>>> {
-    #[inline]
-    fn is_container(&self) -> Option<&dyn Container> {
-        Some(self)
-    }
-    #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        Some(self)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> MultiContainer for AMember<AControl<AMultiContainer<T>>> {
+impl<T: MultiContainerInner> MultiContainer for AMember<AContainer<AMultiContainer<T>>> {
     #[inline]
     fn len(&self) -> usize {
         self.inner.inner.inner.len()
@@ -304,6 +162,61 @@ impl<T: MultiContainerInner + ControlInner> MultiContainer for AMember<AControl<
     #[inline]
     fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control> {
         self.inner.inner.inner.child_at_mut(index)
+    }
+
+    #[inline]
+    fn as_multi_container(&self) -> &dyn MultiContainer {
+        self
+    }
+    #[inline]
+    fn as_multi_container_mut(&mut self) -> &mut dyn MultiContainer {
+        self
+    }
+    #[inline]
+    fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer> {
+        self
+    }
+}
+impl<T: MultiContainerInner> MaybeMultiContainer for AMember<AContainer<AMultiContainer<T>>> {
+    #[inline]
+    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
+        Some(self)
+    }
+    #[inline]
+    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
+        Some(self)
+    }
+}
+impl<T: MultiContainerInner + ControlInner> MaybeMultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {
+    #[inline]
+    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
+        Some(self)
+    }
+    #[inline]
+    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
+        Some(self)
+    }
+}
+impl<T: MultiContainerInner + ControlInner> MultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.inner.inner.inner.len()
+    }
+    #[inline]
+    fn set_child_to(&mut self, index: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>> {
+        self.inner.inner.inner.inner.set_child_to(&mut self.base, index, child)
+    }
+    #[inline]
+    fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn Control>> {
+        self.inner.inner.inner.inner.remove_child_from(&mut self.base, index)
+    }
+    #[inline]
+    fn child_at(&self, index: usize) -> Option<&dyn Control> {
+        self.inner.inner.inner.inner.child_at(index)
+    }
+    #[inline]
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control> {
+        self.inner.inner.inner.inner.child_at_mut(index)
     }
 
     #[inline]

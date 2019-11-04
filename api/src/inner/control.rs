@@ -1,11 +1,12 @@
 use crate::{layout, types};
 
-use super::HasInner;
-use super::native_id::HasNativeIdInner;
 use super::member::{Member, MemberInner, AMember, MemberBase};
 use super::container::Container;
 use super::drawable::{Drawable, OuterDrawable};
-use super::auto::{OnSize, OnVisibility, HasLayout, HasLayoutInner, HasSize, HasSizeInner, HasVisibility, HasVisibilityInner, MaybeControl, MaybeHasSize};
+use super::has_layout::{HasLayout, HasLayoutInner};
+use super::auto::HasInner;
+use super::has_size::{OnSize, HasSize, HasSizeInner};
+use super::has_visibility::{OnVisibility, HasVisibility, HasVisibilityInner};
 
 pub trait Control: HasSize + HasVisibility + HasLayout + OuterDrawable {
     fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16);
@@ -54,6 +55,8 @@ pub struct AControl<T: ControlInner> {
     pub inner: T,
 }
 
+maybe!(Control);
+
 impl Default for ControlBase {
     fn default() -> Self {
         ControlBase {
@@ -68,15 +71,6 @@ impl Default for ControlBase {
         }
     }
 }
-impl<T: ControlInner> HasNativeIdInner for AControl<T> {
-    type Id = T::Id;
-
-    #[inline]
-    unsafe fn native_id(&self) -> Self::Id {
-        self.inner.native_id()
-    }
-}
-
 impl<T: ControlInner> MemberInner for AControl<T> {}
 
 impl<T: ControlInner> AControl<T> {
@@ -95,60 +89,14 @@ impl<T: ControlInner> HasLayoutInner for AControl<T> {
         self.inner.layout_margin(member)
     }
 }
-impl<T: ControlInner> MaybeHasSize for AMember<AControl<T>> {
+/*impl<T: ControlInner> MaybeHasSize for AMember<AControl<T>> {
     fn is_has_size(&self) -> Option<&dyn HasSize> {
         Some(self)
     }
     fn is_has_size_mut(&mut self) -> Option<&mut dyn HasSize> {
         Some(self)
     }
-}
-impl<T: ControlInner> HasLayout for AMember<AControl<T>> {
-    fn layout(&self) -> (layout :: Size, layout :: Size) {
-        (self.inner.base.layout.width, self.inner.base.layout.height)
-    }
-    fn set_layout(&mut self, width: layout::Size, height: layout::Size) {
-        self.inner.base.layout.width = width;
-        self.inner.base.layout.width = height;
-    }
-    
-    #[inline]
-    fn layout_width(&self) -> layout::Size {
-        self.inner.base.layout.width
-    }
-    #[inline]
-    fn layout_height(&self) -> layout::Size {
-        self.inner.base.layout.height
-    }
-    #[inline]
-    fn layout_margin(&self) -> layout::BoundarySize {
-        self.inner.inner.layout_margin(&self.base)
-    }
-
-    #[inline]
-    fn set_layout_width(&mut self, value: layout::Size) {
-        self.inner.base.layout.width = value;
-        self.inner.inner.on_layout_changed(&mut self.base);
-    }
-    #[inline]
-    fn set_layout_height(&mut self, value: layout::Size) {
-        self.inner.base.layout.height = value;
-        self.inner.inner.on_layout_changed(&mut self.base);
-    }
-
-    #[inline]
-    fn as_has_layout(&self) -> &dyn HasLayout {
-        self
-    }
-    #[inline]
-    fn as_has_layout_mut(&mut self) -> &mut dyn HasLayout {
-        self
-    }
-    #[inline]
-    fn into_has_layout(self: Box<Self>) -> Box<dyn HasLayout> {
-        self
-    }
-}
+}*/
 impl<T: ControlInner> OuterDrawable for AMember<AControl<T>> {
     #[inline]
     fn draw(&mut self, coords: Option<(i32, i32)>) {
@@ -300,6 +248,16 @@ impl<T: ControlInner> Control for AMember<AControl<T>> {
         self
     }
 }
+impl<T: MemberInner> MaybeControl for AMember<T> {
+    #[inline]
+    default fn is_control(&self) -> Option<&dyn Control> {
+        None
+    }
+    #[inline]
+    default fn is_control_mut(&mut self) -> Option<&mut dyn Control> {
+        None
+    }
+}
 impl<T: ControlInner> MaybeControl for AMember<AControl<T>> {
     #[inline]
     fn is_control(&self) -> Option<&dyn Control> {
@@ -340,7 +298,6 @@ impl<T: ControlInner> AMember<AControl<T>> {
         (&mut unsafe { &mut *self2 }.base, &mut unsafe { &mut *self3 }.inner.base, &mut self.inner.inner)
     }
 }
-
 impl<T: ControlInner> HasInner for AControl<T> {
     type I = T;
 
@@ -349,5 +306,37 @@ impl<T: ControlInner> HasInner for AControl<T> {
     }
     fn inner_mut(&mut self) -> &mut Self::I {
         &mut self.inner
+    }
+}
+impl<II: ControlInner, T: HasInner<I=II> + HasSizeInner + HasVisibilityInner + HasLayoutInner + Drawable> ControlInner for T {
+        #[inline]
+    fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
+        self.inner_mut().on_added_to_container(member, control, parent, x, y, w, h)
+    }
+    #[inline]
+    fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container) {
+        self.inner_mut().on_removed_from_container(member, control, parent)
+    }
+
+    #[inline]
+    fn parent(&self) -> Option<&dyn Member> {
+        self.inner().parent()
+    }
+    #[inline]
+    fn parent_mut(&mut self) -> Option<&mut dyn Member> {
+        self.inner_mut().parent_mut()
+    }
+    #[inline]
+    fn root(&self) -> Option<&dyn Member> {
+        self.inner().root()
+    }
+    #[inline]
+    fn root_mut(&mut self) -> Option<&mut dyn Member> {
+        self.inner_mut().root_mut()
+    }
+
+    #[cfg(feature = "markup")]
+    fn fill_from_markup(&mut self, member: &mut MemberBase, control: &mut ControlBase, markup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry) {
+        self.inner_mut().fill_from_markup(member, control, markup, registry)
     }
 }

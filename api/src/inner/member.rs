@@ -1,11 +1,10 @@
 use crate::{ids, runtime};
 
-use super::HasInner;
 use super::seal::Sealed;
 use super::native_id::{HasNativeId, HasNativeIdInner};
-use super::control::Control;
-use super::container::Container;
-use super::auto::{AsAny, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember, HasSize};
+use super::control::{MaybeControl};
+use super::container::{MaybeContainer};
+use super::auto::{HasInner, AsAny};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -15,7 +14,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::any::Any;
 
-pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + Sealed {
+pub trait Member: HasNativeId + MaybeControl + MaybeContainer + /*MaybeHasSize + MaybeHasVisibility +*/ AsAny + Sealed {
     fn id(&self) -> ids::Id;
     fn tag(&self) -> Option<Cow<str>>;
     fn set_tag(&mut self, tag: Option<Cow<str>>);
@@ -29,6 +28,8 @@ pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + M
 }
 
 pub trait MemberInner: HasNativeIdInner + Sized + 'static {}
+
+impl<II: MemberInner, T: HasInner<I=II> + HasNativeIdInner> MemberInner for T {}
 
 #[repr(C)]
 pub struct MemberBase {
@@ -44,6 +45,9 @@ pub struct AMember<T: MemberInner> {
     pub base: MemberBase,
     pub inner: T,
 }
+
+maybe!(Member);
+
 #[repr(C)]
 pub struct MemberFunctions {
     _as_any: unsafe fn(&MemberBase) -> &dyn Any,
@@ -114,42 +118,13 @@ impl<T: MemberInner> HasNativeId for AMember<T> {
 impl<T: MemberInner> MaybeMember for AMember<T> {
     #[inline]
     default fn is_member(&self) -> Option<&dyn Member> {
-        None
+        Some(self)
     }
     #[inline]
     default fn is_member_mut(&mut self) -> Option<&mut dyn Member> {
-        None
+        Some(self)
     }
 }
-impl<T: MemberInner> MaybeControl for AMember<T> {
-    #[inline]
-    default fn is_control(&self) -> Option<&dyn Control> {
-        None
-    }
-    #[inline]
-    default fn is_control_mut(&mut self) -> Option<&mut dyn Control> {
-        None
-    }
-}
-impl<T: MemberInner> MaybeContainer for AMember<T> {
-    #[inline]
-    default fn is_container(&self) -> Option<&dyn Container> {
-        None
-    }
-    #[inline]
-    default fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        None
-    }
-}
-impl<T: MemberInner> MaybeHasSize for AMember<T> {
-    default fn is_has_size(&self) -> Option<&dyn HasSize> {
-        None
-    }
-    default fn is_has_size_mut(&mut self) -> Option<&mut dyn HasSize> {
-        None
-    }
-}
-impl<T: MemberInner> MaybeHasVisibility for AMember<T> {}
 
 impl<T: MemberInner> Member for AMember<T> {
     #[inline]

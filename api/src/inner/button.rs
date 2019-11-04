@@ -1,6 +1,10 @@
-use super::auto::{HasLabel, HasLabelInner, Clickable, ClickableInner};
-use super::control::{Control, ControlInner, AControl};
-use super::member::{Member, MemberInner, AMember};
+use super::native_id::HasNativeIdInner;
+use super::auto::{HasLabel, HasLabelInner, Clickable, ClickableInner, HasInner};
+use super::control::{Control, ControlBase, ControlInner, AControl};
+use super::member::{Member, MemberBase, MemberInner, AMember};
+use super::has_layout::{HasLayout, HasLayoutInner};
+use super::container::Container;
+use super::drawable::Drawable;
 
 define! {
     Button: Control + Clickable + HasLabel {
@@ -8,6 +12,10 @@ define! {
             fn with_label(label: &str) -> Box<AMember<AControl<AButton<Self>>>>;
         }
     }
+}
+
+impl<T: ButtonInner> Drawable for AButton<T> {
+    
 }
 
 impl<T: ButtonInner> ControlInner for AButton<T> {

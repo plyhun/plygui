@@ -1,12 +1,13 @@
 use crate::{layout, types};
 
-use super::HasInner;
-use super::auto::{HasSizeInner, HasVisibilityInner, HasLayoutInner, MaybeContainer};
+use super::auto::{HasInner};
 use super::control::{Control, ControlInner, AControl, ControlBase};
 use super::container::{Container, ContainerInner, AContainer};
-use super::native_id::HasNativeIdInner;
 use super::drawable::{Drawable};
+use super::has_layout::{HasLayoutInner};
 use super::member::{Member, MemberBase, AMember, MemberInner};
+use super::has_size::HasSizeInner;
+use super::has_visibility::HasVisibilityInner;
 
 define! {
     SingleContainer: Container {
@@ -23,27 +24,6 @@ define! {
     }
 }
 
-impl<T: SingleContainerInner> HasNativeIdInner for ASingleContainer<T> {
-    type Id = T::Id;
-
-    #[inline]
-    unsafe fn native_id(&self) -> Self::Id {
-        self.inner.native_id()
-    }
-}
-
-impl<T: SingleContainerInner> MemberInner for ASingleContainer<T> {}
-
-impl<T: SingleContainerInner + ContainerInner> ContainerInner for ASingleContainer<T> {
-    #[inline]
-    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
-        self.inner.find_control_mut(arg)
-    }
-    #[inline]
-    fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control> {
-        self.inner.find_control(arg)
-    }
-}
 impl<T: SingleContainerInner + ControlInner + Drawable> Drawable for ASingleContainer<T> {
     #[inline]
     fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
@@ -113,53 +93,6 @@ impl<T: SingleContainerInner + ControlInner> ControlInner for ASingleContainer<T
 impl<T: SingleContainerInner> SingleContainer for AMember<AContainer<ASingleContainer<T>>> {
     #[inline]
     fn set_child(&mut self, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>> {
-        self.inner.inner.set_child(&mut self.base, child)
-    }
-    #[inline]
-    fn child(&self) -> Option<&dyn Control> {
-        self.inner.inner.child()
-    }
-    #[inline]
-    fn child_mut(&mut self) -> Option<&mut dyn Control> {
-        self.inner.inner.child_mut()
-    }
-
-    #[inline]
-    fn as_single_container(&self) -> &dyn SingleContainer {
-        self
-    }
-    #[inline]
-    fn as_single_container_mut(&mut self) -> &mut dyn SingleContainer {
-        self
-    }
-    #[inline]
-    fn into_single_container(self: Box<Self>) -> Box<dyn SingleContainer> {
-        self
-    }
-}
-impl<T: SingleContainerInner> MaybeContainer for AMember<AContainer<ASingleContainer<T>>> {
-    #[inline]
-    fn is_container(&self) -> Option<&dyn Container> {
-        Some(self)
-    }
-    #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        Some(self)
-    }
-}
-impl<T: SingleContainerInner> Container for AMember<AContainer<ASingleContainer<T>>> {
-    #[inline]
-    fn is_single_mut(&mut self) -> Option<&mut dyn SingleContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_single(&self) -> Option<&dyn SingleContainer> {
-        Some(self)
-    }
-}
-impl<T: SingleContainerInner + ControlInner> SingleContainer for AMember<AControl<AContainer<ASingleContainer<T>>>> {
-    #[inline]
-    fn set_child(&mut self, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>> {
         self.inner.inner.inner.set_child(&mut self.base, child)
     }
     #[inline]
@@ -184,74 +117,64 @@ impl<T: SingleContainerInner + ControlInner> SingleContainer for AMember<AContro
         self
     }
 }
-impl<T: SingleContainerInner + ControlInner> MaybeContainer for AMember<AControl<AContainer<ASingleContainer<T>>>> {
+impl<T: SingleContainerInner + ControlInner> SingleContainer for AMember<AControl<AContainer<ASingleContainer<T>>>> {
     #[inline]
-    fn is_container(&self) -> Option<&dyn Container> {
-        Some(self)
+    fn set_child(&mut self, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>> {
+        self.inner.inner.inner.inner.set_child(&mut self.base, child)
     }
     #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        Some(self)
-    }
-}
-impl<T: SingleContainerInner + ControlInner> Container for AMember<AControl<AContainer<ASingleContainer<T>>>> {
-    #[inline]
-    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
-        match arg {
-            types::FindBy::Id(id) => {
-                if self.base.id() == id {
-                    return Some(self);
-                }
-            }
-            types::FindBy::Tag(ref tag) => {
-                if let Some(mytag) = self.base.tag() {
-                    if tag.as_str() == mytag {
-                        return Some(self);
-                    }
-                }
-            }
-        }
-        self.inner.inner.find_control_mut(arg)
+    fn child(&self) -> Option<&dyn Control> {
+        self.inner.inner.inner.inner.child()
     }
     #[inline]
-    fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control> {
-        match arg {
-            types::FindBy::Id(id) => {
-                if self.base.id() == id {
-                    return Some(self);
-                }
-            }
-            types::FindBy::Tag(ref tag) => {
-                if let Some(mytag) = self.base.tag() {
-                    if tag.as_str() == mytag {
-                        return Some(self);
-                    }
-                }
-            }
-        }
-        self.inner.inner.find_control(arg)
+    fn child_mut(&mut self) -> Option<&mut dyn Control> {
+        self.inner.inner.inner.inner.child_mut()
     }
 
     #[inline]
-    fn is_single_mut(&mut self) -> Option<&mut dyn SingleContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_single(&self) -> Option<&dyn SingleContainer> {
-        Some(self)
-    }
-
-    #[inline]
-    fn as_container(&self) -> &dyn Container {
+    fn as_single_container(&self) -> &dyn SingleContainer {
         self
     }
     #[inline]
-    fn as_container_mut(&mut self) -> &mut dyn Container {
+    fn as_single_container_mut(&mut self) -> &mut dyn SingleContainer {
         self
     }
     #[inline]
-    fn into_container(self: Box<Self>) -> Box<dyn Container> {
+    fn into_single_container(self: Box<Self>) -> Box<dyn SingleContainer> {
         self
     }
 }
-
+impl<II: SingleContainerInner, T: HasInner<I=II> + MemberInner + Drawable> SingleContainerInner for T {
+    #[inline]
+    fn set_child(&mut self, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>> {
+        self.inner_mut().set_child(&mut self.base, child)
+    }
+    #[inline]
+    fn child(&self) -> Option<&dyn Control> {
+        self.inner().child()
+    }
+    #[inline]
+    fn child_mut(&mut self) -> Option<&mut dyn Control> {
+        self.inner_mut().child_mut()
+    }
+}
+impl<T: SingleContainerInner> MaybeSingleContainer for AMember<AContainer<ASingleContainer<T>>> {
+    #[inline]
+    fn is_single_container_mut(&mut self) -> Option<&mut dyn SingleContainer> {
+        Some(self)
+    }
+    #[inline]
+    fn is_single_container(&self) -> Option<&dyn SingleContainer> {
+        Some(self)
+    }
+}
+impl<T: SingleContainerInner + ControlInner> MaybeSingleContainer for AMember<AControl<AContainer<ASingleContainer<T>>>> {
+    #[inline]
+    fn is_single_container_mut(&mut self) -> Option<&mut dyn SingleContainer> {
+        Some(self)
+    }
+    #[inline]
+    fn is_single_container(&self) -> Option<&dyn SingleContainer> {
+        Some(self)
+    }
+}

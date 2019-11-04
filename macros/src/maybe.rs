@@ -12,7 +12,19 @@ pub fn make(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 pub(crate) struct Maybe {
-    name: Ident,
+    pub name: Ident,
+}
+
+impl Maybe {
+    pub fn maybe_ident<S: AsRef<str>>(ident: S) -> Ident {
+        Ident::new(&format!("Maybe{}", ident.as_ref()).to_camel_case(), Span::call_site())
+    }
+    pub fn is_ident<S: AsRef<str>>(ident: S) -> Ident {
+        Ident::new(&format!("is_{}", ident.as_ref()).to_snake_case(), Span::call_site())
+    }
+    pub fn is_ident_mut<S: AsRef<str>>(ident: S) -> Ident {
+        Ident::new(&format!("is_{}_mut", ident.as_ref()).to_snake_case(), Span::call_site())
+    }
 }
 
 impl Parse for Maybe {
@@ -25,10 +37,9 @@ impl ToTokens for Maybe {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let ident = &self.name.to_string().to_camel_case();
 
-        let maybe_ident = Ident::new(&format!("Maybe{}", ident).to_camel_case(), Span::call_site());
-
-        let is_ident_fn = Ident::new(&format!("is_{}", ident).to_snake_case(), Span::call_site());
-        let is_ident_mut_fn = Ident::new(&format!("is_{}_mut", ident).to_snake_case(), Span::call_site());
+        let maybe_ident = Maybe::maybe_ident(ident);
+        let is_ident_fn = Maybe::is_ident(ident);
+        let is_ident_mut_fn = Maybe::is_ident_mut(ident);
 
         let static_ = Lifetime::new("'static", Span::call_site());
 

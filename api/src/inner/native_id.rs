@@ -1,3 +1,5 @@
+use super::auto::HasInner;
+
 use std::any::Any;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -14,4 +16,12 @@ pub trait HasNativeIdInner: 'static {
     type Id: NativeId;
 
     unsafe fn native_id(&self) -> Self::Id;
+}
+
+impl<II: HasNativeIdInner, T: HasInner<I=II> + 'static> HasNativeIdInner for T {
+    type Id = <T::I as HasNativeIdInner>::Id;
+
+    unsafe fn native_id(&self) -> Self::Id {
+        self.inner().native_id()
+    }
 }
