@@ -19,7 +19,7 @@ pub mod clickable;
 pub mod closeable;
 
 pub mod application;
-//pub mod button;
+pub mod button;
 pub mod tray;
 pub mod window;
 

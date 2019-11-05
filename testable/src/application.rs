@@ -1,9 +1,6 @@
 use super::common::*;
 use super::*;
 
-use plygui_api::controls::{self, *};
-use plygui_api::types;
-
 pub struct TestableApplication {
     pub(crate) root: *mut Application,
     name: String,
@@ -11,11 +8,11 @@ pub struct TestableApplication {
     trays: Vec<TestableId>,
 }
 
-pub type Application = ::plygui_api::development::Application<TestableApplication>;
+pub type Application = AApplication<TestableApplication>;
 
 impl ApplicationInner for TestableApplication {
     fn get() -> Box<Application> {
-        let mut w = Box::new(Application::with_inner(
+        let mut w = Box::new(AApplication::with_inner(
             TestableApplication {
             	root: ptr::null_mut(),
                 name: String::new(), //name.into(), // TODO later
@@ -27,12 +24,12 @@ impl ApplicationInner for TestableApplication {
         w.as_inner_mut().root = w.as_mut();
         w
     }
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
         let w = window::TestableWindow::with_params(title, size, menu);
         self.windows.push(unsafe { w.as_inner().as_inner().native_id() });
         w
     }
-    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray> {
     	let tray = tray::TestableTray::with_params(title, menu);
         self.trays.push(unsafe { tray.as_inner().native_id() });
         tray
@@ -73,9 +70,7 @@ impl ApplicationInner for TestableApplication {
             }
         }
     }
-    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Member> {
-        use plygui_api::controls::Member;
-
+    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member> {
         for window in self.windows.as_mut_slice() {
             if let Some(window) = common::member_from_id::<window::Window>((*window).into()) {
                 match arg {
@@ -118,9 +113,7 @@ impl ApplicationInner for TestableApplication {
         }
         None
     }
-    fn find_member(&self, arg: types::FindBy) -> Option<&dyn controls::Member> {
-        use plygui_api::controls::Member;
-
+    fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member> {
         for window in self.windows.as_slice() {
             if let Some(window) = common::member_from_id::<window::Window>((*window).into()) {
                 match arg {
@@ -176,7 +169,7 @@ impl ApplicationInner for TestableApplication {
         }
         true
     }
-    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn controls::Member)> + 'a> {
+    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {
         Box::new(MemberIterator {
             inner: self,
             is_tray: false,
@@ -185,7 +178,7 @@ impl ApplicationInner for TestableApplication {
             needs_tray: true,
         })
     }
-    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn controls::Member)> + 'a> {
+    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a> {
         Box::new(MemberIteratorMut {
             inner: self,
             is_tray: false,
@@ -219,7 +212,7 @@ struct MemberIterator<'a> {
     index: usize,
 }
 impl<'a> Iterator for MemberIterator<'a> {
-    type Item = &'a dyn (controls::Member);
+    type Item = &'a dyn (Member);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.inner.windows.len() {
@@ -227,9 +220,9 @@ impl<'a> Iterator for MemberIterator<'a> {
             self.index = 0;
         }
         let ret = if self.needs_tray && self.is_tray {
-            self.inner.trays.get(self.index).map(|tray| common::member_from_id::<tray::Tray>((*tray).into()).unwrap() as &dyn controls::Member)
+            self.inner.trays.get(self.index).map(|tray| common::member_from_id::<tray::Tray>((*tray).into()).unwrap() as &dyn Member)
         } else if self.needs_window {
-            self.inner.windows.get(self.index).map(|window| common::member_from_id::<window::Window>((*window).into()).unwrap() as &dyn controls::Member)
+            self.inner.windows.get(self.index).map(|window| common::member_from_id::<window::Window>((*window).into()).unwrap() as &dyn Member)
         } else {
             return None;
         };
@@ -246,7 +239,7 @@ struct MemberIteratorMut<'a> {
     index: usize,
 }
 impl<'a> Iterator for MemberIteratorMut<'a> {
-    type Item = &'a mut dyn (controls::Member);
+    type Item = &'a mut dyn (Member);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.needs_tray && self.index >= self.inner.windows.len() {
@@ -254,9 +247,9 @@ impl<'a> Iterator for MemberIteratorMut<'a> {
             self.index = 0;
         }
         let ret = if self.needs_tray && self.is_tray {
-            self.inner.trays.get_mut(self.index).map(|tray| common::member_from_id::<tray::Tray>((*tray).into()).unwrap() as &mut dyn controls::Member)
+            self.inner.trays.get_mut(self.index).map(|tray| common::member_from_id::<tray::Tray>((*tray).into()).unwrap() as &mut dyn Member)
         } else if self.needs_window {
-            self.inner.windows.get_mut(self.index).map(|window| common::member_from_id::<window::Window>((*window).into()).unwrap() as &mut dyn controls::Member)
+            self.inner.windows.get_mut(self.index).map(|window| common::member_from_id::<window::Window>((*window).into()).unwrap() as &mut dyn Member)
         } else {
             return None;
         };

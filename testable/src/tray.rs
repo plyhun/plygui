@@ -13,7 +13,7 @@ pub struct TestableTray {
     on_close: Option<callbacks::OnClose>,
 }
 
-pub type Tray = Member<TestableTray>;
+pub type Tray = AMember<TestableTray>;
 
 /*impl TestableTray {
     pub(crate) fn toggle_menu(&mut self) {
@@ -84,15 +84,15 @@ impl HasImageInner for TestableTray {
     }
     #[inline]
     fn set_image(&mut self, _base: &mut MemberBase, i: Cow<image::DynamicImage>) {
-    	use plygui_api::external::image::GenericImageView;
+    	//use plygui_api::external::image::GenericImageView;
     	let i = i.resize(SIZE, SIZE, image::FilterType::Lanczos3);
     	self.image = i.into();
     }
 }
 
 impl TrayInner for TestableTray {
-    fn with_params(title: &str, menu: types::Menu) -> Box<Member<Self>> {
-        let mut t = Box::new(Member::with_inner(
+    fn with_params(title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
+        let mut t = Box::new(AMember::with_inner(
             TestableTray {
             	id: 0 as InnerId,
                 label: title.into(),

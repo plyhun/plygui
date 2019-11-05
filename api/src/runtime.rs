@@ -1,4 +1,4 @@
-use super::development::{ApplicationInnerWrapper, ApplicationInner};
+use crate::inner::application::{ApplicationInnerWrapper, ApplicationInner};
 use std::cell::{RefCell, UnsafeCell};
 use std::rc::Rc;
 

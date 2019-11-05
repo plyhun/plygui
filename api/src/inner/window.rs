@@ -17,7 +17,7 @@ define! {
             pub on_visibility: Option<OnVisibility>,
         },
         inner: {
-            fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
+            fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
             fn size(&self) -> (u16, u16);
             fn position(&self) -> (i32, i32);
         }
@@ -90,7 +90,7 @@ impl<T: WindowInner> Window for AMember<AContainer<ASingleContainer<AWindow<T>>>
     }
 }
 impl<II: WindowInner, T: HasInner<I = II> + 'static> WindowInner for T {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
+    fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
         <<Self as HasInner>::I as WindowInner>::with_params(title, window_size, menu)
     }
     fn size(&self) -> (u16, u16) {

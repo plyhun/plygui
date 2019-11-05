@@ -1,4 +1,11 @@
 pub use crate::inner::{
+    has_native_id::HasNativeId,
+    has_image::HasImage,
+    has_label::HasLabel,
+    has_layout::HasLayout,
+    has_progress::HasProgress,
+    has_size::HasSize,
+    has_visibility::HasVisibility,
     member::Member,
     control::Control,
     application::Application,
@@ -6,6 +13,8 @@ pub use crate::inner::{
     container_single::SingleContainer,
     container_multi::MultiContainer,
     tray::Tray,
+    button::Button,
+    window::Window,
 };
 
 /*pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};

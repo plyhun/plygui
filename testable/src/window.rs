@@ -12,7 +12,7 @@ pub struct TestableWindow {
     on_close: Option<callbacks::OnClose>,
 }
 
-pub type Window = Member<SingleContainer<plygui_api::development::Window<TestableWindow>>>;
+pub type Window = AMember<AContainer<ASingleContainer<AWindow<TestableWindow>>>>;
 
 impl TestableWindow {
 	pub fn draw(&mut self) {
@@ -49,26 +49,26 @@ impl HasSizeInner for TestableWindow {
 }
 
 impl WindowInner for TestableWindow {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<Window> {
-        let mut w: Box<Window> = Box::new(Member::with_inner(
-            SingleContainer::with_inner(
-                plygui_api::development::Window::with_inner(
-                    TestableWindow {
-                        id: 0 as InnerId,
-                        label: title.into(),
-                        size: match window_size {
-	                        types::WindowStartSize::Exact(w, h) => (w, h), 
-						    types::WindowStartSize::Fullscreen => (1280, 800)
+    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
+        let mut w: Box<Window> = Box::new(AMember::with_inner(
+            AContainer::with_inner(
+                ASingleContainer::with_inner(
+                    plygui_api::development::AWindow::with_inner(
+                        TestableWindow {
+                            id: 0 as InnerId,
+                            label: title.into(),
+                            size: match window_size {
+    	                        types::WindowStartSize::Exact(w, h) => (w, h), 
+    						    types::WindowStartSize::Fullscreen => (1280, 800)
+                            },
+    					    position: (0, 0),
+    					    visibility: types::Visibility::Visible,
+                            child: None,
+                            menu: menu,
+                            on_close: None,
                         },
-					    position: (0, 0),
-					    visibility: types::Visibility::Visible,
-                        child: None,
-                        menu: menu,
-                        on_close: None,
-                    },
-                    (),
-                ),
-                (),
+                    ),
+                )
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
@@ -112,8 +112,6 @@ impl ContainerInner for TestableWindow {
 
 impl SingleContainerInner for TestableWindow {
     fn set_child(&mut self, _: &mut MemberBase, mut child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>> {
-        use plygui_api::controls::SingleContainer;
-
         let mut old = self.child.take();
         if let Some(outer_self) = common::member_from_id::<Window>(self.id.into()) {
             if let Some(old) = old.as_mut() {

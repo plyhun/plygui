@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type Button = Member<Control<TestableButton>>;
+pub type Button = AMember<AControl<AButton<TestableButton>>>;
 
 #[repr(C)]
 pub struct TestableButton {
@@ -34,14 +34,15 @@ impl ClickableInner for TestableButton {
 
 impl ButtonInner for TestableButton {
     fn with_label(label: &str) -> Box<Button> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableButton {
-                    base: common::TestableControlBase::new(),
-                    h_left_clicked: None,
-                    label: label.to_owned(),
-                },
-                (),
+        let mut b = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AButton::with_inner(
+                    TestableButton {
+                        base: common::TestableControlBase::new(),
+                        h_left_clicked: None,
+                        label: label.to_owned(),
+                    }
+                ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
