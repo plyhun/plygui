@@ -1,6 +1,6 @@
 use crate::{layout, types};
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Spawnable};
 use super::container::Container;
 use super::drawable::{Drawable, OuterDrawable};
 use super::has_layout::{HasLayout, HasLayoutInner, MaybeHasLayout};
@@ -25,7 +25,7 @@ pub trait Control: HasSize + HasVisibility + HasLayout + OuterDrawable {
     fn into_control(self: Box<Self>) -> Box<dyn Control>;
 }
 
-pub trait ControlInner: HasSizeInner + HasVisibilityInner + HasLayoutInner + Drawable {
+pub trait ControlInner: HasSizeInner + HasVisibilityInner + HasLayoutInner + Drawable + Spawnable {
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16);
     fn on_removed_from_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container);
 
@@ -339,18 +339,28 @@ impl<T: ControlInner> AMember<AControl<T>> {
         let self3 = self as *mut Self;
         (&mut unsafe { &mut *self2 }.base, &mut unsafe { &mut *self3 }.inner.base, &mut self.inner.inner)
     }
+    #[inline]
+    pub fn spawn() -> Box<dyn Control> {
+        T::spawn()
+    }
 }
 impl<T: ControlInner> HasInner for AControl<T> {
     type I = T;
-
+    
+    #[inline]
     fn inner(&self) -> &Self::I {
         &self.inner
     }
+    #[inline]
     fn inner_mut(&mut self) -> &mut Self::I {
         &mut self.inner
     }
+    #[inline]
+    fn into_inner(self) -> Self::I {
+        self.inner
+    }
 }
-impl<II: ControlInner, T: HasInner<I = II> + HasSizeInner + HasVisibilityInner + HasLayoutInner + Drawable> ControlInner for T {
+impl<II: ControlInner, T: HasInner<I = II> + HasSizeInner + HasVisibilityInner + HasLayoutInner + Drawable + Spawnable> ControlInner for T {
     #[inline]
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
         self.inner_mut().on_added_to_container(member, control, parent, x, y, w, h)

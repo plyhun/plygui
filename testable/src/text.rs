@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type Text = Member<Control<TestableText>>;
+pub type Text = AMember<AControl<AText<TestableText>>>;
 
 #[repr(C)]
 pub struct TestableText {
@@ -20,13 +20,14 @@ impl HasLabelInner for TestableText {
 
 impl TextInner for TestableText {
     fn with_text(text: &str) -> Box<Text> {
-        let mut b: Box<Text> = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableText {
-                    base: common::TestableControlBase::new(),
-                    text: text.to_owned(),
-                },
-                (),
+        let mut b: Box<Text> = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AText::with_inner(
+                    TestableText {
+                        base: common::TestableControlBase::new(),
+                        text: text.to_owned(),
+                    }
+                ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));

@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type Image = Member<Control<TestableImage>>;
+pub type Image = AMember<AControl<AImage<TestableImage>>>;
 
 #[repr(C)]
 pub struct TestableImage {
@@ -27,15 +27,16 @@ impl Drop for TestableImage {
 
 impl ImageInner for TestableImage {
     fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image> {
-        let mut i = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableImage {
-                    base: TestableControlBase::new(),
-
-                    bmp: None,
-                    scale: types::ImageScalePolicy::FitCenter,
-                },
-                (),
+        let mut i = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AImage::with_inner(
+                    TestableImage {
+                        base: TestableControlBase::new(),
+    
+                        bmp: None,
+                        scale: types::ImageScalePolicy::FitCenter,
+                    }
+                ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));

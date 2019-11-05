@@ -150,6 +150,9 @@ impl ToTokens for Define {
                 fn inner_mut(&mut self) -> &mut Self::I {
                     &mut self.inner
                 }
+                fn into_inner(self) -> Self::I {
+                    self.inner
+                }
             }
             
             #maybe

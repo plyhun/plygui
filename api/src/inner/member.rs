@@ -166,11 +166,17 @@ impl<T: MemberInner> AMember<T> {
 impl<T: MemberInner> HasInner for AMember<T> {
     type I = T;
 
+    #[inline]
     fn inner(&self) -> &Self::I {
         &self.inner
     }
+    #[inline]
     fn inner_mut(&mut self) -> &mut Self::I {
         &mut self.inner
+    }
+    #[inline]
+    fn into_inner(self) -> Self::I {
+        self.inner
     }
 }
 

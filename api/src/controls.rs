@@ -14,7 +14,11 @@ pub use crate::inner::{
     container_multi::MultiContainer,
     tray::Tray,
     button::Button,
+    text::Text,
     window::Window,
+    message::Message,
+    image::Image,
+    frame::Frame,
 };
 
 /*pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};

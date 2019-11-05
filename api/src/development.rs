@@ -1,8 +1,9 @@
 pub use crate::inner::{
-    auto::HasInner,
+    auto::{Spawnable, HasInner},
     application::{AApplication, ApplicationBase, ApplicationInner},
     member::{AMember, MemberBase, MemberInner, MemberFunctions},
     button::{AButton, ButtonInner},
+    text::{AText, TextInner},
     control::{AControl, ControlBase, ControlInner},
     container::{AContainer, ContainerInner},
     container_single::{ASingleContainer, SingleContainerInner},
@@ -18,7 +19,10 @@ pub use crate::inner::{
     has_progress::HasProgressInner,
     has_size::HasSizeInner,
     has_visibility::HasVisibilityInner,
-    window::{AWindow, WindowBase, WindowInner}
+    window::{AWindow, WindowBase, WindowInner},
+    message::{AMessage, MessageInner},
+    image::{AImage, ImageInner},
+    frame::{AFrame, FrameInner},
 };
 
 /*pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};

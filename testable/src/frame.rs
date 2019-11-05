@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type Frame = Member<Control<SingleContainer<TestableFrame>>>;
+pub type Frame = AMember<AControl<AContainer<ASingleContainer<AFrame<TestableFrame>>>>>;
 
 #[repr(C)]
 pub struct TestableFrame {
@@ -12,18 +12,20 @@ pub struct TestableFrame {
 
 impl FrameInner for TestableFrame {
     fn with_label(label: &str) -> Box<Frame> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                SingleContainer::with_inner(
-                    TestableFrame {
-                        base: common::TestableControlBase::new(),
-                        child: None,
-                        label: label.to_owned(),
-                        label_padding: 8,
-                    },
-                    (),
+        let mut b = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AContainer::with_inner(
+                    ASingleContainer::with_inner(
+                        AFrame::with_inner(
+                            TestableFrame {
+                                base: common::TestableControlBase::new(),
+                                child: None,
+                                label: label.to_owned(),
+                                label_padding: 8,
+                            }
+                        ),
+                    )
                 ),
-                (),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));

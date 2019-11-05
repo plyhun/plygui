@@ -20,8 +20,13 @@ pub mod closeable;
 
 pub mod application;
 pub mod button;
+pub mod text;
 pub mod tray;
 pub mod window;
+pub mod message;
+pub mod image;
+pub mod frame;
+pub mod progress_bar;
 
 pub(crate) mod seal {
     pub trait Sealed {}

@@ -160,6 +160,10 @@ impl<T: ApplicationInner> HasInner for AApplication<T> {
     fn inner_mut(&mut self) -> &mut Self::I {
         unsafe { &mut (&mut *self.inner.get()).inner }
     }
+    #[inline]
+    fn into_inner(self) -> Self::I {
+        panic!("Never unwrap an Application");
+    }
 }
 impl<T: ApplicationInner> AApplication<T> {
     #[inline]

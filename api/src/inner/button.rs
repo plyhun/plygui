@@ -12,6 +12,12 @@ define! {
     }
 }
 
+impl<II: ButtonInner, T: HasInner<I = II> + 'static> ButtonInner for T {
+    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Button> {
+        <<Self as HasInner>::I as ButtonInner>::with_label(label)
+    }
+}
+
 impl<T: ButtonInner> Button for AMember<AControl<AButton<T>>> {
     #[inline]
     fn as_button(&self) -> &dyn Button {
