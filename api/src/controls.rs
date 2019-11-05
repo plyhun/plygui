@@ -1,4 +1,14 @@
-pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
+pub use crate::inner::{
+    member::Member,
+    control::Control,
+    application::Application,
+    container::Container,
+    container_single::SingleContainer,
+    container_multi::MultiContainer,
+    tray::Tray,
+};
+
+/*pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
 use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
@@ -185,3 +195,4 @@ pub trait Image: Control {
 
 pub trait ProgressBar: Control + HasProgress {}
 //impl <T: ProgressBar> development::Final for T {}
+*/

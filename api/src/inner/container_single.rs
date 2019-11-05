@@ -1,8 +1,7 @@
-use super::auto::{HasInner};
-use super::control::{Control, ControlInner, AControl};
-use super::container::{Container, ContainerInner, AContainer};
-use super::drawable::{Drawable};
-use super::member::{MemberBase, AMember, MemberInner};
+use super::auto::HasInner;
+use super::container::{AContainer, Container, ContainerInner};
+use super::control::{AControl, Control, ControlInner};
+use super::member::{AMember, MemberBase, MemberInner};
 
 define! {
     SingleContainer: Container {
@@ -72,7 +71,7 @@ impl<T: SingleContainerInner> SingleContainer for AMember<AContainer<ASingleCont
         self
     }
 }
-impl<II: SingleContainerInner, T: HasInner<I=II> + MemberInner + Drawable> SingleContainerInner for T {
+impl<II: SingleContainerInner, T: HasInner<I = II> + MemberInner> SingleContainerInner for T {
     #[inline]
     fn set_child(&mut self, base: &mut MemberBase, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>> {
         self.inner_mut().set_child(base, child)

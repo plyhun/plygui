@@ -18,7 +18,7 @@ pub trait HasNativeIdInner: 'static {
     unsafe fn native_id(&self) -> Self::Id;
 }
 
-impl<II: HasNativeIdInner, T: HasInner<I=II> + 'static> HasNativeIdInner for T {
+impl<II: HasNativeIdInner, T: HasInner<I = II> + 'static> HasNativeIdInner for T {
     type Id = <T::I as HasNativeIdInner>::Id;
 
     unsafe fn native_id(&self) -> Self::Id {

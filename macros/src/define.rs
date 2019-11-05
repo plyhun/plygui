@@ -151,15 +151,6 @@ impl ToTokens for Define {
                     &mut self.inner
                 }
             }
-            /*impl<T: #ident_inner> HasNativeIdInner for #a_ident<T> {
-                type Id = T::Id;
-            
-                #[inline]
-                unsafe fn native_id(&self) -> Self::Id {
-                    self.inner.native_id()
-                }
-            }
-            impl<T: #ident_inner> MemberInner for #a_ident<T> {}*/
             
             #maybe
         };

@@ -1,23 +1,27 @@
-mod auto;
-mod member;
-mod native_id;
-mod control;
-mod drawable;
-mod container;
-mod container_single;
-mod container_multi;
-mod has_layout;
-mod has_size;
-mod has_visibility;
-mod has_label;
-mod has_progress;
-mod has_image;
-mod clickable;
-mod closeable;
+pub mod auto;
+pub mod control;
+pub mod drawable;
+pub mod member;
 
-//mod application;
-//mod button;
-mod tray;
+pub mod container;
+pub mod container_multi;
+pub mod container_single;
+
+pub mod has_image;
+pub mod has_label;
+pub mod has_layout;
+pub mod has_native_id;
+pub mod has_progress;
+pub mod has_size;
+pub mod has_visibility;
+
+pub mod clickable;
+pub mod closeable;
+
+pub mod application;
+//pub mod button;
+pub mod tray;
+pub mod window;
 
 pub(crate) mod seal {
     pub trait Sealed {}

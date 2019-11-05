@@ -1,4 +1,17 @@
-use crate::callbacks::*;
+pub use crate::inner::{
+    auto::AsAny,
+    has_native_id::HasNativeId,
+    closeable::Closeable,
+    clickable::Clickable,
+    has_label::HasLabel,
+    has_image::HasImage,
+    has_progress::HasProgress,
+    has_size::HasSize,
+    has_visibility::HasVisibility,
+};
+
+
+/*use crate::callbacks::*;
 use crate::types;
 use crate::controls::{Member, Control, Container, Application};
 use crate::development::{MemberInner, MemberBase};
@@ -32,4 +45,4 @@ maybe!(Member);
 maybe!(Control);
 maybe!(Container);
 
-on!(Frame (&mut dyn Application) -> bool);
+on!(Frame (&mut dyn Application) -> bool);*/

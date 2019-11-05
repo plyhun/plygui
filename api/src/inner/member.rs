@@ -1,18 +1,18 @@
 use crate::{ids, runtime};
 
+use super::auto::{AsAny, HasInner};
+use super::container::MaybeContainer;
+use super::control::MaybeControl;
+use super::has_native_id::{HasNativeId, HasNativeIdInner};
 use super::seal::Sealed;
-use super::native_id::{HasNativeId, HasNativeIdInner};
-use super::control::{MaybeControl};
-use super::container::{MaybeContainer};
-use super::auto::{HasInner, AsAny};
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
 
+use std::any::Any;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::any::Any;
 
 pub trait Member: HasNativeId + MaybeControl + MaybeContainer + /*MaybeHasSize + MaybeHasVisibility +*/ AsAny + Sealed {
     fn id(&self) -> ids::Id;
@@ -29,7 +29,7 @@ pub trait Member: HasNativeId + MaybeControl + MaybeContainer + /*MaybeHasSize +
 
 pub trait MemberInner: HasNativeIdInner + Sized + 'static {}
 
-impl<II: MemberInner, T: HasInner<I=II> + HasNativeIdInner> MemberInner for T {}
+impl<II: MemberInner, T: HasInner<I = II> + HasNativeIdInner> MemberInner for T {}
 
 #[repr(C)]
 pub struct MemberBase {
@@ -57,12 +57,7 @@ pub struct MemberFunctions {
 }
 impl MemberFunctions {
     #[inline]
-    pub fn new(
-        _as_any: unsafe fn(&MemberBase) -> &dyn Any,
-        _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any,
-        _as_member: unsafe fn(&MemberBase) -> &dyn Member,
-        _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn Member,
-    ) -> Self {
+    pub fn new(_as_any: unsafe fn(&MemberBase) -> &dyn Any, _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any, _as_member: unsafe fn(&MemberBase) -> &dyn Member, _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn Member) -> Self {
         MemberFunctions {
             _as_any,
             _as_any_mut,
@@ -160,7 +155,7 @@ impl<T: MemberInner> AsAny for AMember<T> {
 }
 impl<T: MemberInner> AMember<T> {
     #[inline]
-    fn with_inner(inner: T, params: MemberFunctions) -> Self {
+    pub fn with_inner(inner: T, params: MemberFunctions) -> Self {
         AMember {
             inner: inner,
             base: MemberBase::with_functions(params),
@@ -180,4 +175,3 @@ impl<T: MemberInner> HasInner for AMember<T> {
 }
 
 impl<T: MemberInner> Sealed for AMember<T> {}
-

@@ -1,4 +1,23 @@
-pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
+pub use crate::inner::{
+    auto::HasInner,
+    application::*,
+    member::*,
+    control::*,
+    container::*,
+    container_single::*,
+    container_multi::*,
+    tray::*,
+    has_native_id::*,
+    closeable::*,
+    clickable::*,
+    has_label::*,
+    has_image::*,
+    has_progress::*,
+    has_size::*,
+    has_visibility::*,
+};
+
+/*pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
 
 use crate::{callbacks, controls, ids, layout, runtime, types};
 
@@ -2096,14 +2115,6 @@ impl<T: WindowInner> controls::HasSize for Member<SingleContainer<Window<T>>> {
     }
 }
 impl<T: WindowInner> controls::Window for Member<SingleContainer<Window<T>>> {}
-/* // Ban free creation of Window, use Application for that
-impl<T: WindowInner> Member<SingleContainer<Window<T>>> {
-    #[inline]
-    pub fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
-        T::with_params(title, window_size, menu)
-    }
-}*/
-
 // ===============================================================================================================
 
 pub trait ButtonInner: ControlInner + ClickableInner + HasLabelInner {
@@ -2278,13 +2289,6 @@ pub trait TrayInner: MemberInner + HasImageInner + HasLabelInner + CloseableInne
 }
 
 impl<T: TrayInner> controls::Tray for Member<T> {}
-/* // Ban free creation of Tray, use Application for that
-impl<T: TrayInner> Member<T> {
-    #[inline]
-    pub fn with_params(title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
-        T::with_params(title, menu)
-    }
-}*/
 
 // ===============================================================================================================
 
@@ -2401,3 +2405,4 @@ pub trait OuterDrawable: seal::Sealed {
 pub(crate) mod seal {
     pub trait Sealed {}
 }
+*/

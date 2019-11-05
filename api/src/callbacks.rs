@@ -1,11 +1,12 @@
 use crate::controls;
-pub use crate::auto::{
-    OnSize,
-    OnVisibility,
-    OnClick,
-    OnFrame,
-    //OnProgress,
-    OnClose, 
+
+pub use crate::inner::{
+    has_size::OnSize,
+    has_visibility::OnVisibility,
+    has_progress::OnProgress,
+    clickable::OnClick,
+    closeable::OnClose, 
+    //OnFrame,    
 };
 
 use std::sync::atomic::{AtomicUsize, Ordering};

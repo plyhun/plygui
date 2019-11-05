@@ -1,8 +1,6 @@
 use crate::callbacks::*;
-use crate::{types};
 
-//use super::application::{Application};
-use super::member::{Member, MemberInner, AMember, MemberBase};
+use super::application::Application;
 
 use std::any::Any;
 
@@ -17,9 +15,9 @@ pub trait AsAny {
 
 pub trait HasInner {
     type I: Sized + 'static;
-    
+
     fn inner(&self) -> &Self::I;
     fn inner_mut(&mut self) -> &mut Self::I;
 }
 
-//on!(Frame (&mut dyn Application) -> bool);
+on!(Frame(&mut dyn Application) -> bool);

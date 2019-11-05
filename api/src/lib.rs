@@ -18,7 +18,8 @@ pub mod utils;
 
 mod runtime;
 mod auto;
-mod inner;
+
+pub(crate) mod inner;
 
 #[macro_use]
 pub mod callbacks;

@@ -1,7 +1,7 @@
-use super::auto::{HasInner};
-use super::control::{Control, ControlInner, AControl};
-use super::container::{Container, AContainer, ContainerInner};
-use super::member::{MemberBase, AMember, MemberInner};
+use super::auto::HasInner;
+use super::container::{AContainer, Container, ContainerInner};
+use super::control::{AControl, Control, ControlInner};
+use super::member::{AMember, MemberBase, MemberInner};
 
 define! {
     MultiContainer: Container {
@@ -40,7 +40,7 @@ define! {
             fn remove_child_from(&mut self, base: &mut MemberBase, index: usize) -> Option<Box<dyn Control>>;
             fn child_at(&self, index: usize) -> Option<&dyn Control>;
             fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control>;
-        
+
             #[inline]
             fn is_empty(&self) -> bool {
                 self.len() < 1
