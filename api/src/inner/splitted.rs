@@ -1,11 +1,11 @@
 use crate::layout;
 
 use super::auto::HasInner;
+use super::container::AContainer;
+use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
+use super::control::{AControl, Control, ControlBase, ControlInner};
 use super::has_orientation::{HasOrientation, HasOrientationInner};
-use super::control::{Control, ControlInner, AControl, ControlBase};
-use super::member::{MemberInner, AMember, MemberBase};
-use super::container::{AContainer};
-use super::container_multi::{MultiContainer, AMultiContainer, MultiContainerInner};
+use super::member::{AMember, MemberBase, MemberInner};
 
 define! {
     Splitted: MultiContainer + Control + HasOrientation {
@@ -14,7 +14,7 @@ define! {
             fn second(&self) -> &dyn Control;
             fn first_mut(&mut self) -> &mut dyn Control;
             fn second_mut(&mut self) -> &mut dyn Control;
-        
+
             fn set_splitter(&mut self, pos: f32);
             fn splitter(&self) -> f32;
         }

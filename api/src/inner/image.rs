@@ -1,9 +1,9 @@
 use crate::types;
 
 use super::auto::HasInner;
+use super::control::{AControl, Control, ControlBase, ControlInner};
 use super::has_image::{HasImage, HasImageInner};
-use super::control::{Control, ControlBase, ControlInner, AControl};
-use super::member::{MemberBase, MemberInner, AMember};
+use super::member::{AMember, MemberBase, MemberInner};
 
 define! {
     Image: Control + HasImage {
@@ -40,7 +40,7 @@ impl<T: ImageInner> Image for AMember<AControl<AImage<T>>> {
     fn scale(&self) -> types::ImageScalePolicy {
         self.inner.inner.inner.scale()
     }
-    
+
     #[inline]
     fn as_image(&self) -> &dyn Image {
         self

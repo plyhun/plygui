@@ -16,7 +16,7 @@ pub enum WindowStartSize {
 pub enum Progress {
     Value(u32, u32),
     Undefined,
-    None
+    None,
 }
 
 pub type Menu = Option<Vec<MenuItem>>;
@@ -57,14 +57,14 @@ pub enum ImageScalePolicy {
 #[derive(Debug, Clone, PartialEq)]
 pub enum FindBy {
     Id(crate::ids::Id),
-    Tag(String)
+    Tag(String),
 }
 
 pub enum ApplicationResult {
     New(Box<dyn crate::controls::Application>),
     Existing(Box<dyn crate::controls::Application>),
     ErrorNonUiThread,
-    ErrorUnspecified
+    ErrorUnspecified,
 }
 impl ApplicationResult {
     pub fn unwrap(self) -> Box<dyn crate::controls::Application> {

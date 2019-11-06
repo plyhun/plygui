@@ -5,12 +5,11 @@ pub use crate::inner::{
     has_visibility::OnVisibility,
     clickable::OnClick,
     closeable::OnClose, 
-    //OnFrame,    
 };
 
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{SendError, Sender};
-use std::fmt::{Display, Formatter, Result as FmtResult};
 
 static GLOBAL_COUNT: AtomicUsize = AtomicUsize::new(0);
 
@@ -23,9 +22,9 @@ impl CallbackId {
     }
 }
 impl Display for CallbackId {
-	fn fmt(&self, f: &mut Formatter) -> FmtResult {
-		write!(f, "#{}", self.0)
-	}
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "#{}", self.0)
+    }
 }
 
 fn atomic_next() -> usize {
@@ -51,8 +50,8 @@ impl<T: Callback> From<Sender<T>> for AsyncFeeder<T> {
         AsyncFeeder { sender: s }
     }
 }
-unsafe impl <T: Callback> Send for AsyncFeeder<T> {}
-unsafe impl <T: Callback> Sync for AsyncFeeder<T> {}
+unsafe impl<T: Callback> Send for AsyncFeeder<T> {}
+unsafe impl<T: Callback> Sync for AsyncFeeder<T> {}
 
 macro_rules! callback {
 	($id: ident, $($typ:tt)+) => {
@@ -106,6 +105,5 @@ macro_rules! callback {
 	}
 }
 
-//callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
-
+callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);

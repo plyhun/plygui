@@ -25,13 +25,14 @@ define! {
 }
 impl<T: WindowInner> AWindow<T> {
     pub fn with_inner(inner: T) -> Self {
-        AWindow { 
+        AWindow {
             base: WindowBase {
                 visibility: types::Visibility::Visible,
                 on_size: None,
                 on_visibility: None,
-            }, 
-        inner }
+            },
+            inner,
+        }
     }
 }
 impl<T: WindowInner> HasVisibility for AMember<AContainer<ASingleContainer<AWindow<T>>>> {

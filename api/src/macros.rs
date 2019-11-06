@@ -16,11 +16,11 @@ macro_rules! default_pub_use {
             pub use crate::image::Image;
             pub use crate::layout_linear::LinearLayout;
             pub use crate::message::Message;
+            pub use crate::progress_bar::ProgressBar;
             pub use crate::splitted::Splitted;
             pub use crate::text::Text;
             pub use crate::tray::Tray;
             pub use crate::window::Window;
-            pub use crate::progress_bar::ProgressBar;
         }
     };
 }

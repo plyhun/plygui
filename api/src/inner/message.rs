@@ -2,7 +2,7 @@ use crate::{callbacks, types};
 
 use super::auto::HasInner;
 use super::has_label::{HasLabel, HasLabelInner};
-use super::member::{Member, MemberInner, AMember};
+use super::member::{AMember, Member, MemberInner};
 
 define! {
     Message: Member + HasLabel {
@@ -13,7 +13,7 @@ define! {
         inner: {
             fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Box<dyn Message>;
             fn severity(&self) -> types::MessageSeverity;
-            fn start(self) -> Result<String, ()>;            
+            fn start(self) -> Result<String, ()>;
         }
     }
 }
@@ -39,7 +39,7 @@ impl<T: MessageInner> Message for AMember<AMessage<T>> {
     fn start(self: Box<Self>) -> Result<String, ()> {
         self.inner.start()
     }
-    
+
     #[inline]
     fn as_message(&self) -> &dyn Message {
         self

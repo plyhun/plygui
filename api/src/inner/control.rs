@@ -346,7 +346,7 @@ impl<T: ControlInner> AMember<AControl<T>> {
 }
 impl<T: ControlInner> HasInner for AControl<T> {
     type I = T;
-    
+
     #[inline]
     fn inner(&self) -> &Self::I {
         &self.inner

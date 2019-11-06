@@ -1,11 +1,11 @@
 use crate::layout;
 
 use super::auto::HasInner;
+use super::container::AContainer;
+use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
+use super::control::{AControl, Control, ControlInner};
 use super::has_orientation::{HasOrientation, HasOrientationInner};
-use super::control::{Control, ControlInner, AControl};
-use super::member::{MemberInner, AMember};
-use super::container::{AContainer};
-use super::container_multi::{MultiContainer, AMultiContainer, MultiContainerInner};
+use super::member::{AMember, MemberInner};
 
 define! {
     LinearLayout: MultiContainer + Control + HasOrientation {

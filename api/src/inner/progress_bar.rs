@@ -1,9 +1,9 @@
 use crate::types;
 
 use super::auto::HasInner;
+use super::control::{AControl, Control, ControlInner};
 use super::has_progress::{HasProgress, HasProgressInner};
-use super::control::{Control, ControlInner, AControl};
-use super::member::{MemberInner, AMember};
+use super::member::{AMember, MemberInner};
 
 define! {
     ProgressBar: Control + HasProgress {

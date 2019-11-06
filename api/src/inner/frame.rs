@@ -1,9 +1,9 @@
 use super::auto::HasInner;
+use super::container::AContainer;
+use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
+use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
-use super::control::{Control, ControlInner, AControl};
-use super::member::{MemberInner, AMember};
-use super::container::{AContainer};
-use super::container_single::{SingleContainer, ASingleContainer, SingleContainerInner};
+use super::member::{AMember, MemberInner};
 
 define! {
     Frame: SingleContainer + Control + HasLabel {
