@@ -19,23 +19,27 @@ impl HasLabelInner for TestableText {
 }
 
 impl TextInner for TestableText {
-    fn with_text(text: &str) -> Box<Text> {
+    fn with_text<S: AsRef<str>>(text: S) -> Box<dyn controls::Text> {
         let mut b: Box<Text> = Box::new(AMember::with_inner(
             AControl::with_inner(
                 AText::with_inner(
                     TestableText {
                         base: common::TestableControlBase::new(),
-                        text: text.to_owned(),
+                        text: text.as_ref().to_owned(),
                     }
                 ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
+        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
 }
-
+impl Spawnable for TestableText {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_text("").into_control()
+    }
+}
 impl ControlInner for TestableText {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
@@ -133,11 +137,6 @@ impl Drawable for TestableText {
     fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
         self.base.invalidate()
     }
-}
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Text::empty().into_control()
 }
 
 default_impls_as!(Text);

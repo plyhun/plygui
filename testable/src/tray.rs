@@ -13,7 +13,7 @@ pub struct TestableTray {
     on_close: Option<callbacks::OnClose>,
 }
 
-pub type Tray = AMember<TestableTray>;
+pub type Tray = AMember<ATray<TestableTray>>;
 
 /*impl TestableTray {
     pub(crate) fn toggle_menu(&mut self) {
@@ -68,7 +68,7 @@ impl CloseableInner for TestableTray {
         }
         let mut app = Application::get().unwrap();
         let app = app.as_any_mut().downcast_mut::<Application>().unwrap();
-        app.as_inner_mut().remove_tray(self.id.into());
+        app.inner_mut().remove_tray(self.id.into());
 
         println!("Tray closed ({:?})", self.id);
         true
@@ -91,26 +91,28 @@ impl HasImageInner for TestableTray {
 }
 
 impl TrayInner for TestableTray {
-    fn with_params(title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
+    fn with_params<S: AsRef<str>>(title: S, menu: types::Menu) -> Box<dyn controls::Tray> {
         let mut t = Box::new(AMember::with_inner(
-            TestableTray {
-            	id: 0 as InnerId,
-                label: title.into(),
-                menu: menu,
-                image: image::DynamicImage::ImageRgba8(image::ImageBuffer::new(1,1)),
-                on_close: None,
-            },
+            ATray::with_inner(
+                TestableTray {
+                	id: 0 as InnerId,
+                    label: title.as_ref().to_owned(),
+                    menu: menu,
+                    image: image::DynamicImage::ImageRgba8(image::ImageBuffer::new(1,1)),
+                    on_close: None,
+                }
+            ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
         let this = t.as_mut();
-        t.as_inner_mut().id = this as *mut _ as *mut MemberBase;
+        t.inner_mut().inner_mut().id = this as *mut _ as *mut MemberBase;
 
         /*let app = super::application::Application::get();
 		if let Some(items) = menu {
             unsafe {
                 let menu = winuser::CreatePopupMenu();
-                common::make_menu(menu, items, &mut t.as_inner_mut().menu.1);
-                t.as_inner_mut().menu.0 = menu;
+                common::make_menu(menu, items, &mut t.inner_mut().menu.1);
+                t.inner_mut().menu.0 = menu;
             }
         }*/
         t

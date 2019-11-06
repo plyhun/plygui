@@ -87,8 +87,10 @@ impl ToTokens for Define {
             .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_camel_case()), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
 
-        let (type_base, custom_base, custom_trait, custom_inner) = {
+        let (type_base, custom_base, custom_trait, custom_inner, constructor) = {
+        	let mut should_have_constructor = true;
         	let mut type_base = quote!{};
+        	let mut constructor = quote!{};
         	let mut custom_base = quote!{};
         	let mut custom_trait = quote!{};
         	let mut custom_inner = quote!{};
@@ -105,6 +107,7 @@ impl ToTokens for Define {
 										#custom
 									}
 		        				};
+		        				should_have_constructor = false;
 		        			},
 		        			"outer" => {
 		        				custom_trait = custom.custom.clone();
@@ -117,7 +120,17 @@ impl ToTokens for Define {
 		        	}
         		}
         	}
-        	(type_base, custom_base, custom_trait, custom_inner)
+        	if should_have_constructor {
+            	constructor = quote! {
+                	impl<T: #ident_inner> #a_ident<T> {
+                        #[inline]
+                        pub fn with_inner(inner: T) -> Self {
+                            #a_ident { inner }
+                        }
+            		}
+            	};
+        	}
+        	(type_base, custom_base, custom_trait, custom_inner, constructor)
         };
         
         let maybe = Maybe {
@@ -155,6 +168,7 @@ impl ToTokens for Define {
                 }
             }
             
+            #constructor
             #maybe
         };
         expr.to_tokens(tokens);

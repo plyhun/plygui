@@ -3,7 +3,7 @@ use crate::common::{self, *};
 const DEFAULT_BOUND: i32 = DEFAULT_PADDING;
 const HALF_BOUND: i32 = DEFAULT_BOUND / 2;
 
-pub type Splitted = Member<Control<MultiContainer<TestableSplitted>>>;
+pub type Splitted = AMember<AControl<AContainer<AMultiContainer<ASplitted<TestableSplitted>>>>>;
 
 #[repr(C)]
 pub struct TestableSplitted {
@@ -70,27 +70,29 @@ impl TestableSplitted {
 }
 
 impl SplittedInner for TestableSplitted {
-    fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<Splitted> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                MultiContainer::with_inner(
-                    TestableSplitted {
-                        base: common::TestableControlBase::new(),
-                        orientation: orientation,
-
-                        splitter: 0.5,
-                        moving: false,
-
-                        first: first,
-                        second: second,
-                    },
-                    (),
+    fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<dyn controls::Splitted> {
+        let mut b = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AContainer::with_inner(
+                    AMultiContainer::with_inner(
+                        ASplitted::with_inner(
+                            TestableSplitted {
+                                base: common::TestableControlBase::new(),
+                                orientation: orientation,
+        
+                                splitter: 0.5,
+                                moving: false,
+        
+                                first: first,
+                                second: second,
+                            }
+                        ),
+                    )
                 ),
-                (),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
+        b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
     fn set_splitter(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, pos: f32) {
@@ -113,7 +115,11 @@ impl SplittedInner for TestableSplitted {
         self.second.as_mut()
     }
 }
-
+impl Spawnable for TestableSplitted {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_content(super::text::TestableText::spawn(), super::text::TestableText::spawn(), layout::Orientation::Vertical).into_control()
+    }
+}
 impl HasNativeIdInner for TestableSplitted {
     type Id = common::TestableId;
 
@@ -350,13 +356,13 @@ impl MultiContainerInner for TestableSplitted {
 }
 
 impl HasOrientationInner for TestableSplitted {
-    fn layout_orientation(&self) -> layout::Orientation {
+    fn orientation(&self, _: &MemberBase) -> layout::Orientation {
         self.orientation
     }
-    fn set_layout_orientation(&mut self, base: &mut MemberBase, orientation: layout::Orientation) {
+    fn set_orientation(&mut self, base: &mut MemberBase, orientation: layout::Orientation) {
         if orientation != self.orientation {
             self.orientation = orientation;
-            self.update_children_layout(unsafe { utils::base_to_impl_mut::<Splitted>(base) }.as_inner().base());
+            self.update_children_layout(& (unsafe { utils::base_to_impl_mut::<Splitted>(base) }.inner()).base);
             self.base.invalidate();
         }
     }
@@ -435,11 +441,6 @@ impl Drawable for TestableSplitted {
     fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
         self.base.invalidate()
     }
-}
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Splitted::with_content(super::text::spawn(), super::text::spawn(), layout::Orientation::Vertical).into_control()
 }
 
 default_impls_as!(Splitted);

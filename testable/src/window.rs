@@ -49,14 +49,14 @@ impl HasSizeInner for TestableWindow {
 }
 
 impl WindowInner for TestableWindow {
-    fn with_params(title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
+    fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
         let mut w: Box<Window> = Box::new(AMember::with_inner(
             AContainer::with_inner(
                 ASingleContainer::with_inner(
                     plygui_api::development::AWindow::with_inner(
                         TestableWindow {
                             id: 0 as InnerId,
-                            label: title.into(),
+                            label: title.as_ref().to_owned(),
                             size: match window_size {
     	                        types::WindowStartSize::Exact(w, h) => (w, h), 
     						    types::WindowStartSize::Fullscreen => (1280, 800)
@@ -73,11 +73,11 @@ impl WindowInner for TestableWindow {
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
 
-        w.as_inner_mut().as_inner_mut().as_inner_mut().id = w.base_mut();
+        w.inner_mut().inner_mut().inner_mut().inner_mut().id = &mut w.base;
 
         /*if let Some(items) = menu {
             let menu = winuser::CreateMenu();
-            common::make_menu(menu, items, &mut w.as_inner_mut().as_inner_mut().as_inner_mut().menu);
+            common::make_menu(menu, items, &mut w.inner_mut().inner_mut().inner_mut().menu);
             winuser::SetMenu(id, menu);
         }*/
 
@@ -112,6 +112,8 @@ impl ContainerInner for TestableWindow {
 
 impl SingleContainerInner for TestableWindow {
     fn set_child(&mut self, _: &mut MemberBase, mut child: Option<Box<dyn controls::Control>>) -> Option<Box<dyn controls::Control>> {
+        use crate::plygui_api::controls::SingleContainer;
+        
         let mut old = self.child.take();
         if let Some(outer_self) = common::member_from_id::<Window>(self.id.into()) {
             if let Some(old) = old.as_mut() {
@@ -151,7 +153,7 @@ impl CloseableInner for TestableWindow {
         }
         let mut app = super::application::Application::get().unwrap();
         let app = app.as_any_mut().downcast_mut::<super::application::Application>().unwrap();
-        app.as_inner_mut().remove_window(self.id.into());
+        app.inner_mut().remove_window(self.id.into());
 
         println!("Window closed ({:?})", self.id);
         true
@@ -172,7 +174,7 @@ impl MemberInner for TestableWindow {}
 impl Drop for TestableWindow {
     fn drop(&mut self) {
         if let Some(self2) = common::member_from_id::<Window>(self.id) {
-            self.set_child(self2.base_mut(), None);
+            self.set_child(&mut self2.base, None);
         }
     }
 }

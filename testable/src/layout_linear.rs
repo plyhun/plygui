@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type LinearLayout = Member<Control<MultiContainer<TestableLinearLayout>>>;
+pub type LinearLayout = AMember<AControl<AContainer<AMultiContainer<ALinearLayout<TestableLinearLayout>>>>>;
 
 #[repr(C)]
 pub struct TestableLinearLayout {
@@ -10,31 +10,37 @@ pub struct TestableLinearLayout {
 }
 
 impl LinearLayoutInner for TestableLinearLayout {
-    fn with_orientation(orientation: layout::Orientation) -> Box<LinearLayout> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                MultiContainer::with_inner(
-                    TestableLinearLayout {
-                        base: TestableControlBase::new(),
-                        orientation: orientation,
-                        children: Vec::new(),
-                    },
-                    (),
+    fn with_orientation(orientation: layout::Orientation) -> Box<dyn controls::LinearLayout> {
+        let mut b = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AContainer::with_inner(
+                    AMultiContainer::with_inner(
+                        ALinearLayout::with_inner(
+                            TestableLinearLayout {
+                                base: TestableControlBase::new(),
+                                orientation: orientation,
+                                children: Vec::new(),
+                            }
+                        ),
+                    )
                 ),
-                (),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
+        b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
 }
-
+impl Spawnable for TestableLinearLayout {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_orientation(layout::Orientation::Vertical).into_control()
+    }
+}
 impl HasOrientationInner for TestableLinearLayout {
-    fn layout_orientation(&self) -> layout::Orientation {
+    fn orientation(&self, _: &MemberBase) -> layout::Orientation {
         self.orientation
     }
-    fn set_layout_orientation(&mut self, _base: &mut MemberBase, orientation: layout::Orientation) {
+    fn set_orientation(&mut self, _base: &mut MemberBase, orientation: layout::Orientation) {
         if orientation != self.orientation {
             self.orientation = orientation;
             self.base.invalidate();
@@ -50,7 +56,7 @@ impl MultiContainerInner for TestableLinearLayout {
 
         self.children.insert(index, child);
         if self.base.parent.is_some() {
-            let (w, h) = base.as_any().downcast_ref::<LinearLayout>().unwrap().as_inner().base().measured;
+            let (w, h) = base.as_any().downcast_ref::<LinearLayout>().unwrap().inner().base.measured;
             self.children.get_mut(index).unwrap().on_added_to_container(
                 self.base.as_outer_mut(),
                 w as i32 - DEFAULT_PADDING,
@@ -306,11 +312,6 @@ impl Drawable for TestableLinearLayout {
     fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
         self.base.invalidate()
     }
-}
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    LinearLayout::with_orientation(layout::Orientation::Vertical).into_control()
 }
 
 default_impls_as!(LinearLayout);

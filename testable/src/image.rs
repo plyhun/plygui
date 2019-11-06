@@ -6,25 +6,18 @@ pub type Image = AMember<AControl<AImage<TestableImage>>>;
 pub struct TestableImage {
     base: TestableControlBase<Image>,
 
-    bmp: Option<image::DynamicImage>,
+    bmp: image::DynamicImage,
     scale: types::ImageScalePolicy,
 }
 
-impl TestableImage {
-    fn install_image(&mut self, content: image::DynamicImage) {
-		self.bmp = Some(content);
+impl HasImageInner for TestableImage {
+    fn image(&self, _: &MemberBase) -> Cow<image::DynamicImage> {
+        Cow::Borrowed(&self.bmp)
     }
-    fn remove_image(&mut self) {
-        self.bmp = None;
-    }
-}
-
-impl Drop for TestableImage {
-    fn drop(&mut self) {
-        self.remove_image();
+    fn set_image(&mut self, _: &mut MemberBase, arg0: Cow<image::DynamicImage>) {
+        self.bmp = arg0.into_owned();
     }
 }
-
 impl ImageInner for TestableImage {
     fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image> {
         let mut i = Box::new(AMember::with_inner(
@@ -32,16 +25,14 @@ impl ImageInner for TestableImage {
                 AImage::with_inner(
                     TestableImage {
                         base: TestableControlBase::new(),
-    
-                        bmp: None,
+                        bmp: content,
                         scale: types::ImageScalePolicy::FitCenter,
                     }
                 ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-		i.as_inner_mut().as_inner_mut().base.id = i.base_mut();
-        i.as_inner_mut().as_inner_mut().install_image(content);
+		i.inner_mut().inner_mut().inner_mut().base.id = &mut i.base;
         i
     }
     fn set_scale(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, policy: types::ImageScalePolicy) {
@@ -54,7 +45,11 @@ impl ImageInner for TestableImage {
         self.scale
     }
 }
-
+impl Spawnable for TestableImage {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_content(image::DynamicImage::ImageRgba8(image::ImageBuffer::new(0, 0))).into_control()
+    }
+}
 impl ControlInner for TestableImage {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
@@ -136,14 +131,14 @@ impl Drawable for TestableImage {
                     layout::Size::MatchParent => w,
                     layout::Size::Exact(w) => w,
                     layout::Size::WrapContent => {
-                        if let Some(ref bmp) = self.bmp {bmp.dimensions().0 as u16 } else { 0 }
+                        self.bmp.dimensions().0 as u16
                     }
                 };
                 let h = match control.layout.height {
                     layout::Size::MatchParent => h,
                     layout::Size::Exact(h) => h,
                     layout::Size::WrapContent => {
-                        if let Some(ref bmp) = self.bmp {bmp.dimensions().1 as u16 } else { 0 }
+                        self.bmp.dimensions().1 as u16
                     }
                 };
                 (cmp::max(0, w as i32) as u16, cmp::max(0, h as i32) as u16)

@@ -159,3 +159,20 @@ impl<T: MultiContainerInner + ControlInner> MultiContainer for AMember<AControl<
         self
     }
 }
+impl<II: MultiContainerInner, T: HasInner<I = II> + 'static> MultiContainerInner for T {
+    fn len(&self) -> usize {
+        self.inner().len()
+    }
+    fn set_child_to(&mut self, base: &mut MemberBase, index: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>> {
+        self.inner_mut().set_child_to(base, index, child)
+    }
+    fn remove_child_from(&mut self, base: &mut MemberBase, index: usize) -> Option<Box<dyn Control>> {
+        self.inner_mut().remove_child_from(base, index)
+    }
+    fn child_at(&self, index: usize) -> Option<&dyn Control> {
+        self.inner().child_at(index)
+    }
+    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control> {
+        self.inner_mut().child_at_mut(index)
+    }
+}

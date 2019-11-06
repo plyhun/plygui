@@ -6,6 +6,7 @@ pub use crate::inner::{
     has_progress::HasProgress,
     has_size::HasSize,
     has_visibility::HasVisibility,
+    has_orientation::HasOrientation,
     member::Member,
     control::Control,
     application::Application,
@@ -19,6 +20,9 @@ pub use crate::inner::{
     message::Message,
     image::Image,
     frame::Frame,
+    layout_linear::LinearLayout,
+    progress_bar::ProgressBar,
+    splitted::Splitted,
 };
 
 /*pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};

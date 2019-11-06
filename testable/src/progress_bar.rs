@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type ProgressBar = Member<Control<TestableProgressBar>>;
+pub type ProgressBar = AMember<AControl<AProgressBar<TestableProgressBar>>>;
 
 #[repr(C)]
 pub struct TestableProgressBar {
@@ -19,22 +19,27 @@ impl HasProgressInner for TestableProgressBar {
 }
 
 impl ProgressBarInner for TestableProgressBar {
-    fn with_progress(arg: types::Progress) -> Box<ProgressBar> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableProgressBar {
-                    base: common::TestableControlBase::new(),
-                    progress: arg,
-                },
-                (),
+    fn with_progress(arg: types::Progress) -> Box<dyn controls::ProgressBar> {
+        let mut b = Box::new(AMember::with_inner(
+            AControl::with_inner(
+                AProgressBar::with_inner(
+                    TestableProgressBar {
+                        base: common::TestableControlBase::new(),
+                        progress: arg,
+                    }
+                ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
+        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
 }
-
+impl Spawnable for TestableProgressBar {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_progress(types::Progress::None).into_control()
+    }
+}
 impl ControlInner for TestableProgressBar {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
         self.base.parent = Some(unsafe { parent.native_id() as InnerId });
@@ -127,11 +132,6 @@ impl Drawable for TestableProgressBar {
     fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
         self.base.invalidate()
     }
-}
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    ProgressBar::with_progress(types::Progress::None).into_control()
 }
 
 default_impls_as!(ProgressBar);

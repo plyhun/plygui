@@ -3,7 +3,6 @@ use crate::controls;
 pub use crate::inner::{
     has_size::OnSize,
     has_visibility::OnVisibility,
-    has_progress::OnProgress,
     clickable::OnClick,
     closeable::OnClose, 
     //OnFrame,    

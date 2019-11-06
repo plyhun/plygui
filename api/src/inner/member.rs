@@ -4,6 +4,8 @@ use super::auto::{AsAny, HasInner};
 use super::container::MaybeContainer;
 use super::control::MaybeControl;
 use super::has_native_id::{HasNativeId, HasNativeIdInner};
+use super::has_size::MaybeHasSize;
+use super::has_visibility::MaybeHasVisibility;
 use super::seal::Sealed;
 
 #[cfg(feature = "type_check")]
@@ -14,7 +16,7 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-pub trait Member: HasNativeId + MaybeControl + MaybeContainer + /*MaybeHasSize + MaybeHasVisibility +*/ AsAny + Sealed {
+pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + Sealed {
     fn id(&self) -> ids::Id;
     fn tag(&self) -> Option<Cow<str>>;
     fn set_tag(&mut self, tag: Option<Cow<str>>);

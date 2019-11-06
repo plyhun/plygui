@@ -19,19 +19,18 @@ impl ApplicationInner for TestableApplication {
                 windows: Vec::with_capacity(1),
                 trays: Vec::with_capacity(0),
             },
-            (),
         ));
-        w.as_inner_mut().root = w.as_mut();
+        w.inner_mut().root = w.as_mut();
         w
     }
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
         let w = window::TestableWindow::with_params(title, size, menu);
-        self.windows.push(unsafe { w.as_inner().as_inner().native_id() });
+        self.windows.push(unsafe { TestableId::from_outer(w.native_id()) });
         w
     }
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray> {
     	let tray = tray::TestableTray::with_params(title, menu);
-        self.trays.push(unsafe { tray.as_inner().native_id() });
+        self.trays.push(unsafe { TestableId::from_outer(tray.native_id()) });
         tray
     }
     fn remove_window(&mut self, id: Self::Id) {
@@ -46,7 +45,7 @@ impl ApplicationInner for TestableApplication {
     fn start(&mut self) {
     	for window in self.windows.as_slice() {
     		let window = common::member_from_id::<window::Window>(window.clone().into()).unwrap();
-    		window.as_inner_mut().as_inner_mut().as_inner_mut().draw();
+    		window.inner_mut().inner_mut().inner_mut().inner_mut().draw();
     	}
         loop {
             let mut frame_callbacks = 0;
@@ -87,7 +86,7 @@ impl ApplicationInner for TestableApplication {
                         }
                     }
                 }
-                let found = window.find_control_mut(arg.clone()).map(|control| control.as_member_mut());
+                let found = controls::Container::find_control_mut(window, arg.clone()).map(|control| control.as_member_mut());
                 if found.is_some() {
                     return found;
                 }
@@ -130,7 +129,7 @@ impl ApplicationInner for TestableApplication {
                         }
                     }
                 }
-                let found = window.find_control(arg.clone()).map(|control| control.as_member());
+                let found = controls::Container::find_control(window, arg.clone()).map(|control| control.as_member());
                 if found.is_some() {
                     return found;
                 }

@@ -11,7 +11,7 @@ pub struct TestableFrame {
 }
 
 impl FrameInner for TestableFrame {
-    fn with_label(label: &str) -> Box<Frame> {
+    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Frame> {
         let mut b = Box::new(AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
@@ -20,7 +20,7 @@ impl FrameInner for TestableFrame {
                             TestableFrame {
                                 base: common::TestableControlBase::new(),
                                 child: None,
-                                label: label.to_owned(),
+                                label: label.as_ref().to_owned(),
                                 label_padding: 8,
                             }
                         ),
@@ -29,11 +29,15 @@ impl FrameInner for TestableFrame {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
+        b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
 }
-
+impl Spawnable for TestableFrame {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_label("").into_control()
+    }
+}
 impl HasLayoutInner for TestableFrame {
     fn on_layout_changed(&mut self, _base: &mut MemberBase) {
         self.base.invalidate();
@@ -65,7 +69,7 @@ impl SingleContainerInner for TestableFrame {
 
         if self.child.is_some() {
             if self.base.parent.is_some() {
-                let (w, h) = base.as_any().downcast_ref::<Frame>().unwrap().as_inner().base().measured;
+                let (w, h) = base.as_any().downcast_ref::<Frame>().unwrap().inner().base.measured;
                 if let Some(new) = self.child.as_mut() {
                     new.as_mut().on_added_to_container(
                         self.base.as_outer_mut(),
@@ -283,11 +287,6 @@ impl Drawable for TestableFrame {
     }
 }
 
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Frame::with_label("").into_control()
-}
-
 /*unsafe extern "system" fn whandler(hwnd: windef::HWND, msg: minwindef::UINT, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
     let ww = winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA);
     if ww == 0 {
@@ -303,11 +302,11 @@ pub(crate) fn spawn() -> Box<dyn controls::Control> {
             let width = lparam as u16;
             let height = (lparam >> 16) as u16;
             let frame: &mut Frame = mem::transmute(ww);
-            let label_padding = frame.as_inner().as_inner().as_inner().label_padding;
+            let label_padding = frame.inner().inner().inner().label_padding;
             let hp = DEFAULT_PADDING + DEFAULT_PADDING;
             let vp = DEFAULT_PADDING + DEFAULT_PADDING + label_padding;
 
-            if let Some(ref mut child) = frame.as_inner_mut().as_inner_mut().as_inner_mut().child {
+            if let Some(ref mut child) = frame.inner_mut().inner_mut().inner_mut().child {
                 child.measure(cmp::max(0, width as i32 - hp) as u16, cmp::max(0, height as i32 - vp) as u16);
                 child.draw(Some((DEFAULT_PADDING, DEFAULT_PADDING)));
             }

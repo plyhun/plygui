@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 pub trait NativeId: Any + Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash + Into<usize> + Sized {
-    unsafe fn from<T: Into<usize>>(arg: T) -> Self;
+    unsafe fn from_outer(arg: usize) -> Self;
 }
 
 pub trait HasNativeId: 'static {

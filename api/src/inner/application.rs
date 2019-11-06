@@ -68,6 +68,18 @@ pub struct ApplicationInnerWrapper<T: ApplicationInner> {
     base: ApplicationBase,
     inner: T,
 }
+impl<T: ApplicationInner> AApplication<T> {
+    #[inline]
+    pub fn with_inner(inner: T) -> Self {
+        let (tx, rx) = mpsc::channel();
+        AApplication {
+            inner: Rc::new(UnsafeCell::new(ApplicationInnerWrapper {
+                base: ApplicationBase { sender: tx, queue: rx },
+                inner: inner,
+            })),
+        }
+    }
+}
 impl ApplicationBase {
     pub fn sender(&mut self) -> &mut mpsc::Sender<OnFrame> {
         &mut self.sender

@@ -1,19 +1,21 @@
+use crate::types;
+
 use super::auto::HasInner;
-use super::has_label::{HasLabel, HasLabelInner};
+use super::has_progress::{HasProgress, HasProgressInner};
 use super::control::{Control, ControlInner, AControl};
 use super::member::{MemberInner, AMember};
 
 define! {
-    ProgressBar: Control + HasLabel {
+    ProgressBar: Control + HasProgress {
         inner: {
-            fn with_progress_bar<S: AsRef<str>>(label: S) -> Box<dyn ProgressBar>;
+            fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar>;
         }
     }
 }
 
 impl<II: ProgressBarInner, T: HasInner<I = II> + 'static> ProgressBarInner for T {
-    fn with_progress_bar<S: AsRef<str>>(label: S) -> Box<dyn ProgressBar> {
-        <<Self as HasInner>::I as ProgressBarInner>::with_progress_bar(label)
+    fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar> {
+        <<Self as HasInner>::I as ProgressBarInner>::with_progress(progress)
     }
 }
 
@@ -34,7 +36,7 @@ impl<T: ProgressBarInner> ProgressBar for AMember<AControl<AProgressBar<T>>> {
 
 impl<T: ProgressBarInner> AMember<AControl<AProgressBar<T>>> {
     #[inline]
-    pub fn with_progress_bar<S: AsRef<str>>(label: S) -> Box<dyn ProgressBar> {
-        T::with_progress_bar(label)
+    pub fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar> {
+        T::with_progress(progress)
     }
 }

@@ -33,24 +33,28 @@ impl ClickableInner for TestableButton {
 }
 
 impl ButtonInner for TestableButton {
-    fn with_label(label: &str) -> Box<Button> {
+    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
         let mut b = Box::new(AMember::with_inner(
             AControl::with_inner(
                 AButton::with_inner(
                     TestableButton {
                         base: common::TestableControlBase::new(),
                         h_left_clicked: None,
-                        label: label.to_owned(),
+                        label: label.as_ref().to_owned(),
                     }
                 ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         ));
-        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
+        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
 }
-
+impl Spawnable for TestableButton {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_label("").into_control()
+    }
+}
 impl ControlInner for TestableButton {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
@@ -150,11 +154,6 @@ impl Drawable for TestableButton {
     fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
         self.base.invalidate()
     }
-}
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Button::with_label("").into_control()
 }
 
 default_impls_as!(Button);

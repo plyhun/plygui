@@ -26,7 +26,7 @@ pub trait Spawnable {
     fn spawn() -> Box<dyn Control>;
 }
 impl<II: Spawnable + 'static, T: HasInner<I = II> + 'static> Spawnable for T {
-    fn spawn() -> Box<dyn Control> {
+    default fn spawn() -> Box<dyn Control> {
         <<Self as HasInner>::I as Spawnable>::spawn()
     }
 }

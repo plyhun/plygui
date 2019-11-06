@@ -13,7 +13,9 @@ has_private!(Layout(layout::Size, layout::Size): Member {
     },
     inner: {
         fn on_layout_changed(&mut self, base: &mut MemberBase);
-        fn layout_margin(&self, member: &MemberBase) -> layout::BoundarySize;
+        fn layout_margin(&self, _member: &MemberBase) -> layout::BoundarySize {
+            layout::BoundarySize::AllTheSame(0)
+        }
     }
 });
 

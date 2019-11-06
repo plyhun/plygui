@@ -34,7 +34,11 @@ impl From<TestableId> for usize {
         a.0 as usize
     }
 }
-impl NativeId for TestableId {}
+impl NativeId for TestableId {
+    unsafe fn from_outer(arg: usize) -> Self {
+        TestableId(arg as *mut MemberBase)
+    }
+}
 
 #[repr(C)]
 pub struct TestableControlBase<T: controls::Control + Sized> {

@@ -19,10 +19,14 @@ pub use crate::inner::{
     has_progress::HasProgressInner,
     has_size::HasSizeInner,
     has_visibility::HasVisibilityInner,
+    has_orientation::HasOrientationInner,
     window::{AWindow, WindowBase, WindowInner},
     message::{AMessage, MessageInner},
     image::{AImage, ImageInner},
     frame::{AFrame, FrameInner},
+    layout_linear::{ALinearLayout, LinearLayoutInner},
+    progress_bar::{AProgressBar, ProgressBarInner},
+    splitted::{ASplitted, SplittedInner},
 };
 
 /*pub use crate::auto::{ClickableInner, CloseableInner, HasImageInner, HasLabelInner, HasProgressInner, HasSizeInner, HasVisibilityInner};
