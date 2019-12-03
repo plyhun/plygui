@@ -56,6 +56,7 @@ impl ControlInner for TestableText {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
 
+    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_BUTTON;
         fill_from_markup_base!(self, member, markup, registry, Text, [MEMBER_TYPE_BUTTON]);

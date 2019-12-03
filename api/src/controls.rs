@@ -1,4 +1,4 @@
-pub use crate::auto::{AsAny, Clickable, Closeable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
+pub use crate::auto::{Clickable, Closeable, ItemClickable, HasImage, HasLabel, HasNativeId, HasProgress, HasSize, HasVisibility, MaybeContainer, MaybeControl, MaybeHasSize, MaybeHasVisibility, MaybeMember};
 use crate::{callbacks, development, ids, layout, types};
 
 #[cfg(feature = "type_check")]
@@ -7,7 +7,7 @@ use std::borrow::Cow;
 
 // ===============================================================================================================
 
-pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + AsAny + development::seal::Sealed {
+pub trait Member: HasNativeId + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + types::AsAny + development::seal::Sealed {
     fn id(&self) -> ids::Id;
     fn tag(&self) -> Option<Cow<str>>;
     fn set_tag(&mut self, tag: Option<Cow<str>>);
@@ -76,6 +76,12 @@ pub trait Container: Member {
     fn is_single(&self) -> Option<&dyn SingleContainer> {
         None
     }
+    fn is_adapter_mut(&mut self) -> Option<&mut dyn AdapterView> {
+        None
+    }
+    fn is_adapter(&self) -> Option<&dyn AdapterView> {
+        None
+    }
 
     fn as_container(&self) -> &dyn Container;
     fn as_container_mut(&mut self) -> &mut dyn Container;
@@ -126,7 +132,7 @@ pub trait MultiContainer: Container {
     fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer>;
 }
 
-pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
+pub trait Application: HasNativeId + types::AsAny + development::seal::Sealed {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;
@@ -136,6 +142,9 @@ pub trait Application: HasNativeId + AsAny + development::seal::Sealed {
     fn exit(self: Box<Self>, skip_on_close: bool) -> bool;
     fn on_frame(&mut self, cb: callbacks::OnFrame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<callbacks::OnFrame>;
+    
+    fn frame_sleep(&self) -> u32;
+    fn set_frame_sleep(&mut self, value: u32);
 
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a>; //E0562 :(
     fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a>; //E0562 :(
@@ -185,3 +194,39 @@ pub trait Image: Control {
 
 pub trait ProgressBar: Control + HasProgress {}
 //impl <T: ProgressBar> development::Final for T {}
+
+pub trait Table: Control + MultiContainer {
+    fn row_len(&self) -> usize;
+    fn column_len(&self) -> usize;
+    fn table_child_at(&self, row: usize, col: usize) -> Option<&dyn Control>;
+    fn table_child_at_mut(&mut self, row: usize, col: usize) -> Option<&mut dyn Control>;
+    
+    fn set_table_child_to(&mut self, row: usize, col: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>>;
+    fn remove_table_child_from(&mut self, row: usize, col: usize) -> Option<Box<dyn Control>>;
+    
+    fn add_row(&mut self) -> usize;
+    fn add_column(&mut self) -> usize;
+    fn insert_row(&mut self, row: usize) -> usize;
+    fn insert_column(&mut self, col: usize) -> usize;
+    fn delete_row(&mut self, row: usize) -> usize;
+    fn delete_column(&mut self, col: usize) -> usize;
+}
+//impl <T: Table> development::Final for T {}
+
+pub trait AdapterView: Control + Container + ItemClickable {
+    fn adapter(&self) -> &dyn types::Adapter;
+    fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
+    
+    fn as_adapter_view(&self) -> &dyn AdapterView;
+    fn as_adapter_view_mut(&mut self) -> &mut dyn AdapterView;
+    fn into_adapter_view(self: Box<Self>) -> Box<dyn AdapterView>;
+    
+    fn len(&self) -> usize {
+        self.adapter().len()
+    }
+}
+
+pub trait List: AdapterView {
+}
+//impl <T: List> development::Final for T {}
+

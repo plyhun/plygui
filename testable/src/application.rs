@@ -4,9 +4,12 @@ use super::*;
 use plygui_api::controls::{self, *};
 use plygui_api::types;
 
+use std::{time, thread};
+
 pub struct TestableApplication {
     pub(crate) root: *mut Application,
     name: String,
+    sleep: u32,
     windows: Vec<TestableId>,
     trays: Vec<TestableId>,
 }
@@ -18,6 +21,7 @@ impl ApplicationInner for TestableApplication {
         let mut w = Box::new(Application::with_inner(
             TestableApplication {
             	root: ptr::null_mut(),
+            	sleep: 0,
                 name: String::new(), //name.into(), // TODO later
                 windows: Vec::with_capacity(1),
                 trays: Vec::with_capacity(0),
@@ -46,6 +50,12 @@ impl ApplicationInner for TestableApplication {
     fn name<'a>(&'a self) -> Cow<'a, str> {
         Cow::Borrowed(self.name.as_str())
     }
+    fn frame_sleep(&self) -> u32 {
+        self.sleep
+    }
+    fn set_frame_sleep(&mut self, value: u32) {
+        self.sleep = value;
+    }
     fn start(&mut self) {
     	for window in self.windows.as_slice() {
     		let window = common::member_from_id::<window::Window>(window.clone().into()).unwrap();
@@ -67,6 +77,9 @@ impl ApplicationInner for TestableApplication {
                         mpsc::TryRecvError::Disconnected => unreachable!(),
                     },
                 }
+            }
+            if self.sleep > 0 {
+                thread::sleep(time::Duration::from_millis(self.sleep as u64));
             }
             if self.windows.len() < 1 && self.trays.len() < 1 {
                 break;

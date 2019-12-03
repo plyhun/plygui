@@ -16,6 +16,7 @@ mod text;
 mod tray;
 mod window;
 mod progress_bar;
+mod list;
 
 default_markup_register_members!();
 default_pub_use!();

@@ -1,3 +1,7 @@
+use crate::{development, controls};
+
+pub use crate::auto::AsAny;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Visibility {
@@ -60,14 +64,21 @@ pub enum FindBy {
     Tag(String)
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Change {
+    Added(usize),
+    Removed(usize),
+    Edited(usize)
+}
+
 pub enum ApplicationResult {
-    New(Box<dyn crate::controls::Application>),
-    Existing(Box<dyn crate::controls::Application>),
+    New(Box<dyn controls::Application>),
+    Existing(Box<dyn controls::Application>),
     ErrorNonUiThread,
     ErrorUnspecified
 }
 impl ApplicationResult {
-    pub fn unwrap(self) -> Box<dyn crate::controls::Application> {
+    pub fn unwrap(self) -> Box<dyn controls::Application> {
         match self {
             ApplicationResult::New(app) | ApplicationResult::Existing(app) => app,
             ApplicationResult::ErrorNonUiThread => panic!("Application requested from non-UI thread"),
@@ -75,3 +86,10 @@ impl ApplicationResult {
         }
     }
 }
+
+pub trait Adapter: development::AdapterInner + AsAny {
+	fn len(&self) -> usize;
+	
+	fn spawn_item_view(&mut self, i: usize, parent: &dyn controls::AdapterView) -> Box<dyn controls::Control>;
+}
+

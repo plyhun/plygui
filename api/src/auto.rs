@@ -1,7 +1,7 @@
 use crate::callbacks::*;
 use crate::types;
 use crate::controls::{Member, Control, Container, Application};
-use crate::development::{MemberInner, MemberBase};
+use crate::development::{MemberInner, ControlInner, MemberBase};
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -18,6 +18,7 @@ pub trait HasNativeId: 'static {
 
 able_to!(Close: Member {} -> bool);
 able_to!(Click: Member);
+able_to!(ItemClick (usize, &mut dyn Control): Control);
 
 has!(Label(Cow<'_, str>): Member);
 has!(Image(Cow<'_, image::DynamicImage>): Member);
@@ -33,3 +34,4 @@ maybe!(HasSize);
 maybe!(HasVisibility);
 
 on!(Frame (&mut dyn Application) -> bool);
+on!(ItemChange (&mut MemberBase, types::Change));
