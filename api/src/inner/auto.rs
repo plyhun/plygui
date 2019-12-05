@@ -5,9 +5,6 @@ use super::control::Control;
 
 use std::any::Any;
 
-#[cfg(feature = "type_check")]
-use std::any::TypeId;
-
 pub trait AsAny {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;

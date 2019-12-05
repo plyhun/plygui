@@ -1,10 +1,11 @@
-use crate::controls;
+use crate::{controls, types};
 
 pub use crate::inner::{
     has_size::OnSize,
     has_visibility::OnVisibility,
     clickable::OnClick,
     closeable::OnClose, 
+    member::MemberBase,
 };
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -107,3 +108,5 @@ macro_rules! callback {
 
 callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
+
+on!(ItemChange (&mut MemberBase, types::Change));

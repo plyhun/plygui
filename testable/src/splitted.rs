@@ -95,7 +95,7 @@ impl SplittedInner for TestableSplitted {
         b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
         b
     }
-    fn set_splitter(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, pos: f32) {
+    fn set_splitter(&mut self, _member: &mut MemberBase, pos: f32) {
         self.splitter = pos;
         self.base.invalidate();
     }
@@ -195,6 +195,7 @@ impl ControlInner for TestableSplitted {
         self.base.parent = None;
     }
 
+    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_SPLITTED;
 

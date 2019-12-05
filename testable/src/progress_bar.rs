@@ -61,6 +61,7 @@ impl ControlInner for TestableProgressBar {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
 
+    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_PROGRESS_BAR;
         fill_from_markup_base!(self, member, markup, registry, ProgressBar, [MEMBER_TYPE_PROGRESS_BAR]);

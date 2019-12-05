@@ -18,12 +18,16 @@ pub mod has_visibility;
 
 pub mod clickable;
 pub mod closeable;
+pub mod item_clickable;
+pub mod adapted;
+pub mod adapter;
 
 pub mod application;
 pub mod button;
 pub mod frame;
 pub mod image;
 pub mod layout_linear;
+pub mod list;
 pub mod message;
 pub mod progress_bar;
 pub mod splitted;

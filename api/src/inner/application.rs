@@ -12,9 +12,6 @@ use std::cell::UnsafeCell;
 use std::rc::Rc;
 use std::sync::mpsc;
 
-#[cfg(feature = "type_check")]
-use std::any::TypeId;
-
 pub trait Application: HasNativeId + AsAny + super::seal::Sealed {
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
@@ -26,6 +23,9 @@ pub trait Application: HasNativeId + AsAny + super::seal::Sealed {
     fn on_frame(&mut self, cb: OnFrame);
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<OnFrame>;
 
+    fn frame_sleep(&self) -> u32;
+    fn set_frame_sleep(&mut self, value: u32);
+    
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a>; //E0562 :(
     fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a>; //E0562 :(
 }
@@ -54,6 +54,8 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn on_frame(&mut self, feeder: &mut callbacks::AsyncFeeder<OnFrame>, cb: OnFrame) {
         let _ = feeder.feed(cb);
     }
+    fn frame_sleep(&self) -> u32;
+    fn set_frame_sleep(&mut self, value: u32);
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &(dyn Member)> + 'a>;
     fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &mut (dyn Member)> + 'a>;
 }
@@ -136,6 +138,14 @@ impl<T: ApplicationInner> Application for AApplication<T> {
     fn on_frame(&mut self, cb: OnFrame) {
         let mut feeder = self.base_mut().sender().clone().into();
         self.inner_mut().on_frame(&mut feeder, cb)
+    }
+    #[inline]
+    fn frame_sleep(&self) -> u32 {
+        self.inner().frame_sleep()
+    }
+    #[inline]
+    fn set_frame_sleep(&mut self, value: u32) {
+        self.inner_mut().set_frame_sleep(value)
     }
     #[inline]
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {

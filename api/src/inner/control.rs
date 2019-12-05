@@ -252,6 +252,7 @@ impl<T: ControlInner> Control for AMember<AControl<T>> {
     fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
         #[cfg(feature = "type_check")]
         unsafe {
+            use std::any::Any;
             if self.inner.inner.native_id().type_id() != parent.type_id() {
                 panic!("Attempt to use the control from an incompatible backend!")
             }
@@ -334,7 +335,7 @@ impl<T: ControlInner> AMember<AControl<T>> {
         }
     }
     #[inline]
-    pub fn as_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut T) {
+    pub fn as_control_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut T) {
         let self2 = self as *mut Self;
         let self3 = self as *mut Self;
         (&mut unsafe { &mut *self2 }.base, &mut unsafe { &mut *self3 }.inner.base, &mut self.inner.inner)

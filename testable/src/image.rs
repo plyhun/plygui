@@ -35,7 +35,7 @@ impl ImageInner for TestableImage {
 		i.inner_mut().inner_mut().inner_mut().base.id = &mut i.base;
         i
     }
-    fn set_scale(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, policy: types::ImageScalePolicy) {
+    fn set_scale(&mut self, _member: &mut MemberBase, policy: types::ImageScalePolicy) {
         if self.scale != policy {
             self.scale = policy;
             self.base.invalidate();
@@ -72,6 +72,7 @@ impl ControlInner for TestableImage {
         self.base.root_mut().map(|p| p.as_member_mut())
     }
 
+    #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
         use plygui_api::markup::MEMBER_TYPE_IMAGE;
         fill_from_markup_base!(self, member, markup, registry, Image, [MEMBER_TYPE_IMAGE]);
