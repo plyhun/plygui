@@ -37,7 +37,7 @@ impl AdaptedInner for TestableList {
 }
 impl Spawnable for TestableList {
     fn spawn() -> Box<dyn controls::Control> {
-        Self::with_adapter(Box::new(common::adapter::StringVecAdapter::<crate::imp::Text>::new())).into_control()
+        Self::with_adapter(Box::new(types::imp::StringVecAdapter::<crate::imp::Text>::new())).into_control()
     }
 }
 impl ControlInner for TestableList {

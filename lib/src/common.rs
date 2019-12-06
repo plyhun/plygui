@@ -1,3 +1,3 @@
-use crate::{imp, api_common::adapter};
+use crate::{imp, types};
 
-pub type SimpleTextAdapter = adapter::StringVecAdapter<imp::Text>;
+pub type SimpleTextAdapter = types::imp::StringVecAdapter<imp::Text>;

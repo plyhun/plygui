@@ -188,16 +188,16 @@ impl ToTokens for AbleTo {
         let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
 
         let expr = quote! {
-            pub trait #ident_able: #static_ + AsAny #(+#extends)*{
+            pub trait #ident_able: #static_ + Member #(+#extends)*{
                 fn #ident_fn(&mut self, #(#param_names: #params,)* skip_callbacks: bool) #ret;
                 fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
 
                 #custom
                 #as_into
             }
-            pub trait #ident_able_inner: #(#extends_inner+)* #static_inner {
-                fn #ident_fn(&mut self, #(#param_names: #params,)* skip_callbacks: bool) #ret;
-                fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
+            pub trait #ident_able_inner: #static_inner + MemberInner #(+#extends_inner)*  {
+                fn #ident_fn(&mut self, base: &mut MemberBase, #(#param_names: #params,)* skip_callbacks: bool) #ret;
+                fn #on_ident_fn(&mut self, base: &mut MemberBase, callback: Option<#on_ident>);
 
                 #custom
             }

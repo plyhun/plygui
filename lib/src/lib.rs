@@ -3,9 +3,8 @@ pub use plygui_api::controls::*;
 pub use plygui_api::external;
 pub use plygui_api::ids::*;
 pub use plygui_api::layout;
-pub use plygui_api::types::*;
+pub use plygui_api::types::{*, self};
 pub use plygui_api::utils;
-pub use plygui_api::common as api_common;
 
 pub mod common;
 
