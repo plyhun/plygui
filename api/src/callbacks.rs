@@ -1,6 +1,7 @@
 use crate::{controls, types};
 
 pub use crate::inner::{
+	auto::OnFrame,
     has_size::OnSize,
     has_visibility::OnVisibility,
     clickable::OnClick,
@@ -106,7 +107,7 @@ macro_rules! callback {
 	}
 }
 
-callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
+//callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
 
 on!(ItemChange (&mut MemberBase, types::Change));

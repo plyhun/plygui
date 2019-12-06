@@ -25,6 +25,7 @@ pub use crate::inner::{
     splitted::Splitted,
     item_clickable::ItemClickable,
     clickable::Clickable,
+    closeable::Closeable,
     adapted::Adapted,
     list::List,
 };
