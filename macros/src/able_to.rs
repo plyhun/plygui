@@ -107,6 +107,8 @@ impl ToTokens for AbleTo {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let ident = Ident::new(&self.name.to_string().to_camel_case(), Span::call_site());
         
+        //let a_ident = Ident::new(&format!("A{}", ident).to_camel_case(), Span::call_site());
+        //let ident_base = Ident::new(&format!("{}Base", ident).to_camel_case(), Span::call_site());
         let ident_able = Ident::new(&format!("{}able", ident).to_camel_case(), Span::call_site());
         let ident_able_inner = Ident::new(&format!("{}ableInner", ident).to_camel_case(), Span::call_site());
 
@@ -202,6 +204,17 @@ impl ToTokens for AbleTo {
 
             #on
             #maybe
+            /*
+            #[repr(C)]
+			pub struct #ident_base {
+				pub callback: Option<#on_ident>
+			}
+            
+            #[repr(C)]
+			pub struct #a_ident<T: #ident_able_inner> {
+				pub base: #ident_base,
+				pub inner: T,
+			}*/
         };
         expr.to_tokens(tokens);
     }

@@ -6,7 +6,7 @@ use super::control::{AControl, Control, ControlInner};
 
 able_to!(ItemClick (usize, &mut dyn Control): Control);
 
-impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>> {
+/*impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>> {
     #[inline]
     default fn on_item_click(&mut self, cb: Option<OnItemClick>) {
         self.inner.inner.on_item_click(cb)
@@ -28,13 +28,13 @@ impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>>
     default fn into_item_clickable(self: Box<Self>) -> Box<dyn ItemClickable> {
         self
     }
-}
+}*/
 
 impl<II: ItemClickableInner, T: HasInner<I = II> + 'static> ItemClickableInner for T {
-    fn item_click(&mut self, i: usize, parent: &mut dyn Control, skip_callbacks: bool) {
+    default fn item_click(&mut self, i: usize, parent: &mut dyn Control, skip_callbacks: bool) {
         self.inner_mut().item_click(i, parent, skip_callbacks)
     }
-    fn on_item_click(&mut self, callback: Option<OnItemClick>) {
+    default fn on_item_click(&mut self, callback: Option<OnItemClick>) {
         self.inner_mut().on_item_click(callback)
     }
 }

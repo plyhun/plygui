@@ -1,16 +1,14 @@
 use crate::{callbacks, types};
 
 use super::auto::HasInner;
-use super::item_clickable::{ItemClickable, ItemClickableInner, OnItemClick};
 use super::container::{Container, ContainerInner, AContainer};
 use super::control::{Control, AControl, ControlBase, ControlInner};
 use super::member::{AMember, MemberBase, MemberInner};
 
-/*define! {
-    Adapted: Control + Container + ItemClickable {
+define! {
+    Adapted: Control + Container {
         base: {
             pub adapter: Box<dyn types::Adapter>,
-            pub on_item_click: Option<OnItemClick>,
         }
         outer: {
             fn adapter(&self) -> &dyn types::Adapter;
@@ -25,9 +23,9 @@ use super::member::{AMember, MemberBase, MemberInner};
             fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
         }
     }
-}*/
+}
 
-pub trait Adapted: Control + Container + ItemClickable {
+/*pub trait Adapted: Control + Container + ItemClickable {
     fn adapter(&self) -> &dyn types::Adapter;
     fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
     
@@ -70,21 +68,13 @@ impl < T : MemberInner > MaybeAdapted for AMember < T > {
     default fn is_adapted (& self) -> Option < & dyn Adapted > { None } 
     #[inline] 
     default fn is_adapted_mut (& mut self) -> Option < &mut dyn Adapted > { None }
-}
+} */
 
 impl<T: AdaptedInner + 'static> AMember<AControl<AContainer<AAdapted<T>>>> {
     #[inline]
     pub fn as_adapted_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut AdaptedBase, &mut T) {
         let this = self as *mut Self;
         (&mut unsafe { &mut *this }.base, &mut unsafe { &mut *this }.inner.base, &mut unsafe { &mut *this }.inner.inner.inner.base, &mut unsafe { &mut *this }.inner.inner.inner.inner)
-    }
-    
-    #[inline]
-    pub(crate) fn on_item_change(base: &mut MemberBase, value: types::Change) {
-        let this = base.as_any_mut().downcast_mut::<Self>().unwrap();
-        let this2 = this as *mut Self; // bck is stupid;
-        let inner = unsafe {&mut *this2}.inner_mut().inner_mut().inner_mut();
-        inner.on_item_change(base, value)
     }
 }
 
@@ -96,22 +86,6 @@ impl AdapterInnerCallback {
     pub fn on_item_change(&mut self, value: types::Change) {
         if !self.target.is_null() {
             (self.on_item_change.as_mut())(unsafe {&mut *self.target}, value)
-        }
-    }
-}
-
-impl<T: AdaptedInner> ItemClickableInner for AAdapted<T> {
-    #[inline]
-    fn on_item_click(&mut self, cb: Option<OnItemClick>) {
-        self.inner.base.on_item_click = cb;
-    }
-    #[inline]
-    fn item_click(&mut self, arg: usize, item_view: &mut dyn Control, skip_callbacks: bool) {
-        if !skip_callbacks{
-            let self2 = self as *mut Self;
-            if let Some(ref mut callback) = self.inner.base.on_item_click {
-                (callback.as_mut())(unsafe { &mut *self2 }, arg, item_view)
-            }
         }
     }
 }
