@@ -28,7 +28,7 @@ pub use crate::inner::{
     layout_linear::{ALinearLayout, LinearLayoutInner},
     progress_bar::{AProgressBar, ProgressBarInner},
     splitted::{ASplitted, SplittedInner},
-    adapted::{AAdapted, AdaptedInner},
+    adapted::{AAdapted, AdaptedInner, AdapterInnerCallback},
     adapter::{AdapterInner},
     list::{AList, ListInner},
 };

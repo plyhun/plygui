@@ -15,6 +15,7 @@ pub mod ids;
 pub mod layout;
 pub mod types;
 pub mod utils;
+pub mod common;
 
 mod auto;
 mod runtime;

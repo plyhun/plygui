@@ -19,7 +19,6 @@ define! {
             }
         }
         inner: {
-            fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn Adapted>;
             fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
         }
     }
@@ -69,6 +68,13 @@ impl < T : MemberInner > MaybeAdapted for AMember < T > {
     #[inline] 
     default fn is_adapted_mut (& mut self) -> Option < &mut dyn Adapted > { None }
 } */
+
+impl<T: AdaptedInner + 'static> AAdapted<T> {
+    #[inline]
+    pub fn with_inner(inner: T, adapter: Box<dyn types::Adapter>) -> Self {
+        Self { base: AdaptedBase { adapter }, inner }
+    }
+}
 
 impl<T: AdaptedInner + 'static> AMember<AControl<AContainer<AAdapted<T>>>> {
     #[inline]
@@ -125,10 +131,6 @@ impl<T: AdaptedInner + ControlInner> MaybeAdapted for AMember<AControl<AContaine
 }
 impl<II: AdaptedInner, T: HasInner<I = II> + 'static> AdaptedInner for T {
     #[inline]
-    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn Adapted> {
-        <<Self as HasInner>::I as AdaptedInner>::with_adapter(adapter)
-    }
-     #[inline]
     fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         self.inner_mut().on_item_change(base, value)
     }

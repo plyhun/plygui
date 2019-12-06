@@ -3,7 +3,7 @@ use crate::layout;
 use super::auto::HasInner;
 use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
-use super::control::{AControl, Control, ControlBase, ControlInner};
+use super::control::{AControl, Control, ControlInner};
 use super::has_orientation::{HasOrientation, HasOrientationInner};
 use super::member::{AMember, MemberBase, MemberInner};
 
@@ -20,7 +20,7 @@ define! {
         }
         inner: {
             fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted>;
-            fn set_splitter(&mut self, member: &mut MemberBase, control: &mut ControlBase, pos: f32);
+            fn set_splitter(&mut self, member: &mut MemberBase, pos: f32);
             fn splitter(&self) -> f32;
             fn first(&self) -> &dyn Control;
             fn second(&self) -> &dyn Control;
@@ -36,8 +36,8 @@ impl<II: SplittedInner, T: HasInner<I = II> + 'static> SplittedInner for T {
         <<Self as HasInner>::I as SplittedInner>::with_content(first, second, orientation)
     }
     #[inline]
-    fn set_splitter(&mut self, member: &mut MemberBase, control: &mut ControlBase, pos: f32) {
-        self.inner_mut().set_splitter(member, control, pos)
+    fn set_splitter(&mut self, member: &mut MemberBase, pos: f32) {
+        self.inner_mut().set_splitter(member, pos)
     }
     #[inline]
     fn splitter(&self) -> f32 {
@@ -64,7 +64,7 @@ impl<II: SplittedInner, T: HasInner<I = II> + 'static> SplittedInner for T {
 impl<T: SplittedInner> Splitted for AMember<AControl<AContainer<AMultiContainer<ASplitted<T>>>>> {
     #[inline]
     fn set_splitter(&mut self, pos: f32) {
-        self.inner.inner.inner.inner.inner.set_splitter(&mut self.base, &mut self.inner.base, pos)
+        self.inner.inner.inner.inner.inner.set_splitter(&mut self.base, pos)
     }
     #[inline]
     fn splitter(&self) -> f32 {

@@ -1,6 +1,7 @@
 use crate::controls;
 
 pub use crate::inner::{
+    auto::{AsAny, Spawnable},
     adapter::Adapter,
 };
 

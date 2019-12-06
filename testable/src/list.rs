@@ -8,18 +8,18 @@ pub struct TestableList {
     children: Vec<Box<dyn controls::Control>>,
 }
 
-impl ListInner for TestableList {}
-
-impl AdaptedInner for TestableList {
-    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<List> {
+impl ListInner for TestableList {
+    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn controls::List> {
         let b = Box::new(AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
                     AAdapted::with_inner(
-                        TestableList {
-                            base: TestableControlBase::new(),
-                            children: Vec::with_capacity(adapter.len()),
-                        },
+                        AList::with_inner(
+                            TestableList {
+                                base: TestableControlBase::new(),
+                                children: Vec::with_capacity(adapter.len()),
+                            }
+                        ),
                         adapter,
                     ),
                 )
@@ -28,13 +28,16 @@ impl AdaptedInner for TestableList {
         ));
         b
     }
+}
+
+impl AdaptedInner for TestableList {
     fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         
     }
 }
 impl Spawnable for TestableList {
     fn spawn() -> Box<dyn controls::Control> {
-        Self::with_adapter().into_control()
+        Self::with_adapter(Box::new(common::adapter::StringVecAdapter::<crate::imp::Text>::new())).into_control()
     }
 }
 impl ControlInner for TestableList {
@@ -54,7 +57,7 @@ impl ControlInner for TestableList {
         self.base.parent = Some(unsafe {parent.native_id() as InnerId});
 	    self.base.position = (px, py);
 
-        let (member, _, adapter) = List::adapter_base_parts_mut(member);
+        let (member, _, adapter, _) = List::as_adapted_parts_mut(unsafe { utils::base_to_impl_mut(member) });
 
         let mut y = 0;
         for i in 0..adapter.adapter.len() {

@@ -2,10 +2,10 @@ use crate::types;
 
 use super::auto::HasInner;
 use super::container::AContainer;
-use super::item_clickable::{ItemClickableInner, ItemClickable, OnItemClick};
+use super::item_clickable::{ItemClickable, OnItemClick};
 use super::adapted::{AAdapted, Adapted, AdaptedInner};
 use super::control::{AControl, Control};
-use super::member::{AMember, MemberInner, MemberBase};
+use super::member::{AMember, MemberInner};
 
 /*define! {
     List: Adapted + ItemClickable {
@@ -20,7 +20,9 @@ pub trait List: Adapted + ItemClickable {
     fn as_list_mut(&mut self) -> &mut dyn List;
     fn into_list(self: Box<Self>) -> Box<dyn List>;
 }
-pub trait ListInner: AdaptedInner {}
+pub trait ListInner: AdaptedInner {
+    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List>;        
+}
 
 #[repr(C)]
 pub struct ListBase {
@@ -31,7 +33,12 @@ pub struct AList<T: ListInner> {
     base: ListBase,
     inner: T,
 }
-
+impl <T: ListInner> AList<T> {
+    #[inline]
+    pub fn with_inner(inner: T) -> Self {
+        Self { base: ListBase { on_item_click: None }, inner }
+    }
+} 
 impl < T : ListInner > HasInner for AList < T > {
     type I = T; 
     fn inner (& self) -> & Self :: I { & self . inner } 
@@ -50,6 +57,10 @@ impl < T : MemberInner > MaybeAdapted for AMember < T > {
 } 
 
 impl<II: ListInner, T: HasInner<I = II> + 'static> ListInner for T {
+    #[inline]
+    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List> {
+        <<Self as HasInner>::I as ListInner>::with_adapter(adapter)
+    }
 }
 
 impl<T: ListInner> ItemClickable for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {

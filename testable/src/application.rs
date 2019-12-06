@@ -19,6 +19,7 @@ impl ApplicationInner for TestableApplication {
             TestableApplication {
             	root: ptr::null_mut(),
                 name: String::new(), //name.into(), // TODO later
+                sleep: 0,
                 windows: Vec::with_capacity(1),
                 trays: Vec::with_capacity(0),
             },
