@@ -1,7 +1,7 @@
 use super::auto::HasInner;
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
-use super::member::{AMember, MemberInner};
+use super::member::{AMember, Member};
 
 define! {
     Text: Control + HasLabel {

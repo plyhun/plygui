@@ -3,7 +3,7 @@ use super::container::AContainer;
 use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
-use super::member::{AMember, MemberInner};
+use super::member::{AMember, Member};
 
 define! {
     Frame: SingleContainer + Control + HasLabel {

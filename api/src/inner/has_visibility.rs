@@ -2,7 +2,7 @@ use crate::callbacks::*;
 use crate::types;
 
 use super::auto::{AsAny, HasInner};
-use super::member::{AMember, Member, MemberBase, MemberInner};
+use super::member::{Member, MemberBase, MemberInner};
 
 has_reacted!(Visibility(types::Visibility): Member);
 

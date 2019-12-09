@@ -1,7 +1,7 @@
 use super::auto::HasInner;
-use super::container::{AContainer, Container, ContainerInner};
-use super::control::{AControl, Control, ControlInner};
-use super::member::{AMember, MemberBase, MemberInner};
+use super::container::{Container, ContainerInner};
+use super::control::{Control};
+use super::member::{AMember, MemberBase, Member};
 
 define! {
     MultiContainer: Container {
@@ -69,81 +69,26 @@ define! {
         }
     }
 }
-impl<T: MultiContainerInner> MaybeMultiContainer for AMember<AContainer<AMultiContainer<T>>> {
-    #[inline]
-    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
-        Some(self)
-    }
-}
-impl<T: MultiContainerInner + ControlInner> MaybeMultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {
-    #[inline]
-    fn is_multi_container(&self) -> Option<&dyn MultiContainer> {
-        Some(self)
-    }
-    #[inline]
-    fn is_multi_container_mut(&mut self) -> Option<&mut dyn MultiContainer> {
-        Some(self)
-    }
-}
-impl<T: MultiContainerInner> MultiContainer for AMember<AContainer<AMultiContainer<T>>> {
+impl<T: MultiContainerInner> MultiContainer for AMember<T> {
     #[inline]
     fn len(&self) -> usize {
-        self.inner.inner.inner.len()
+        self.inner.len()
     }
     #[inline]
     fn set_child_to(&mut self, index: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>> {
-        self.inner.inner.inner.set_child_to(&mut self.base, index, child)
+        self.inner.set_child_to(&mut self.base, index, child)
     }
     #[inline]
     fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn Control>> {
-        self.inner.inner.inner.remove_child_from(&mut self.base, index)
+        self.inner.remove_child_from(&mut self.base, index)
     }
     #[inline]
     fn child_at(&self, index: usize) -> Option<&dyn Control> {
-        self.inner.inner.inner.child_at(index)
+        self.inner.child_at(index)
     }
     #[inline]
     fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control> {
-        self.inner.inner.inner.child_at_mut(index)
-    }
-
-    #[inline]
-    fn as_multi_container(&self) -> &dyn MultiContainer {
-        self
-    }
-    #[inline]
-    fn as_multi_container_mut(&mut self) -> &mut dyn MultiContainer {
-        self
-    }
-    #[inline]
-    fn into_multi_container(self: Box<Self>) -> Box<dyn MultiContainer> {
-        self
-    }
-}
-impl<T: MultiContainerInner + ControlInner> MultiContainer for AMember<AControl<AContainer<AMultiContainer<T>>>> {
-    #[inline]
-    fn len(&self) -> usize {
-        self.inner.inner.inner.inner.len()
-    }
-    #[inline]
-    fn set_child_to(&mut self, index: usize, child: Box<dyn Control>) -> Option<Box<dyn Control>> {
-        self.inner.inner.inner.inner.set_child_to(&mut self.base, index, child)
-    }
-    #[inline]
-    fn remove_child_from(&mut self, index: usize) -> Option<Box<dyn Control>> {
-        self.inner.inner.inner.inner.remove_child_from(&mut self.base, index)
-    }
-    #[inline]
-    fn child_at(&self, index: usize) -> Option<&dyn Control> {
-        self.inner.inner.inner.inner.child_at(index)
-    }
-    #[inline]
-    fn child_at_mut(&mut self, index: usize) -> Option<&mut dyn Control> {
-        self.inner.inner.inner.inner.child_at_mut(index)
+        self.inner.child_at_mut(index)
     }
 
     #[inline]

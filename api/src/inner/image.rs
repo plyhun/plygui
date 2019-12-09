@@ -3,7 +3,7 @@ use crate::types;
 use super::auto::HasInner;
 use super::control::{AControl, Control, ControlInner};
 use super::has_image::{HasImage, HasImageInner};
-use super::member::{AMember, MemberBase, MemberInner};
+use super::member::{AMember, MemberBase, Member};
 
 define! {
     Image: Control + HasImage {

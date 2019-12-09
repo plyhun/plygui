@@ -5,7 +5,7 @@ use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
 use super::control::{AControl, Control, ControlInner};
 use super::has_orientation::{HasOrientation, HasOrientationInner};
-use super::member::{AMember, MemberInner};
+use super::member::{AMember, Member};
 
 define! {
     LinearLayout: MultiContainer + Control + HasOrientation {

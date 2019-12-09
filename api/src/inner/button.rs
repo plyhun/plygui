@@ -2,7 +2,7 @@ use super::auto::HasInner;
 use super::clickable::{Clickable, ClickableInner};
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
-use super::member::{AMember, MemberInner};
+use super::member::{AMember, Member};
 
 define! {
     Button: Control + Clickable + HasLabel {

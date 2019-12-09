@@ -48,8 +48,6 @@ pub struct AMember<T: MemberInner> {
     pub inner: T,
 }
 
-maybe!(Member);
-
 #[repr(C)]
 pub struct MemberFunctions {
     _as_any: unsafe fn(&MemberBase) -> &dyn Any,

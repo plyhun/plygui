@@ -1,7 +1,7 @@
 use crate::layout;
 
 use super::auto::{AsAny, HasInner};
-use super::member::{AMember, Member, MemberBase, MemberInner};
+use super::member::{Member, MemberBase, MemberInner};
 
 has_private!(Layout(layout::Size, layout::Size): Member {
     outer: {

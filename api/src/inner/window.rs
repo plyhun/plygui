@@ -5,7 +5,7 @@ use super::container_single::{ASingleContainer, SingleContainer, SingleContainer
 use super::has_label::{HasLabel, HasLabelInner};
 use super::has_size::{HasSize, HasSizeInner, OnSize};
 use super::has_visibility::{HasVisibility, HasVisibilityInner, OnVisibility};
-use super::member::{AMember, MemberInner};
+use super::member::{AMember, Member};
 
 use crate::types;
 

@@ -53,7 +53,7 @@ impl ToTokens for Maybe {
                 }
             }
             
-            impl<T: MemberInner> #maybe_ident for AMember<T> {
+            impl<T: Member> #maybe_ident for T {
                 #[inline]
                 default fn #is_ident_fn(&self) -> Option<&dyn #ident> {
                     None
@@ -61,6 +61,16 @@ impl ToTokens for Maybe {
                 #[inline]
                 default fn #is_ident_mut_fn(&mut self) -> Option<&mut dyn #ident> {
                     None
+                }
+            }
+            impl<T: #ident> #maybe_ident for T {
+                #[inline]
+                default fn #is_ident_fn(&self) -> Option<&dyn #ident> {
+                    Some(self)
+                }
+                #[inline]
+                default fn #is_ident_mut_fn(&mut self) -> Option<&mut dyn #ident> {
+                    Some(self)
                 }
             }
         };

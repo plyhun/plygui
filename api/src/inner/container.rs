@@ -16,7 +16,6 @@ define! {
         }
     }
 }
-
 impl<T: ContainerInner> Container for AMember<T> {
     #[inline]
     default fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
@@ -40,7 +39,7 @@ impl<T: ContainerInner> Container for AMember<T> {
         self
     }
 }
-impl<T: ContainerInner + ControlInner> Container for AMember<AControl<AContainer<T>>> {
+impl<T: ContainerInner + ControlInner> Container for AMember<AControl<T>> {
     #[inline]
     default fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
         match arg {
@@ -57,7 +56,7 @@ impl<T: ContainerInner + ControlInner> Container for AMember<AControl<AContainer
                 }
             }
         }
-        self.inner.inner.inner.find_control_mut(arg)
+        self.inner.find_control_mut(arg)
     }
     #[inline]
     default fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control> {
@@ -75,7 +74,7 @@ impl<T: ContainerInner + ControlInner> Container for AMember<AControl<AContainer
                 }
             }
         }
-        self.inner.inner.inner.find_control(arg)
+        self.inner.find_control(arg)
     }
 
     #[inline]
@@ -89,26 +88,6 @@ impl<T: ContainerInner + ControlInner> Container for AMember<AControl<AContainer
     #[inline]
     default fn into_container(self: Box<Self>) -> Box<dyn Container> {
         self
-    }
-}
-impl<T: ContainerInner> MaybeContainer for AMember<AContainer<T>> {
-    #[inline]
-    fn is_container(&self) -> Option<&dyn Container> {
-        Some(self)
-    }
-    #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        Some(self)
-    }
-}
-impl<T: ContainerInner + ControlInner> MaybeContainer for AMember<AControl<AContainer<T>>> {
-    #[inline]
-    fn is_container(&self) -> Option<&dyn Container> {
-        Some(self)
-    }
-    #[inline]
-    fn is_container_mut(&mut self) -> Option<&mut dyn Container> {
-        Some(self)
     }
 }
 impl<II: ContainerInner, T: HasInner<I = II> + 'static> ContainerInner for T {

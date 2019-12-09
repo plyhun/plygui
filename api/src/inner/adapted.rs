@@ -3,10 +3,10 @@ use crate::{callbacks, types};
 use super::auto::HasInner;
 use super::container::{Container, ContainerInner, AContainer};
 use super::control::{Control, AControl, ControlBase, ControlInner};
-use super::member::{AMember, MemberBase, MemberInner};
+use super::member::{Member, AMember, MemberBase};
 
 define! {
-    Adapted: Control + Container {
+    Adapted: Container {
         base: {
             pub adapter: Box<dyn types::Adapter>,
         }
@@ -19,55 +19,13 @@ define! {
             }
         }
         inner: {
+            fn adapter(&self) -> &dyn types::Adapter;
+            fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
+            
             fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
         }
     }
 }
-
-/*pub trait Adapted: Control + Container + ItemClickable {
-    fn adapter(&self) -> &dyn types::Adapter;
-    fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
-    
-    fn len(&self) -> usize {
-        self.adapter().len()
-    }
-    
-    fn as_adapted(&self) -> &dyn Adapted;
-    fn as_adapted_mut(&mut self) -> &mut dyn Adapted;
-    fn into_adapted(self: Box<Self>) -> Box<dyn Adapted>;
-}
-pub trait AdaptedInner: ControlInner + ContainerInner {
-    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn Adapted>;
-    fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
-}
-
-#[repr(C)]
-pub struct AdaptedBase {
-    pub adapter: Box<dyn types::Adapter>,
-    pub on_item_click: Option<OnItemClick>,
-}
-#[repr(C)]
-pub struct AAdapted<T: AdaptedInner> {
-    base: AdaptedBase,
-    inner: T,
-}
-
-impl < T : AdaptedInner > HasInner for AAdapted < T > {
-    type I = T; 
-    fn inner (& self) -> & Self :: I { & self . inner } 
-    fn inner_mut (& mut self) -> & mut Self :: I { & mut self . inner } 
-    fn into_inner (self) -> Self :: I { self . inner }
-} 
-pub trait MaybeAdapted : 'static {
-    fn is_adapted (& self) -> Option < & dyn Adapted > { None } 
-    fn is_adapted_mut (& mut self) -> Option < & mut dyn Adapted > { None }
-} 
-impl < T : MemberInner > MaybeAdapted for AMember < T > {
-    #[inline] 
-    default fn is_adapted (& self) -> Option < & dyn Adapted > { None } 
-    #[inline] 
-    default fn is_adapted_mut (& mut self) -> Option < &mut dyn Adapted > { None }
-} */
 
 impl<T: AdaptedInner + 'static> AAdapted<T> {
     #[inline]
@@ -76,7 +34,7 @@ impl<T: AdaptedInner + 'static> AAdapted<T> {
     }
 }
 
-impl<T: AdaptedInner + 'static> AMember<AControl<AContainer<AAdapted<T>>>> {
+impl<T: AdaptedInner + ControlInner + 'static> AMember<AControl<AContainer<AAdapted<T>>>> {
     #[inline]
     pub fn as_adapted_parts_mut(&mut self) -> (&mut MemberBase, &mut ControlBase, &mut AdaptedBase, &mut T) {
         let this = self as *mut Self;
@@ -96,14 +54,14 @@ impl AdapterInnerCallback {
     }
 }
 
-impl<T: AdaptedInner + ControlInner> Adapted for AMember<AControl<AContainer<AAdapted<T>>>> {
+impl<T: AdaptedInner> Adapted for AMember<T> {
     #[inline]
     default fn adapter(&self) -> &dyn types::Adapter {
-        self.inner.inner.inner.base.adapter.as_ref()
+        self.inner().adapter()
     }
     #[inline]
     default fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
-        self.inner.inner.inner.base.adapter.as_mut()
+        self.inner_mut().adapter_mut()
     }
 
     #[inline]
@@ -119,17 +77,21 @@ impl<T: AdaptedInner + ControlInner> Adapted for AMember<AControl<AContainer<AAd
         self
     }
 }
-impl<T: AdaptedInner + ControlInner> MaybeAdapted for AMember<AControl<AContainer<AAdapted<T>>>> {
-    #[inline]
-    fn is_adapted(&self) -> Option<&dyn Adapted> {
-        Some(self)
-    }
-    #[inline]
-    fn is_adapted_mut(&mut self) -> Option<&mut dyn Adapted> {
-        Some(self)
-    }
+
+impl<T: AdaptedInner> AdaptedInner for AAdapted<T> {
+    fn adapter(&self) -> &dyn types::Adapter { self.base.adapter.as_ref() }
+    fn adapter_mut(&mut self) -> &mut dyn types::Adapter { self.base.adapter.as_mut() }
 }
+
 impl<II: AdaptedInner, T: HasInner<I = II> + 'static> AdaptedInner for T {
+    #[inline]
+    default fn adapter(&self) -> &dyn types::Adapter {
+        self.inner().adapter()
+    }
+    #[inline]
+    default fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
+        self.inner_mut().adapter_mut()
+    }
     #[inline]
     fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         self.inner_mut().on_item_change(base, value)

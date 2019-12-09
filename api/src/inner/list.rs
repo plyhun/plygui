@@ -4,8 +4,8 @@ use super::auto::HasInner;
 use super::container::AContainer;
 use super::item_clickable::{ItemClickable, OnItemClick};
 use super::adapted::{AAdapted, Adapted, AdaptedInner};
-use super::control::{AControl, Control};
-use super::member::{AMember, MemberInner};
+use super::control::{AControl, Control, ControlInner};
+use super::member::{AMember, Member};
 
 /*define! {
     List: Adapted + ItemClickable {
@@ -15,12 +15,12 @@ use super::member::{AMember, MemberInner};
     }
 }*/
 
-pub trait List: Adapted + ItemClickable {
+pub trait List: Control + Adapted + ItemClickable {
     fn as_list(&self) -> &dyn List;
     fn as_list_mut(&mut self) -> &mut dyn List;
     fn into_list(self: Box<Self>) -> Box<dyn List>;
 }
-pub trait ListInner: AdaptedInner {
+pub trait ListInner: ControlInner + AdaptedInner {
     fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List>;        
 }
 
@@ -45,15 +45,15 @@ impl < T : ListInner > HasInner for AList < T > {
     fn inner_mut (& mut self) -> & mut Self :: I { & mut self . inner } 
     fn into_inner (self) -> Self :: I { self . inner }
 } 
-pub trait MaybeAdapted : 'static {
-    fn is_adapted (& self) -> Option < & dyn Adapted > { None } 
-    fn is_adapted_mut (& mut self) -> Option < & mut dyn Adapted > { None }
+pub trait MaybeList : 'static {
+    fn is_list (& self) -> Option < & dyn List > { None } 
+    fn is_list_mut (& mut self) -> Option < & mut dyn List > { None }
 } 
-impl < T : MemberInner > MaybeAdapted for AMember < T > {
+impl < T : Member > MaybeList for T {
     #[inline] 
-    default fn is_adapted (& self) -> Option < & dyn Adapted > { None } 
+    default fn is_list (& self) -> Option < & dyn List > { None } 
     #[inline] 
-    default fn is_adapted_mut (& mut self) -> Option < &mut dyn Adapted > { None }
+    default fn is_list_mut (& mut self) -> Option < &mut dyn List > { None }
 } 
 
 impl<II: ListInner, T: HasInner<I = II> + 'static> ListInner for T {

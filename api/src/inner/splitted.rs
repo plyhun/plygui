@@ -5,7 +5,7 @@ use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
 use super::control::{AControl, Control, ControlInner};
 use super::has_orientation::{HasOrientation, HasOrientationInner};
-use super::member::{AMember, MemberBase, MemberInner};
+use super::member::{AMember, MemberBase, Member};
 
 define! {
     Splitted: MultiContainer + Control + HasOrientation {

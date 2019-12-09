@@ -1,7 +1,7 @@
 use crate::callbacks::*;
 
 use super::auto::{HasInner, AsAny};
-use super::member::{AMember, MemberInner};
+use super::member::{Member};
 use super::control::{Control, ControlInner};
 
 able_to!(ItemClick (usize, &mut dyn Control): Control);

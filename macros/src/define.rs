@@ -80,7 +80,7 @@ impl ToTokens for Define {
         
         let as_into = &crate::as_into::AsInto { ident_camel: &ident };
 
-		let extends = self.extends.as_ref().map(|punct| punct.iter().map(|i| i.clone()).collect::<Vec<_>>()).unwrap_or(vec![]);
+		let extends = &self.extends.as_ref().map(|punct| punct.iter().map(|i| i.clone()).collect::<Vec<_>>()).unwrap_or(vec![]);
         let extends_inner = self
             .extends
             .as_ref()
@@ -136,6 +136,10 @@ impl ToTokens for Define {
         let maybe = Maybe {
             name: ident.clone()
         };
+        /*let maybe_ident = Maybe::maybe_ident(&ident.to_string());
+        let is_ident_fn = Maybe::is_ident(&ident.to_string());
+        let is_ident_mut_fn = Maybe::is_ident_mut(&ident.to_string());
+        let ident2 = ident.clone();*/
         
 		let expr = quote! {
 			#custom_base
@@ -172,5 +176,21 @@ impl ToTokens for Define {
             #maybe
         };
         expr.to_tokens(tokens);
+        
+        /*for extend in extends {
+            let expr = quote! {
+                impl<T: #extend> #maybe_ident for T {
+                    #[inline]
+                    default fn #is_ident_fn(&self) -> Option<&dyn #ident> {
+                        None
+                    }
+                    #[inline]
+                    default fn #is_ident_mut_fn(&mut self) -> Option<&mut dyn #ident2> {
+                        None
+                    }
+                }
+            };
+            expr.to_tokens(tokens);
+        }*/
     }
 }

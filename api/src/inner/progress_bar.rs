@@ -3,7 +3,7 @@ use crate::types;
 use super::auto::HasInner;
 use super::control::{AControl, Control, ControlInner};
 use super::has_progress::{HasProgress, HasProgressInner};
-use super::member::{AMember, MemberInner};
+use super::member::{AMember, Member};
 
 define! {
     ProgressBar: Control + HasProgress {

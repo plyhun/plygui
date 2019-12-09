@@ -1,7 +1,7 @@
 use crate::callbacks::*;
 
 use super::auto::{AsAny, HasInner};
-use super::member::{AMember, Member, MemberBase, MemberInner};
+use super::member::{Member, MemberBase, MemberInner};
 
 has_reacted!(Size(u16, u16): Member);
 
