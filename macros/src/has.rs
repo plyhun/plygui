@@ -227,7 +227,7 @@ impl ToTokens for Has {
         	let mut custom_trait = quote!{};
         	let mut custom_inner = quote!{};
         	if let Some(ref custom) = self.custom {
-        		for block in [&custom.block1, &custom.block2, &custom.block3].iter() {
+        		for block in [custom.blocks.get(0), custom.blocks.get(1)].iter() {
 	        		if let Some(ref custom) = block {
 		        		match custom.name.to_string().as_str() {
 		        			"outer" => {

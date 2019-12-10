@@ -22,38 +22,20 @@ impl Parse for CodeBlock {
 }
 
 pub struct Custom {
-	pub block1: Option<CodeBlock>,
-    pub block2: Option<CodeBlock>,
-    pub block3: Option<CodeBlock>,
+	pub blocks: Vec<CodeBlock>,
 }
 impl Parse for Custom {
 	fn parse(input: ParseStream) -> Result<Self> {
-		Ok(Self {
-			block1: {
-				let lookahead = input.lookahead1();
-                if lookahead.peek(Ident) {
-                    Some(input.parse()?)
-                } else {
-                    None
-                }
-			},
-			block2: {
-				let lookahead = input.lookahead1();
-                if lookahead.peek(Ident) {
-                    Some(input.parse()?)
-                } else {
-                    None
-                }
-			},
-			block3: {
-				let lookahead = input.lookahead1();
-                if lookahead.peek(Ident) {
-                    Some(input.parse()?)
-                } else {
-                    None
-                }
-			},
-		})
+		let mut custom = Self { blocks: vec![] };
+		loop {
+    		let lookahead = input.lookahead1();
+            if lookahead.peek(Ident) {
+                custom.blocks.push(input.parse()?);
+            } else {
+                break;
+            }
+		}
+		Ok(custom)
 	}
 }
 

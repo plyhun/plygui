@@ -87,20 +87,22 @@ impl ToTokens for Define {
             .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_camel_case()), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
 
-        let (type_base, custom_base, custom_trait, custom_inner, constructor) = {
+        let (type_base, custom_base, custom_trait, custom_inner, constructor, custom_extends, custom_implements) = {
         	let mut should_have_constructor = true;
         	let mut type_base = quote!{};
         	let mut constructor = quote!{};
         	let mut custom_base = quote!{};
         	let mut custom_trait = quote!{};
         	let mut custom_inner = quote!{};
+        	let mut custom_extends = quote!{};
+        	let mut custom_implements = quote!{};
         	if let Some(ref custom) = self.custom {
-        		for block in [&custom.block1, &custom.block2, &custom.block3].iter() {
-	        		if let Some(ref custom) = block {
+        	    for block in [custom.blocks.get(0), custom.blocks.get(1), custom.blocks.get(2), custom.blocks.get(3), custom.blocks.get(4)].iter() {
+	        		if let Some(custom) = block {
 		        		match custom.name.to_string().as_str() {
 		        			"base" => {
 		        				type_base = quote! { pub base: #ident_base, };
-		        				let custom = custom.custom.clone();
+		        				let custom = &custom.custom;
 		        				custom_base = quote! {
 		        					#[repr(C)]
 			        				pub struct #ident_base {
@@ -114,6 +116,14 @@ impl ToTokens for Define {
 		        			},
 		        			"inner" => {
 		        				custom_inner = custom.custom.clone();
+		        			},
+		        			"extends" => {
+		        			    let custom = &custom.custom;		        				
+		        			    custom_extends = quote!{ + #custom };
+		        			},
+		        			"implements" => {
+    		        			let custom = &custom.custom;		        				
+		        			    custom_implements = quote!{ + #custom };
 		        			},
 		        			_ => panic!("Unknown custom block name :'{}'", custom.name),
 		        		}
@@ -130,7 +140,7 @@ impl ToTokens for Define {
             		}
             	};
         	}
-        	(type_base, custom_base, custom_trait, custom_inner, constructor)
+        	(type_base, custom_base, custom_trait, custom_inner, constructor, custom_extends, custom_implements)
         };
         
         let maybe = Maybe {
@@ -150,11 +160,11 @@ impl ToTokens for Define {
 				pub inner: T
 			}
 			
-			pub trait #ident: 'static #(+#extends)* {
+			pub trait #ident: 'static #(+#extends)* #custom_extends {
             	#custom_trait
                 #as_into
             }
-            pub trait #ident_inner: 'static #(+#extends_inner)* {
+            pub trait #ident_inner: 'static #(+#extends_inner)* #custom_implements {
             	#custom_inner
             }
             

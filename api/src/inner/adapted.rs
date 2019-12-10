@@ -2,7 +2,7 @@ use crate::{callbacks, types};
 
 use super::auto::HasInner;
 use super::container::{Container, ContainerInner, AContainer};
-use super::control::{Control, AControl, ControlBase, ControlInner};
+use super::control::{AControl, ControlBase, ControlInner};
 use super::member::{Member, AMember, MemberBase};
 
 define! {

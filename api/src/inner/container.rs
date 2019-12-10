@@ -3,6 +3,9 @@ use crate::types;
 use super::auto::HasInner;
 use super::control::{AControl, Control, ControlInner};
 use super::member::{AMember, Member, MemberInner};
+use super::container_single::{MaybeSingleContainer};
+use super::container_multi::{MaybeMultiContainer};
+use super::adapted::{MaybeAdapted};
 
 define! {
     Container: Member {
@@ -13,6 +16,9 @@ define! {
         inner: {
             fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control>;
             fn find_control(&self, arg: types::FindBy) -> Option<&dyn Control>;
+        }
+        extends: {
+            MaybeSingleContainer + MaybeMultiContainer + MaybeAdapted
         }
     }
 }
