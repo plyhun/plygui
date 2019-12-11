@@ -4,6 +4,7 @@ use super::auto::{AsAny, HasInner};
 use super::container::MaybeContainer;
 use super::control::MaybeControl;
 use super::closeable::MaybeCloseable;
+use super::clickable::MaybeClickable;
 use super::has_native_id::{HasNativeId, HasNativeIdInner};
 use super::has_size::MaybeHasSize;
 use super::has_visibility::MaybeHasVisibility;
@@ -11,6 +12,10 @@ use super::window::MaybeWindow;
 use super::message::MaybeMessage;
 use super::tray::MaybeTray;
 use super::seal::Sealed;
+use super::has_image::MaybeHasImage;
+use super::has_layout::MaybeHasLayout;
+use super::has_label::MaybeHasLabel;
+use super::has_progress::MaybeHasProgress;
 
 #[cfg(feature = "type_check")]
 use std::any::TypeId;
@@ -21,7 +26,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 pub trait Member: HasNativeId + AsAny + Sealed 
-        + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + MaybeCloseable
+        + MaybeControl + MaybeContainer + MaybeHasSize + MaybeHasVisibility + MaybeHasImage + MaybeHasLayout + MaybeHasLabel + MaybeHasProgress + MaybeCloseable + MaybeClickable
         + MaybeWindow + MaybeTray + MaybeMessage {
     fn id(&self) -> ids::Id;
     fn tag(&self) -> Option<Cow<str>>;
