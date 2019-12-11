@@ -7,8 +7,17 @@ use super::has_layout::{HasLayout, HasLayoutInner};
 use super::has_size::{HasSize, HasSizeInner, OnSize};
 use super::has_visibility::{HasVisibility, HasVisibilityInner, OnVisibility};
 use super::member::{AMember, Member, MemberBase, MemberInner};
+use super::button::MaybeButton;
+use super::layout_linear::MaybeLinearLayout;
+use super::splitted::MaybeSplitted;
+use super::frame::MaybeFrame;
+use super::image::MaybeImage;
+use super::list::MaybeList;
+use super::progress_bar::MaybeProgressBar;
+use super::text::MaybeText;
 
-pub trait Control: HasSize + HasVisibility + HasLayout + OuterDrawable {
+pub trait Control: HasSize + HasVisibility + HasLayout + OuterDrawable
+        + MaybeButton + MaybeLinearLayout + MaybeSplitted + MaybeFrame + MaybeImage + MaybeList + MaybeProgressBar + MaybeText {
     fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16);
     fn on_removed_from_container(&mut self, parent: &dyn Container);
 
