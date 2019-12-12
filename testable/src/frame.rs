@@ -230,7 +230,7 @@ impl MemberInner for TestableFrame {}
 
 impl Drawable for TestableFrame {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-    	self.base.draw("Frame", control.coords, control.measured);
+    	self.base.draw(format!("Frame '{}'", self.label).as_str(), control.coords, control.measured);
         if control.coords.is_some() {
             if let Some(ref mut child) = self.child {
                 child.draw(Some((DEFAULT_PADDING, DEFAULT_PADDING)));

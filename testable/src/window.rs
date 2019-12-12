@@ -16,7 +16,7 @@ pub type Window = AMember<AContainer<ASingleContainer<AWindow<TestableWindow>>>>
 
 impl TestableWindow {
 	pub fn draw(&mut self) {
-		println!("Window drawn ({} px, {} px) at {:?} ({:?})", self.size.0, self.size.1, self.position, self.id);
+		println!("Window '{}' drawn ({} px, {} px) at {:?} ({:?})", self.label, self.size.0, self.size.1, self.position, self.id);
 		if let Some(ref mut child) = self.child {
 			child.draw(Some((0, 0)));
 		}
@@ -155,7 +155,7 @@ impl CloseableInner for TestableWindow {
         let app = app.as_any_mut().downcast_mut::<super::application::Application>().unwrap();
         app.inner_mut().remove_window(self.id.into());
 
-        println!("Window closed ({:?})", self.id);
+        println!("Window '{}' closed ({:?})", self.label, self.id);
         true
     }
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {

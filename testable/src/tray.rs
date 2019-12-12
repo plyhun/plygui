@@ -70,7 +70,7 @@ impl CloseableInner for TestableTray {
         let app = app.as_any_mut().downcast_mut::<Application>().unwrap();
         app.inner_mut().remove_tray(self.id.into());
 
-        println!("Tray closed ({:?})", self.id);
+        println!("Tray '{}' closed ({:?})", self.label, self.id);
         true
     }
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
