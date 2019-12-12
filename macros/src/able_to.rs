@@ -188,8 +188,6 @@ impl ToTokens for AbleTo {
         let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
 
         let expr = quote! {
-            #on
-            
             pub trait #ident_able: #static_ + AsAny #(+#extends)*{
                 fn #ident_fn(&mut self, #(#param_names: #params,)* skip_callbacks: bool) #ret;
                 fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
@@ -204,16 +202,19 @@ impl ToTokens for AbleTo {
                 #custom
             }
 
+            #on
             #maybe
+            /*
+            #[repr(C)]
+			pub struct #ident_base {
+				pub callback: Option<#on_ident>
+			}
             
-            impl<II: #ident_able_inner, T: HasInner<I = II> + 'static> #ident_able_inner for T {
-                default fn #ident_fn(&mut self, #(#param_names: #params,)* skip_callbacks: bool) #ret {
-                    self.inner_mut().#ident_fn(#(#param_names,)* skip_callbacks)
-                }
-                default fn #on_ident_fn(&mut self, callback: Option<#on_ident>) {
-                    self.inner_mut().#on_ident_fn(callback)
-                }
-            }
+            #[repr(C)]
+			pub struct #a_ident<T: #ident_able_inner> {
+				pub base: #ident_base,
+				pub inner: T,
+			}*/
         };
         expr.to_tokens(tokens);
     }

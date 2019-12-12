@@ -1,5 +1,5 @@
 use super::auto::HasInner;
-use super::closeable::{Closeable, CloseableInner, OnClose};
+use super::closeable::{Closeable, CloseableInner};
 use super::container::AContainer;
 use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
 use super::has_label::{HasLabel, HasLabelInner};
@@ -87,23 +87,6 @@ impl<T: WindowInner> HasSize for AMember<AContainer<ASingleContainer<AWindow<T>>
     }
     #[inline]
     fn into_has_size(self: Box<Self>) -> Box<dyn HasSize> {
-        self
-    }
-}
-impl<T: WindowInner> Closeable for AMember<AContainer<ASingleContainer<AWindow<T>>>> {
-    fn close(&mut self, skip_callbacks: bool) -> bool {
-        self.inner.inner.inner.inner.close(skip_callbacks)
-    }
-    fn on_close(&mut self, callback: Option<OnClose>) {
-        self.inner.inner.inner.inner.on_close(callback)
-    }
-    fn as_closeable(&self) -> &dyn Closeable {
-        self
-    }
-    fn as_closeable_mut(&mut self) -> &mut dyn Closeable {
-        self
-    }
-    fn into_closeable(self: Box<Self>) -> Box<dyn Closeable> {
         self
     }
 }

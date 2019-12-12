@@ -1,5 +1,5 @@
 use super::auto::HasInner;
-use super::closeable::{Closeable, CloseableInner, OnClose};
+use super::closeable::{Closeable, CloseableInner};
 use super::has_image::{HasImage, HasImageInner};
 use super::has_label::{HasLabel, HasLabelInner};
 use super::member::{AMember, Member, MemberInner};
@@ -22,24 +22,6 @@ impl<T: TrayInner> Tray for AMember<ATray<T>> {
         self
     }
     fn into_tray(self: Box<Self>) -> Box<dyn Tray> {
-        self
-    }
-}
-
-impl<T: TrayInner> Closeable for AMember<ATray<T>> {
-    fn close(&mut self, skip_callbacks: bool) -> bool {
-        self.inner.inner.close(skip_callbacks)
-    }
-    fn on_close(&mut self, callback: Option<OnClose>) {
-        self.inner.inner.on_close(callback)
-    }
-    fn as_closeable(&self) -> &dyn Closeable {
-        self
-    }
-    fn as_closeable_mut(&mut self) -> &mut dyn Closeable {
-        self
-    }
-    fn into_closeable(self: Box<Self>) -> Box<dyn Closeable> {
         self
     }
 }

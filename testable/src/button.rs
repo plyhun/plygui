@@ -6,6 +6,7 @@ pub type Button = AMember<AControl<AButton<TestableButton>>>;
 pub struct TestableButton {
     base: common::TestableControlBase<Button>,
     label: String,
+    h_left_clicked: Option<callbacks::OnClick>,
 }
 
 impl HasLabelInner for TestableButton {
@@ -18,6 +19,19 @@ impl HasLabelInner for TestableButton {
     }
 }
 
+impl ClickableInner for TestableButton {
+    fn on_click(&mut self, handle: Option<callbacks::OnClick>) {
+        self.h_left_clicked = handle;
+    }
+    fn click(&mut self, skip_callbacks: bool) {
+        if !skip_callbacks {
+            if let Some(ref mut h_left_clicked) = self.h_left_clicked {
+                (h_left_clicked.as_mut())(unsafe { &mut *(self.base.id as *mut Button) });
+            }
+        }
+    }
+}
+
 impl ButtonInner for TestableButton {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
         let mut b = Box::new(AMember::with_inner(
@@ -25,6 +39,7 @@ impl ButtonInner for TestableButton {
                 AButton::with_inner(
                     TestableButton {
                         base: common::TestableControlBase::new(),
+                        h_left_clicked: None,
                         label: label.as_ref().to_owned(),
                     }
                 ),
