@@ -29,12 +29,3 @@ impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>>
         self
     }
 }*/
-
-impl<II: ItemClickableInner, T: HasInner<I = II> + 'static> ItemClickableInner for T {
-    default fn item_click(&mut self, i: usize, parent: &mut dyn Control, skip_callbacks: bool) {
-        self.inner_mut().item_click(i, parent, skip_callbacks)
-    }
-    default fn on_item_click(&mut self, callback: Option<OnItemClick>) {
-        self.inner_mut().on_item_click(callback)
-    }
-}
