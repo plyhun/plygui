@@ -31,10 +31,3 @@ impl<II: TrayInner, T: HasInner<I = II> + 'static> TrayInner for T {
         <<Self as HasInner>::I as TrayInner>::with_params(title, menu)
     }
 }
-
-impl<T: TrayInner> AMember<ATray<T>> {
-    #[inline]
-    pub fn with_params<S: AsRef<str>>(title: S, menu: types::Menu) -> Box<dyn Tray> {
-        T::with_params(title, menu)
-    }
-}

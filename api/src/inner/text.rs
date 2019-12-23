@@ -5,7 +5,7 @@ use super::member::{AMember, Member};
 
 define! {
     Text: Control + HasLabel {
-        inner: {
+        constructor: {
             fn with_text<S: AsRef<str>>(label: S) -> Box<dyn Text>;
         }
     }
@@ -32,9 +32,9 @@ impl<T: TextInner> Text for AMember<AControl<AText<T>>> {
     }
 }
 
-impl<T: TextInner> AMember<AControl<AText<T>>> {
+impl<T: TextInner> NewText for AMember<AControl<AText<T>>> {
     #[inline]
-    pub fn with_text<S: AsRef<str>>(label: S) -> Box<dyn Text> {
+    fn with_text<S: AsRef<str>>(label: S) -> Box<dyn Text> {
         T::with_text(label)
     }
 }

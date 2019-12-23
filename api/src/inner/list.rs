@@ -12,7 +12,7 @@ define! {
 	    base: {
             pub on_item_click: Option<OnItemClick>,
         }
-	    inner: {
+	    constructor: {
     	    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List>;
 	    }
 	    extends: { ItemClickable }
@@ -30,9 +30,9 @@ impl<II: ListInner, T: HasInner<I = II> + 'static> ListInner for T {
         <<Self as HasInner>::I as ListInner>::with_adapter(adapter)
     }
 }
-impl<T: ListInner> AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
+impl<T: ListInner> NewList for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
     #[inline]
-    pub fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List> {
+    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List> {
         <<Self as HasInner>::I as ListInner>::with_adapter(adapter)
     }
 }

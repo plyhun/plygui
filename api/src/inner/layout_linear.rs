@@ -9,7 +9,7 @@ use super::member::{AMember, Member};
 
 define! {
     LinearLayout: MultiContainer + Control + HasOrientation {
-        inner: {
+        constructor: {
             fn with_orientation(orientation: layout::Orientation) -> Box<dyn LinearLayout>;
         }
     }
@@ -36,9 +36,9 @@ impl<T: LinearLayoutInner> LinearLayout for AMember<AControl<AContainer<AMultiCo
     }
 }
 
-impl<T: LinearLayoutInner> AMember<AControl<AContainer<AMultiContainer<ALinearLayout<T>>>>> {
+impl<T: LinearLayoutInner> NewLinearLayout for AMember<AControl<AContainer<AMultiContainer<ALinearLayout<T>>>>> {
     #[inline]
-    pub fn with_orientation(orientation: layout::Orientation) -> Box<dyn LinearLayout> {
+    fn with_orientation(orientation: layout::Orientation) -> Box<dyn LinearLayout> {
         T::with_orientation(orientation)
     }
 }

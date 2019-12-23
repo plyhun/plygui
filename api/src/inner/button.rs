@@ -6,7 +6,7 @@ use super::member::{AMember, Member};
 
 define! {
     Button: Control + Clickable + HasLabel {
-        inner: {
+        constructor: {
             fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Button>;
         }
     }
@@ -33,16 +33,16 @@ impl<T: ButtonInner> Button for AMember<AControl<AButton<T>>> {
     }
 }
 
-impl<T: ButtonInner> AMember<AControl<AButton<T>>> {
+impl<T: ButtonInner> NewButton for AMember<AControl<AButton<T>>> {
     #[inline]
-    pub fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Button> {
+    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Button> {
         T::with_label(label)
     }
 }
 
 impl<T: ButtonInner> Spawnable for AMember<AControl<AButton<T>>> {
     fn spawn() -> Box<dyn Control> {
-        Self::with_label("").into_control()
+        <Self as NewButton>::with_label("").into_control()
     }
 }
 

@@ -19,13 +19,15 @@ define! {
             fn splitter(&self) -> f32;
         }
         inner: {
-            fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted>;
             fn set_splitter(&mut self, member: &mut MemberBase, pos: f32);
             fn splitter(&self) -> f32;
             fn first(&self) -> &dyn Control;
             fn second(&self) -> &dyn Control;
             fn first_mut(&mut self) -> &mut dyn Control;
             fn second_mut(&mut self) -> &mut dyn Control;
+        }
+        constructor: {
+            fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted>;
         }
     }
 }
@@ -100,9 +102,9 @@ impl<T: SplittedInner> Splitted for AMember<AControl<AContainer<AMultiContainer<
     }
 }
 
-impl<T: SplittedInner> AMember<AControl<AContainer<AMultiContainer<ASplitted<T>>>>> {
+impl<T: SplittedInner> NewSplitted for AMember<AControl<AContainer<AMultiContainer<ASplitted<T>>>>> {
     #[inline]
-    pub fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted> {
+    fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted> {
         T::with_content(first, second, orientation)
     }
 }

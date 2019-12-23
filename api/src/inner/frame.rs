@@ -7,7 +7,7 @@ use super::member::{AMember, Member};
 
 define! {
     Frame: SingleContainer + Control + HasLabel {
-        inner: {
+        constructor: {
             fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Frame>;
         }
     }
@@ -34,9 +34,9 @@ impl<T: FrameInner> Frame for AMember<AControl<AContainer<ASingleContainer<AFram
     }
 }
 
-impl<T: FrameInner> AMember<AControl<AContainer<ASingleContainer<AFrame<T>>>>> {
+impl<T: FrameInner> NewFrame for AMember<AControl<AContainer<ASingleContainer<AFrame<T>>>>> {
     #[inline]
-    pub fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Frame> {
+    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Frame> {
         T::with_label(label)
     }
 }

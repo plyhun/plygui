@@ -7,7 +7,7 @@ use super::member::{AMember, Member};
 
 define! {
     ProgressBar: Control + HasProgress {
-        inner: {
+        constructor: {
             fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar>;
         }
     }
@@ -34,9 +34,9 @@ impl<T: ProgressBarInner> ProgressBar for AMember<AControl<AProgressBar<T>>> {
     }
 }
 
-impl<T: ProgressBarInner> AMember<AControl<AProgressBar<T>>> {
+impl<T: ProgressBarInner> NewProgressBar for AMember<AControl<AProgressBar<T>>> {
     #[inline]
-    pub fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar> {
+    fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar> {
         T::with_progress(progress)
     }
 }

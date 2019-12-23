@@ -18,6 +18,16 @@ define! {
     }
 }
 
+pub trait NewMessage {
+    fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Box<dyn Message>;
+    fn with_content(content: types::TextContent, severity: types::MessageSeverity, parent: Option<&dyn Member>) -> Box<dyn Message> {
+        Self::with_actions(content, severity, vec![], parent)
+    }
+    fn start_with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Result<String, ()> {
+        Self::with_actions(content, severity, actions, parent).start()
+    }
+}
+
 impl<II: MessageInner, T: HasInner<I = II> + 'static> MessageInner for T {
     fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Box<dyn Message> {
         <<Self as HasInner>::I as MessageInner>::with_actions(content, severity, actions, parent)
@@ -54,17 +64,9 @@ impl<T: MessageInner> Message for AMember<AMessage<T>> {
     }
 }
 
-impl<T: MessageInner> AMember<AMessage<T>> {
+impl<T: MessageInner> NewMessage for AMember<AMessage<T>> {
     #[inline]
-    pub fn with_content(content: types::TextContent, severity: types::MessageSeverity, parent: Option<&dyn Member>) -> Box<dyn Message> {
-        T::with_actions(content, severity, vec![], parent)
-    }
-    #[inline]
-    pub fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Box<dyn Message> {
+    fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Box<dyn Message> {
         T::with_actions(content, severity, actions, parent)
-    }
-    #[inline]
-    pub fn start_with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Result<String, ()> {
-        T::with_actions(content, severity, actions, parent).start()
     }
 }

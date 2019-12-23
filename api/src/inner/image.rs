@@ -12,9 +12,11 @@ define! {
             fn scale(&self) -> types::ImageScalePolicy;
         },
         inner: {
-            fn with_content(content: image::DynamicImage) -> Box<dyn Image>;
             fn set_scale(&mut self, member: &mut MemberBase, policy: types::ImageScalePolicy);
             fn scale(&self) -> types::ImageScalePolicy;
+        }
+        constructor: {
+            fn with_content(content: image::DynamicImage) -> Box<dyn Image>;
         }
     }
 }
@@ -54,9 +56,9 @@ impl<T: ImageInner> Image for AMember<AControl<AImage<T>>> {
     }
 }
 
-impl<T: ImageInner> AMember<AControl<AImage<T>>> {
+impl<T: ImageInner> NewImage for AMember<AControl<AImage<T>>> {
     #[inline]
-    pub fn with_content(content: image::DynamicImage) -> Box<dyn Image> {
+    fn with_content(content: image::DynamicImage) -> Box<dyn Image> {
         T::with_content(content)
     }
 }
