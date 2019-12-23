@@ -31,14 +31,6 @@ impl ListInner for TestableList {
 }
 
 impl AdaptedInner for TestableList {
-    #[inline]
-    fn adapter(&self) -> &dyn types::Adapter {
-        unreachable!()
-    }
-    #[inline]
-    fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
-        unreachable!()
-    }
     fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         
     }

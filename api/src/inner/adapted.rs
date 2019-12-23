@@ -1,12 +1,12 @@
-use crate::{callbacks, types};
+use crate::{callbacks, types, utils};
 
 use super::auto::HasInner;
 use super::container::{Container, ContainerInner, AContainer};
-use super::control::{AControl, ControlBase, ControlInner};
+use super::control::{Control, AControl, ControlBase, ControlInner};
 use super::member::{Member, AMember, MemberBase};
 
 define! {
-    Adapted: Container {
+    Adapted: Control + Container {
         base: {
             pub adapter: Box<dyn types::Adapter>,
         }
@@ -19,9 +19,6 @@ define! {
             }
         }
         inner: {
-            fn adapter(&self) -> &dyn types::Adapter;
-            fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
-            
             fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
         }
     }
@@ -40,6 +37,10 @@ impl<T: AdaptedInner + ControlInner + 'static> AMember<AControl<AContainer<AAdap
         let this = self as *mut Self;
         (&mut unsafe { &mut *this }.base, &mut unsafe { &mut *this }.inner.base, &mut unsafe { &mut *this }.inner.inner.inner.base, &mut unsafe { &mut *this }.inner.inner.inner.inner)
     }
+    #[inline]
+    pub unsafe fn adapter_base_parts_mut(base: &mut MemberBase) -> (&mut MemberBase, &mut ControlBase, &mut AdaptedBase, &mut T) {
+        utils::base_to_impl_mut::<Self>(base).as_adapted_parts_mut()
+    }
 }
 
 pub struct AdapterInnerCallback {
@@ -54,14 +55,14 @@ impl AdapterInnerCallback {
     }
 }
 
-impl<T: AdaptedInner> Adapted for AMember<T> {
+impl<T: AdaptedInner> Adapted for AMember<AControl<AContainer<AAdapted<T>>>> {
     #[inline]
     default fn adapter(&self) -> &dyn types::Adapter {
-        self.inner().adapter()
+        self.inner.inner.inner.base.adapter.as_ref()
     }
     #[inline]
     default fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
-        self.inner_mut().adapter_mut()
+        self.inner.inner.inner.base.adapter.as_mut()
     }
 
     #[inline]
@@ -77,21 +78,7 @@ impl<T: AdaptedInner> Adapted for AMember<T> {
         self
     }
 }
-
-impl<T: AdaptedInner> AdaptedInner for AAdapted<T> {
-    fn adapter(&self) -> &dyn types::Adapter { self.base.adapter.as_ref() }
-    fn adapter_mut(&mut self) -> &mut dyn types::Adapter { self.base.adapter.as_mut() }
-}
-
 impl<II: AdaptedInner, T: HasInner<I = II> + 'static> AdaptedInner for T {
-    #[inline]
-    default fn adapter(&self) -> &dyn types::Adapter {
-        self.inner().adapter()
-    }
-    #[inline]
-    default fn adapter_mut(&mut self) -> &mut dyn types::Adapter {
-        self.inner_mut().adapter_mut()
-    }
     #[inline]
     fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         self.inner_mut().on_item_change(base, value)

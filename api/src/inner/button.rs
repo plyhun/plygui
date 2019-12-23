@@ -1,4 +1,4 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Spawnable};
 use super::clickable::{Clickable, ClickableInner};
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
@@ -39,3 +39,10 @@ impl<T: ButtonInner> AMember<AControl<AButton<T>>> {
         T::with_label(label)
     }
 }
+
+impl<T: ButtonInner> Spawnable for AMember<AControl<AButton<T>>> {
+    fn spawn() -> Box<dyn Control> {
+        Self::with_label("").into_control()
+    }
+}
+
