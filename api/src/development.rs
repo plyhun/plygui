@@ -1,5 +1,5 @@
 pub use crate::inner::{
-    auto::{Spawnable, HasInner},
+    auto::{Spawnable, HasInner, ImplInner},
     application::{AApplication, ApplicationBase, ApplicationInner},
     member::{AMember, MemberBase, MemberInner, MemberFunctions},
     button::{AButton, ButtonInner},

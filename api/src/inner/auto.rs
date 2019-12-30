@@ -2,6 +2,7 @@ use crate::callbacks::*;
 
 use super::application::Application;
 use super::control::Control;
+use super::member::MemberInner;
 
 use std::any::Any;
 
@@ -17,6 +18,10 @@ pub trait HasInner {
     fn inner(&self) -> &Self::I;
     fn inner_mut(&mut self) -> &mut Self::I;
     fn into_inner(self) -> Self::I;
+}
+
+pub trait ImplInner: MemberInner {
+	fn new_inner() -> Self;
 }
 
 pub trait Spawnable {
