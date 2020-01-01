@@ -1,6 +1,6 @@
 use crate::layout;
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
 use super::control::{AControl, Control, ControlInner};
@@ -15,7 +15,7 @@ define! {
     }
 }
 
-impl<II: LinearLayoutInner, T: HasInner<I = II> + 'static> LinearLayoutInner for T {
+impl<II: LinearLayoutInner, T: HasInner<I = II> + Abstract + 'static> LinearLayoutInner for T {
     fn with_orientation(orientation: layout::Orientation) -> Box<dyn LinearLayout> {
         <<Self as HasInner>::I as LinearLayoutInner>::with_orientation(orientation)
     }

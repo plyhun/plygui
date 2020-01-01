@@ -1,6 +1,6 @@
 use crate::types;
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::AContainer;
 use super::item_clickable::{ItemClickable, OnItemClick};
 use super::adapted::{AAdapted, Adapted, AdaptedInner};
@@ -24,7 +24,7 @@ impl<T: ListInner + 'static> AList<T> {
         Self { base: ListBase { on_item_click: None }, inner }
     }
 }
-impl<II: ListInner, T: HasInner<I = II> + 'static> ListInner for T {
+impl<II: ListInner, T: HasInner<I = II> + Abstract + 'static> ListInner for T {
     #[inline]
     fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List> {
         <<Self as HasInner>::I as ListInner>::with_adapter(adapter)

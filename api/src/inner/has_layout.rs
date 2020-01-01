@@ -1,6 +1,6 @@
 use crate::layout;
 
-use super::auto::{AsAny, HasInner};
+use super::auto::{AsAny, HasInner, Abstract};
 use super::member::{Member, MemberBase, MemberInner};
 
 has_private!(Layout(layout::Size, layout::Size): Member {
@@ -19,7 +19,7 @@ has_private!(Layout(layout::Size, layout::Size): Member {
     }
 });
 
-impl<II: HasLayoutInner, T: HasInner<I = II> + 'static> HasLayoutInner for T {
+impl<II: HasLayoutInner, T: HasInner<I = II> + Abstract + 'static> HasLayoutInner for T {
     fn on_layout_changed(&mut self, base: &mut MemberBase) {
         self.inner_mut().on_layout_changed(base)
     }

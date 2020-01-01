@@ -1,11 +1,11 @@
 use crate::layout;
 
-use super::auto::{AsAny, HasInner};
+use super::auto::{AsAny, HasInner, Abstract};
 use super::member::{AMember, Member, MemberBase, MemberInner};
 
 has_settable!(Orientation(layout::Orientation): Member);
 
-impl<II: HasOrientationInner, T: HasInner<I = II> + 'static> HasOrientationInner for T {
+impl<II: HasOrientationInner, T: HasInner<I = II> + Abstract + 'static> HasOrientationInner for T {
     fn orientation(&self, member: &MemberBase) -> layout::Orientation {
         self.inner().orientation(member)
     }

@@ -1,4 +1,4 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::closeable::{Closeable, CloseableInner};
 use super::has_image::{HasImage, HasImageInner};
 use super::has_label::{HasLabel, HasLabelInner};
@@ -26,7 +26,7 @@ impl<T: TrayInner> Tray for AMember<ATray<T>> {
     }
 }
 
-impl<II: TrayInner, T: HasInner<I = II> + 'static> TrayInner for T {
+impl<II: TrayInner, T: HasInner<I = II> + Abstract + 'static> TrayInner for T {
     fn with_params<S: AsRef<str>>(title: S, menu: types::Menu) -> Box<dyn Tray> {
         <<Self as HasInner>::I as TrayInner>::with_params(title, menu)
     }

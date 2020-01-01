@@ -1,6 +1,6 @@
 use crate::types;
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::control::{AControl, Control, ControlInner};
 use super::has_image::{HasImage, HasImageInner};
 use super::member::{AMember, MemberBase, Member};
@@ -21,7 +21,7 @@ define! {
     }
 }
 
-impl<II: ImageInner, T: HasInner<I = II> + 'static> ImageInner for T {
+impl<II: ImageInner, T: HasInner<I = II> + Abstract + 'static> ImageInner for T {
     fn with_content(content: image::DynamicImage) -> Box<dyn Image> {
         <<Self as HasInner>::I as ImageInner>::with_content(content)
     }

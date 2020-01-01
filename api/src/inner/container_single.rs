@@ -1,9 +1,9 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::{Container, ContainerInner};
 use super::control::{Control};
 use super::member::{Member, AMember, MemberBase};
 
-define! {
+define_abstract! {
     SingleContainer: Container {
         outer: {
             fn set_child(&mut self, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>>;
@@ -44,7 +44,7 @@ impl<T: SingleContainerInner> SingleContainer for AMember<T> {
         self
     }
 }
-impl<II: SingleContainerInner, T: HasInner<I = II> + 'static> SingleContainerInner for T {
+impl<II: SingleContainerInner, T: HasInner<I = II> + Abstract + 'static> SingleContainerInner for T {
     #[inline]
     fn set_child(&mut self, base: &mut MemberBase, child: Option<Box<dyn Control>>) -> Option<Box<dyn Control>> {
         self.inner_mut().set_child(base, child)

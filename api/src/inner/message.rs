@@ -1,6 +1,6 @@
 use crate::{callbacks, types};
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::has_label::{HasLabel, HasLabelInner};
 use super::member::{AMember, Member, MemberInner};
 
@@ -28,7 +28,7 @@ pub trait NewMessage {
     }
 }
 
-impl<II: MessageInner, T: HasInner<I = II> + 'static> MessageInner for T {
+impl<II: MessageInner, T: HasInner<I = II> + Abstract + 'static> MessageInner for T {
     fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn Member>) -> Box<dyn Message> {
         <<Self as HasInner>::I as MessageInner>::with_actions(content, severity, actions, parent)
     }

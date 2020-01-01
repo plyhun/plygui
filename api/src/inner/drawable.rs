@@ -1,4 +1,4 @@
-use super::auto::HasInner;
+use super::auto::{Abstract, HasInner};
 use super::control::ControlBase;
 use super::member::MemberBase;
 use super::seal::Sealed;
@@ -21,7 +21,7 @@ pub trait Drawable: Sized + 'static {
     fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase);
 }
 
-impl<II: Drawable, T: HasInner<I = II> + 'static> Drawable for T {
+impl<II: Drawable, T: HasInner<I = II> + Abstract + 'static> Drawable for T {
     #[inline]
     fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
         self.inner_mut().draw(member, control)

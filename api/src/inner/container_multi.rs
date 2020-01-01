@@ -1,9 +1,9 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::{Container, ContainerInner};
 use super::control::{Control};
 use super::member::{AMember, MemberBase, Member};
 
-define! {
+define_abstract! {
     MultiContainer: Container {
         outer: {
             fn len(&self) -> usize;
@@ -104,7 +104,7 @@ impl<T: MultiContainerInner> MultiContainer for AMember<T> {
         self
     }
 }
-impl<II: MultiContainerInner, T: HasInner<I = II> + 'static> MultiContainerInner for T {
+impl<II: MultiContainerInner, T: HasInner<I = II> + Abstract + 'static> MultiContainerInner for T {
     fn len(&self) -> usize {
         self.inner().len()
     }

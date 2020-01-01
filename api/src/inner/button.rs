@@ -1,4 +1,4 @@
-use super::auto::{HasInner, Spawnable};
+use super::auto::{HasInner, Spawnable, Abstract};
 use super::clickable::{Clickable, ClickableInner};
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
@@ -12,7 +12,7 @@ define! {
     }
 }
 
-impl<II: ButtonInner, T: HasInner<I = II> + 'static> ButtonInner for T {
+impl<II: ButtonInner, T: HasInner<I = II> + Abstract + 'static> ButtonInner for T {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Button> {
         <<Self as HasInner>::I as ButtonInner>::with_label(label)
     }

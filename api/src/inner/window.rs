@@ -1,4 +1,4 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::closeable::{Closeable, CloseableInner};
 use super::container::AContainer;
 use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
@@ -101,7 +101,7 @@ impl<T: WindowInner> Window for AMember<AContainer<ASingleContainer<AWindow<T>>>
         self
     }
 }
-impl<II: WindowInner, T: HasInner<I = II> + 'static> WindowInner for T {
+impl<II: WindowInner, T: HasInner<I = II> + Abstract + 'static> WindowInner for T {
     fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
         <<Self as HasInner>::I as WindowInner>::with_params(title, window_size, menu)
     }

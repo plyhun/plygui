@@ -23,11 +23,12 @@ pub trait HasInner {
 pub trait ImplInner: MemberInner {
 	fn new_inner() -> Self;
 }
+pub trait Abstract {}
 
 pub trait Spawnable {
     fn spawn() -> Box<dyn Control>;
 }
-impl<II: Spawnable + 'static, T: HasInner<I = II> + 'static> Spawnable for T {
+impl<II: Spawnable + 'static, T: HasInner<I = II> + Abstract + 'static> Spawnable for T {
     default fn spawn() -> Box<dyn Control> {
         <<Self as HasInner>::I as Spawnable>::spawn()
     }

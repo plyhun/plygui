@@ -1,11 +1,11 @@
-use super::auto::{AsAny, HasInner};
+use super::auto::{AsAny, HasInner, Abstract};
 use super::member::{AMember, Member, MemberBase, MemberInner};
 
 use std::borrow::Cow;
 
 has_settable!(Label(Cow<'_, str>): Member);
 
-impl<II: HasLabelInner, T: HasInner<I = II> + 'static> HasLabelInner for T {
+impl<II: HasLabelInner, T: HasInner<I = II> + Abstract + 'static> HasLabelInner for T {
     fn label(&self, member: &MemberBase) -> Cow<str> {
         self.inner().label(member)
     }

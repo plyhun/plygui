@@ -1,11 +1,11 @@
 use crate::types;
 
-use super::auto::{AsAny, HasInner};
+use super::auto::{AsAny, HasInner, Abstract};
 use super::member::{AMember, Member, MemberBase, MemberInner};
 
 has_settable!(Progress(types::Progress): Member);
 
-impl<II: HasProgressInner, T: HasInner<I = II> + 'static> HasProgressInner for T {
+impl<II: HasProgressInner, T: HasInner<I = II> + Abstract + 'static> HasProgressInner for T {
     fn progress(&self, member: &MemberBase) -> types::Progress {
         self.inner().progress(member)
     }

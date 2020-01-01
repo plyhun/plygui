@@ -1,6 +1,6 @@
 use crate::types;
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::control::{AControl, Control, ControlInner};
 use super::has_progress::{HasProgress, HasProgressInner};
 use super::member::{AMember, Member};
@@ -13,7 +13,7 @@ define! {
     }
 }
 
-impl<II: ProgressBarInner, T: HasInner<I = II> + 'static> ProgressBarInner for T {
+impl<II: ProgressBarInner, T: HasInner<I = II> + Abstract + 'static> ProgressBarInner for T {
     fn with_progress(progress: types::Progress) -> Box<dyn ProgressBar> {
         <<Self as HasInner>::I as ProgressBarInner>::with_progress(progress)
     }

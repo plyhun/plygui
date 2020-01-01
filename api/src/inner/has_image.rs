@@ -1,11 +1,11 @@
-use super::auto::{AsAny, HasInner};
+use super::auto::{AsAny, HasInner, Abstract};
 use super::member::{AMember, Member, MemberBase, MemberInner};
 
 use std::borrow::Cow;
 
 has_settable!(Image(Cow<'_, image::DynamicImage>): Member);
 
-impl<II: HasImageInner, T: HasInner<I = II> + 'static> HasImageInner for T {
+impl<II: HasImageInner, T: HasInner<I = II> + Abstract + 'static> HasImageInner for T {
     fn image(&self, member: &MemberBase) -> Cow<image::DynamicImage> {
         self.inner().image(member)
     }

@@ -1,6 +1,6 @@
 use crate::callbacks::*;
 
-use super::auto::{HasInner, AsAny};
+use super::auto::{HasInner, AsAny, Abstract};
 use super::member::{Member};
 use super::control::{Control, ControlInner};
 
@@ -30,7 +30,7 @@ impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>>
     }
 }*/
 
-impl<II: ItemClickableInner, T: HasInner<I = II> + 'static> ItemClickableInner for T {
+impl<II: ItemClickableInner, T: HasInner<I = II> + Abstract + 'static> ItemClickableInner for T {
     default fn item_click(&mut self, i: usize, parent: &mut dyn Control, skip_callbacks: bool) {
         self.inner_mut().item_click(i, parent, skip_callbacks)
     }

@@ -1,4 +1,4 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
 use super::member::{AMember, Member};
@@ -11,7 +11,7 @@ define! {
     }
 }
 
-impl<II: TextInner, T: HasInner<I = II> + 'static> TextInner for T {
+impl<II: TextInner, T: HasInner<I = II> + Abstract + 'static> TextInner for T {
     fn with_text<S: AsRef<str>>(label: S) -> Box<dyn Text> {
         <<Self as HasInner>::I as TextInner>::with_text(label)
     }

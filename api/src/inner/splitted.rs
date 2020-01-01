@@ -1,6 +1,6 @@
 use crate::layout;
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
 use super::control::{AControl, Control, ControlInner};
@@ -32,7 +32,7 @@ define! {
     }
 }
 
-impl<II: SplittedInner, T: HasInner<I = II> + 'static> SplittedInner for T {
+impl<II: SplittedInner, T: HasInner<I = II> + Abstract + 'static> SplittedInner for T {
     #[inline]
     fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted> {
         <<Self as HasInner>::I as SplittedInner>::with_content(first, second, orientation)

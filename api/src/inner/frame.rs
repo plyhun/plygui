@@ -1,4 +1,4 @@
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::AContainer;
 use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
 use super::control::{AControl, Control, ControlInner};
@@ -13,7 +13,7 @@ define! {
     }
 }
 
-impl<II: FrameInner, T: HasInner<I = II> + 'static> FrameInner for T {
+impl<II: FrameInner, T: HasInner<I = II> + Abstract + 'static> FrameInner for T {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn Frame> {
         <<Self as HasInner>::I as FrameInner>::with_label(label)
     }

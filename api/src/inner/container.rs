@@ -1,13 +1,13 @@
 use crate::types;
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::control::{AControl, Control, ControlInner};
 use super::member::{AMember, Member, MemberInner};
 use super::container_single::{MaybeSingleContainer};
 use super::container_multi::{MaybeMultiContainer};
 use super::adapted::{MaybeAdapted};
 
-define! {
+define_abstract! {
     Container: Member {
         outer: {
             fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control>;
@@ -96,7 +96,7 @@ impl<T: ContainerInner + ControlInner> Container for AMember<AControl<T>> {
         self
     }
 }
-impl<II: ContainerInner, T: HasInner<I = II> + 'static> ContainerInner for T {
+impl<II: ContainerInner, T: HasInner<I = II> + Abstract + 'static> ContainerInner for T {
     #[inline]
     fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Control> {
         self.inner_mut().find_control_mut(arg)

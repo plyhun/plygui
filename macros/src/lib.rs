@@ -47,6 +47,11 @@ pub fn on(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 #[proc_macro]
+pub fn define_abstract(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+	define::make(item, true)
+}
+
+#[proc_macro]
 pub fn define(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	define::make(item)
+	define::make(item, true)
 }

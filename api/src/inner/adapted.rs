@@ -1,11 +1,11 @@
 use crate::{callbacks, types, utils};
 
-use super::auto::HasInner;
+use super::auto::{HasInner, Abstract};
 use super::container::{Container, ContainerInner, AContainer};
 use super::control::{Control, AControl, ControlBase, ControlInner};
 use super::member::{Member, AMember, MemberBase};
 
-define! {
+define_abstract! {
     Adapted: Control + Container {
         base: {
             pub adapter: Box<dyn types::Adapter>,
@@ -78,7 +78,7 @@ impl<T: AdaptedInner> Adapted for AMember<AControl<AContainer<AAdapted<T>>>> {
         self
     }
 }
-impl<II: AdaptedInner, T: HasInner<I = II> + 'static> AdaptedInner for T {
+impl<II: AdaptedInner, T: HasInner<I = II> + Abstract + 'static> AdaptedInner for T {
     #[inline]
     fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
         self.inner_mut().on_item_change(base, value)

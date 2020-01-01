@@ -8,14 +8,16 @@ use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::{braced, parse_macro_input, token, Ident, Token};
 
-pub fn make(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let parsed = parse_macro_input!(item as Define);
+pub fn make(item: proc_macro::TokenStream, is_abstract: bool) -> proc_macro::TokenStream {
+    let mut parsed = parse_macro_input!(item as Define);
+    parsed._abstract = is_abstract;
     let t = quote!(#parsed);
     dbg!(format!("{:#}", t));
     proc_macro::TokenStream::from(t)
 }
 
 pub struct Define {
+    _abstract: bool,
 	name: Ident,
 	_colon: Option<Token![:]>,
     extends: Option<Punctuated<Ident, Token![+]>>,
@@ -28,6 +30,7 @@ impl Parse for Define {
 	    let mut extends_present = false;
 	    let mut custom = None;
         Ok(Self {
+            _abstract: false,    
             name: input.parse()?,
             _colon: {
                 let lookahead = input.lookahead1();
@@ -156,20 +159,20 @@ impl ToTokens for Define {
         let maybe = Maybe {
             name: ident.clone()
         };
+        
+        let abstract_impl = if self._abstract {
+            quote!{
+                impl<T: #ident_inner> Abstract for #a_ident<T> {}
+            }
+        } else {
+            quote!{}
+        };
         /*let maybe_ident = Maybe::maybe_ident(&ident.to_string());
         let is_ident_fn = Maybe::is_ident(&ident.to_string());
         let is_ident_mut_fn = Maybe::is_ident_mut(&ident.to_string());
         let ident2 = ident.clone();*/
         
 		let expr = quote! {
-			#custom_base
-			
-			#[repr(C)]
-			pub struct #a_ident<T: #ident_inner> {
-				#type_base
-				pub inner: T
-			}
-			
 			pub trait #ident: 'static #(+#extends)* #custom_extends {
             	#custom_trait
                 #as_into
@@ -179,7 +182,17 @@ impl ToTokens for Define {
             	#custom_inner
             }
             
-            #custom_constructor
+            #custom_base
+			
+			#[repr(C)]
+			pub struct #a_ident<T: #ident_inner> {
+				#type_base
+				pub inner: T
+			}
+			
+			#abstract_impl
+			
+			#custom_constructor
             
             impl<T: #ident_inner> HasInner for #a_ident<T> {
                 type I = T;

@@ -1,6 +1,6 @@
 use crate::{layout, types};
 
-use super::auto::{HasInner, Spawnable};
+use super::auto::{HasInner, Spawnable, Abstract};
 use super::container::Container;
 use super::drawable::{Drawable, OuterDrawable};
 use super::has_layout::{HasLayout, HasLayoutInner};
@@ -336,7 +336,9 @@ impl<T: ControlInner> HasInner for AControl<T> {
         self.inner
     }
 }
-impl<II: ControlInner, T: HasInner<I = II> + 'static> ControlInner for T {
+
+impl<T: ControlInner> Abstract for AControl<T> {}
+impl<II: ControlInner, T: HasInner<I = II> + Abstract + 'static> ControlInner for T {
     #[inline]
     fn on_added_to_container(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
         self.inner_mut().on_added_to_container(member, control, parent, x, y, w, h)

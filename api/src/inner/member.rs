@@ -1,6 +1,6 @@
 use crate::{ids, runtime};
 
-use super::auto::{AsAny, HasInner};
+use super::auto::{AsAny, HasInner, Abstract};
 use super::container::MaybeContainer;
 use super::control::MaybeControl;
 use super::closeable::MaybeCloseable;
@@ -42,7 +42,8 @@ pub trait Member: HasNativeId + AsAny + Sealed
 
 pub trait MemberInner: HasNativeIdInner + Sized + 'static {}
 
-impl<II: MemberInner, T: HasInner<I = II> + HasNativeIdInner> MemberInner for T {}
+impl<T: MemberInner> Abstract for AMember<T> {}
+impl<II: MemberInner, T: HasInner<I = II> + Abstract + 'static> MemberInner for T {}
 
 #[repr(C)]
 pub struct MemberBase {

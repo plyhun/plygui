@@ -28,7 +28,7 @@ macro_rules! default_pub_use {
 
 #[macro_export]
 macro_rules! default_markup_register_members {
-    () => {
+    () => {/*
         #[cfg(feature = "markup")]
         pub fn register_members(registry: &mut plygui_api::markup::MarkupRegistry) {
             registry.register_member(plygui_api::markup::MEMBER_TYPE_BUTTON.into(), button::spawn).unwrap();
@@ -36,7 +36,7 @@ macro_rules! default_markup_register_members {
             registry.register_member(plygui_api::markup::MEMBER_TYPE_FRAME.into(), frame::spawn).unwrap();
             registry.register_member(plygui_api::markup::MEMBER_TYPE_SPLITTED.into(), splitted::spawn).unwrap();
             registry.register_member(plygui_api::markup::MEMBER_TYPE_IMAGE.into(), image::spawn).unwrap();
-        }
+        }*/
     };
 }
 
