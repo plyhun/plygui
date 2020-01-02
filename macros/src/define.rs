@@ -160,13 +160,6 @@ impl ToTokens for Define {
             name: ident.clone()
         };
         
-        let abstract_impl = if self._abstract {
-            quote!{
-                impl<T: #ident_inner> Abstract for #a_ident<T> {}
-            }
-        } else {
-            quote!{}
-        };
         /*let maybe_ident = Maybe::maybe_ident(&ident.to_string());
         let is_ident_fn = Maybe::is_ident(&ident.to_string());
         let is_ident_mut_fn = Maybe::is_ident_mut(&ident.to_string());
@@ -190,7 +183,7 @@ impl ToTokens for Define {
 				pub inner: T
 			}
 			
-			#abstract_impl
+			impl<T: #ident_inner> Abstract for #a_ident<T> {}
 			
 			#custom_constructor
             

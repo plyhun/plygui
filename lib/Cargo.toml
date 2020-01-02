@@ -11,22 +11,14 @@ path = "src/lib.rs"
 [dependencies]
 plygui-api = { version = "0.0.1", path = "../api" }
 
-[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd"))'.dependencies]
-plygui-gtk = { version = "0.0.1", path = "../../plygui-gtk", optional = true }
-
 [target.'cfg(target_os = "windows")'.dependencies]
 plygui-win32 = { version = "0.0.1", path = "../../plygui-win32", optional = true }
-
-[target.'cfg(target_os = "macos")'.dependencies]
-plygui-cocoa = { version = "0.0.1", path = "../../plygui-cocoa", optional = true }
 
 [target.'cfg(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")))'.dependencies]
 plygui-testable = { version = "0.0.1", path = "../testable" }
 
 [features]
-gtk3 = ["plygui-gtk"]
 win32 = ["plygui-win32"]
-cocoa = ["plygui-cocoa"]
 #https://github.com/rust-lang/cargo/issues/1197
 #native = ["win32", "cocoa", "gtk3"]
 type_check = ["plygui-api/type_check"]

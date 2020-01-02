@@ -4,6 +4,7 @@
 #![cfg_attr(feature = "cargo-clippy", allow(redundant_field_names))]
 #![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names))]
 #![feature(specialization)]
+#![feature(fundamental)]
 
 #[macro_use]
 extern crate plygui_macros;

@@ -1,4 +1,6 @@
 //#![feature(core_intrinsics)]
+#![feature(specialization)]
+#![feature(fundamental)]
 
 #[macro_use]
 extern crate plygui_api;

@@ -71,3 +71,8 @@ macro_rules! impl_as_member {
         }
     };
 }
+#[macro_export]
+macro_rules! please_override_this {
+    () => { panic!("This method is abstract. Please override it.") }
+}
+

@@ -1,4 +1,4 @@
-use super::auto::{AsAny, HasInner, OnFrame};
+use super::auto::{AsAny, HasInner, OnFrame, Abstract};
 use super::has_native_id::{HasNativeId, HasNativeIdInner};
 use super::member::Member;
 use super::tray::Tray;
@@ -29,9 +29,11 @@ pub trait Application: HasNativeId + AsAny + super::seal::Sealed {
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a>; //E0562 :(
     fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a>; //E0562 :(
 }
-
+pub trait NewApplication {
+    fn get() -> Box<dyn Application>;
+}
 pub trait ApplicationInner: HasNativeIdInner + 'static {
-    fn get() -> Box<AApplication<Self>>
+    fn get() -> Box<dyn Application>
     where
         Self: Sized;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
@@ -59,6 +61,7 @@ pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &(dyn Member)> + 'a>;
     fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &mut (dyn Member)> + 'a>;
 }
+#[fundamental]
 pub struct AApplication<T: ApplicationInner> {
     inner: Rc<UnsafeCell<ApplicationInnerWrapper<T>>>,
 }
@@ -69,6 +72,12 @@ pub struct ApplicationBase {
 pub struct ApplicationInnerWrapper<T: ApplicationInner> {
     base: ApplicationBase,
     inner: T,
+}
+impl<T: ApplicationInner> NewApplication for AApplication<T> {
+    #[inline]
+    fn get() -> Box<dyn Application> {
+        T::get()
+    }
 }
 impl<T: ApplicationInner> AApplication<T> {
     #[inline]
@@ -81,6 +90,10 @@ impl<T: ApplicationInner> AApplication<T> {
             })),
         }
     }
+    #[inline]
+    pub fn runtime_deinit(&mut self) {
+        runtime::deinit(&self.inner);
+    } 
 }
 impl ApplicationBase {
     pub fn sender(&mut self) -> &mut mpsc::Sender<OnFrame> {
@@ -98,61 +111,61 @@ impl<T: ApplicationInner> HasNativeId for AApplication<T> {
 }
 impl<T: ApplicationInner> Application for AApplication<T> {
     #[inline]
-    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
+    default fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
         self.inner_mut().new_window(title, size, menu)
     }
     #[inline]
-    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray> {
+    default fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray> {
         self.inner_mut().new_tray(title, menu)
     }
     #[inline]
-    fn name(&self) -> Cow<'_, str> {
+    default fn name(&self) -> Cow<'_, str> {
         self.inner().name()
     }
     #[inline]
-    fn start(&mut self) {
+    default fn start(&mut self) {
         self.inner_mut().start()
     }
     #[inline]
-    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member> {
+    default fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member> {
         self.inner_mut().find_member_mut(arg)
     }
     #[inline]
-    fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member> {
+    default fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member> {
         self.inner().find_member(arg)
     }
     #[inline]
-    fn exit(mut self: Box<Self>, skip_on_close: bool) -> bool {
+    default fn exit(mut self: Box<Self>, skip_on_close: bool) -> bool {
         let exited = self.inner_mut().exit(skip_on_close);
         if exited {
-            runtime::deinit(&self.inner);
+            self.runtime_deinit();
         }
         exited
     }
     #[inline]
-    fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<OnFrame> {
+    default fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<OnFrame> {
         let feeder = self.base_mut().sender().clone();
         self.inner_mut().on_frame_async_feeder(feeder.into())
     }
     #[inline]
-    fn on_frame(&mut self, cb: OnFrame) {
+    default fn on_frame(&mut self, cb: OnFrame) {
         let mut feeder = self.base_mut().sender().clone().into();
         self.inner_mut().on_frame(&mut feeder, cb)
     }
     #[inline]
-    fn frame_sleep(&self) -> u32 {
+    default fn frame_sleep(&self) -> u32 {
         self.inner().frame_sleep()
     }
     #[inline]
-    fn set_frame_sleep(&mut self, value: u32) {
+    default fn set_frame_sleep(&mut self, value: u32) {
         self.inner_mut().set_frame_sleep(value)
     }
     #[inline]
-    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {
+    default fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {
         self.inner().members()
     }
     #[inline]
-    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a> {
+    default fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a> {
         self.inner_mut().members_mut()
     }
 }
@@ -197,7 +210,7 @@ impl<T: ApplicationInner> AApplication<T> {
             types::ApplicationResult::ErrorNonUiThread
         } else {
             let app = T::get();
-            runtime::init(app.inner.clone());
+            runtime::init(app.as_any().downcast_ref::<Self>().unwrap().inner.clone());
             types::ApplicationResult::New(app)
         }
     }
@@ -208,6 +221,50 @@ impl<T: ApplicationInner> AApplication<T> {
     #[inline]
     pub fn base_mut(&mut self) -> &mut ApplicationBase {
         unsafe { &mut (&mut *self.inner.get()).base }
+    }
+}
+impl<II: ApplicationInner, T: HasInner<I = II> + Abstract + 'static> ApplicationInner for T {
+    fn get() -> Box<dyn Application> {
+        <<Self as HasInner>::I as ApplicationInner>::get()
+    }
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
+        self.inner_mut().new_window(title, size, menu)
+    }
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray> {
+    	self.inner_mut().new_tray(title, menu)
+    }
+    fn remove_window(&mut self, id: Self::Id) {
+    	self.inner_mut().remove_window(id)
+    }
+    fn remove_tray(&mut self, id: Self::Id) {
+    	self.inner_mut().remove_tray(id)
+    }
+    fn name<'a>(&'a self) -> Cow<'a, str> {
+        self.inner().name()
+    }
+    fn frame_sleep(&self) -> u32 {
+        self.inner().frame_sleep()
+    }
+    fn set_frame_sleep(&mut self, value: u32) {
+        self.inner_mut().set_frame_sleep(value)
+    }
+    fn start(&mut self) {
+    	self.inner_mut().start()
+    }
+    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member> {
+        self.inner_mut().find_member_mut(arg)
+    }
+    fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member> {
+        self.inner().find_member(arg)
+    }
+    fn exit(&mut self, skip_on_close: bool) -> bool {
+        self.inner_mut().exit(skip_on_close)
+    }
+    fn members<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {
+        self.inner().members()
+    }
+    fn members_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a> {
+        self.inner_mut().members_mut()
     }
 }
 impl<T: ApplicationInner> super::seal::Sealed for AApplication<T> {}
