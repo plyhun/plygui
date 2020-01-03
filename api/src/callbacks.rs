@@ -6,6 +6,7 @@ pub use crate::inner::{
     has_visibility::OnVisibility,
     clickable::OnClick,
     closeable::OnClose, 
+    item_clickable::OnItemClick,
     member::MemberBase,
 };
 

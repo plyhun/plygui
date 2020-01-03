@@ -20,9 +20,6 @@ pub trait HasInner {
     fn into_inner(self) -> Self::I;
 }
 
-pub trait ImplInner: MemberInner {
-	fn new_inner() -> Self;
-}
 pub trait Abstract {}
 
 pub trait Spawnable {

@@ -31,9 +31,7 @@ pub trait Application: HasNativeId + AsAny + super::seal::Sealed {
 }
 
 pub trait ApplicationInner: HasNativeIdInner + 'static {
-    fn get() -> Box<AApplication<Self>>
-    where
-        Self: Sized;
+    fn get() -> Box<dyn Application>;
     fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
     fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
 
@@ -197,7 +195,7 @@ impl<T: ApplicationInner> AApplication<T> {
             types::ApplicationResult::ErrorNonUiThread
         } else {
             let app = T::get();
-            runtime::init(app.inner.clone());
+            runtime::init(app.as_any().downcast_ref::<Self>().unwrap().inner.clone());
             types::ApplicationResult::New(app)
         }
     }

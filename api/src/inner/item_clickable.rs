@@ -1,11 +1,11 @@
 use crate::callbacks::*;
 
 use super::auto::{HasInner, AsAny, Abstract};
-use super::member::{Member};
-use super::control::{Control, ControlInner};
+use super::member::{Member, MemberInner, AMember};
+use super::control::{Control, ControlInner, AControl};
 
 able_to!(ItemClick (usize, &mut dyn Control): Control);
-/*
+
 impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>> {
     #[inline]
     default fn on_item_click(&mut self, cb: Option<OnItemClick>) {
@@ -28,7 +28,7 @@ impl<T: ItemClickableInner + MemberInner> ItemClickable for AMember<AControl<T>>
     default fn into_item_clickable(self: Box<Self>) -> Box<dyn ItemClickable> {
         self
     }
-}*/
+}
 
 impl<II: ItemClickableInner, T: HasInner<I = II> + Abstract + 'static> ItemClickableInner for T {
     default fn item_click(&mut self, i: usize, parent: &mut dyn Control, skip_callbacks: bool) {

@@ -5,7 +5,8 @@ pub type List = AMember<AControl<AContainer<AAdapted<AList<TestableList>>>>>;
 #[repr(C)]
 pub struct TestableList {
     base: TestableControlBase<List>,
-    children: Vec<Box<dyn controls::Control>>,
+    items: Vec<Box<dyn controls::Control>>,
+    on_item_click: Option<callbacks::OnItemClick>,
 }
 
 impl ListInner for TestableList {
@@ -17,7 +18,8 @@ impl ListInner for TestableList {
                         AList::with_inner(
                             TestableList {
                                 base: TestableControlBase::new(),
-                                children: Vec::with_capacity(adapter.len()),
+                                items: Vec::with_capacity(adapter.len()),
+                                on_item_click: None,
                             }
                         ),
                         adapter,
@@ -29,10 +31,32 @@ impl ListInner for TestableList {
         b
     }
 }
-
+impl ItemClickableInner for TestableList {
+    fn item_click(&mut self, i: usize, item_view: &mut dyn controls::Control, skip_callbacks: bool) {
+        if !skip_callbacks{
+            let self2 = self.base.as_outer_mut();
+            if let Some(ref mut callback) = self.on_item_click {
+                (callback.as_mut())(self2, i, item_view)
+            }
+        }
+    }
+    fn on_item_click(&mut self, callback: Option<callbacks::OnItemClick>) {
+        self.on_item_click = callback;
+    }
+}
 impl AdaptedInner for TestableList {
-    fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
-        
+    fn on_item_change(&mut self, _base: &mut MemberBase, value: types::Change) {
+        match value {
+            types::Change::Added(index) => {
+                println!("item added {}", index);
+            },
+            types::Change::Removed(index) => {
+                println!("item removed {}", index);
+            },
+            types::Change::Edited(index) => {
+                println!("item edited {}", index);
+            }
+        }
     }
 }
 impl Spawnable for TestableList {
@@ -65,14 +89,14 @@ impl ControlInner for TestableList {
             let mut item = adapter.adapter.spawn_item_view(i, self2);
             item.on_added_to_container(self2, 0, y, utils::coord_to_size(pw as i32) as u16, utils::coord_to_size(ph as i32) as u16);
             let (_, yy) = item.size();
-            self.children.push(item);
+            self.items.push(item);
             y += yy as i32;
         }
     }
     fn on_removed_from_container(&mut self, member: &mut MemberBase, _control: &mut ControlBase, _: &dyn controls::Container) {
-        for ref mut child in self.children.as_mut_slice() {
+        for ref mut item in self.items.as_mut_slice() {
             let self2: &mut List = unsafe { utils::base_to_impl_mut(member) };
-            child.on_removed_from_container(self2);
+            item.on_removed_from_container(self2);
         }
         self.base.parent = None;
     }
@@ -82,27 +106,27 @@ impl ControlInner for TestableList {
         use plygui_api::markup::MEMBER_TYPE_TABLE;
 
         fill_from_markup_base!(self, member, markup, registry, List, [MEMBER_TYPE_TABLE]);
-        //fill_from_markup_children!(self, member, markup, registry);
+        //fill_from_markup_items!(self, member, markup, registry);
     }
 }
 impl ContainerInner for TestableList {
     fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
-        for child in self.children.as_mut_slice() {
+        for item in self.items.as_mut_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
-                    if child.as_member_mut().id() == *id {
-                        return Some(child.as_mut());
+                    if item.as_member_mut().id() == *id {
+                        return Some(item.as_mut());
                     }
                 }
                 types::FindBy::Tag(ref tag) => {
-                    if let Some(mytag) = child.as_member_mut().tag() {
+                    if let Some(mytag) = item.as_member_mut().tag() {
                         if tag.as_str() == mytag {
-                            return Some(child.as_mut());
+                            return Some(item.as_mut());
                         }
                     }
                 }
             }
-            if let Some(c) = child.is_container_mut() {
+            if let Some(c) = item.is_container_mut() {
                 let ret = c.find_control_mut(arg.clone());
                 if ret.is_none() {
                     continue;
@@ -113,22 +137,22 @@ impl ContainerInner for TestableList {
         None
     }
     fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
-        for child in self.children.as_slice() {
+        for item in self.items.as_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
-                    if child.as_member().id() == *id {
-                        return Some(child.as_ref());
+                    if item.as_member().id() == *id {
+                        return Some(item.as_ref());
                     }
                 }
                 types::FindBy::Tag(ref tag) => {
-                    if let Some(mytag) = child.as_member().tag() {
+                    if let Some(mytag) = item.as_member().tag() {
                         if tag.as_str() == mytag {
-                            return Some(child.as_ref());
+                            return Some(item.as_ref());
                         }
                     }
                 }
             }
-            if let Some(c) = child.is_container() {
+            if let Some(c) = item.is_container() {
                 let ret = c.find_control(arg.clone());
                 if ret.is_none() {
                     continue;
@@ -198,14 +222,6 @@ impl Drawable for TestableList {
     fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
         self.base.invalidate()
     }
-}
-
-/*#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    List::with_dimensions(0, 0).into_control()
-}*/
-fn on_item_change(this: &mut dyn controls::Adapted, i: usize) {
-    
 }
 
 default_impls_as!(List);

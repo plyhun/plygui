@@ -18,5 +18,7 @@ mod window;
 mod progress_bar;
 mod list;
 
+mod better_button; 
+
 default_markup_register_members!();
 default_pub_use!();

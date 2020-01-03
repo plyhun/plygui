@@ -90,7 +90,7 @@ impl ToTokens for Define {
             .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_camel_case()), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
 
-        let (type_base, custom_base, custom_trait, custom_inner, constructor, custom_extends, custom_implements, custom_constructor, custom_constructor_fn) = {
+        let (type_base, custom_base, custom_trait, custom_inner, constructor, custom_extends, custom_implements, custom_constructor, custom_constructor_fn, custom_constructor_inner_fn) = {
         	let mut should_have_constructor = true;
         	let mut type_base = quote!{};
         	let mut constructor = quote!{};
@@ -101,6 +101,7 @@ impl ToTokens for Define {
         	let mut custom_implements = quote!{};
         	let mut custom_constructor = quote!{};
         	let mut custom_constructor_fn = quote!{};
+        	let mut custom_constructor_inner_fn = quote!{ fn new() -> Box<dyn #ident>; };
         	if let Some(ref custom) = self.custom {
         	    for block in custom.blocks.iter() {
 	        		match block.name.to_string().as_str() {
@@ -138,6 +139,7 @@ impl ToTokens for Define {
 								}
 	        				};
                             custom_constructor_fn = quote!{ #custom };
+                            custom_constructor_inner_fn = quote!{ #custom };
 	        			}
 	        			_ => panic!("Unknown custom block name :'{}'", block.name),
 	        		}
@@ -153,7 +155,7 @@ impl ToTokens for Define {
             		}
             	};
         	}
-        	(type_base, custom_base, custom_trait, custom_inner, constructor, custom_extends, custom_implements, custom_constructor, custom_constructor_fn)
+        	(type_base, custom_base, custom_trait, custom_inner, constructor, custom_extends, custom_implements, custom_constructor, custom_constructor_fn, custom_constructor_inner_fn)
         };
         
         let maybe = Maybe {
@@ -161,11 +163,14 @@ impl ToTokens for Define {
         };
         
         let abstract_impl = if self._abstract {
-            quote!{
-                impl<T: #ident_inner> Abstract for #a_ident<T> {}
-            }
-        } else {
             quote!{}
+        } else {
+            let constructor_inner = Ident::new(&format!("New{}Inner", ident).to_camel_case(), Span::call_site());
+            quote!{
+                pub trait #constructor_inner<O: #ident>: #ident_inner {
+                    #custom_constructor_inner_fn
+                }
+            }
         };
         /*let maybe_ident = Maybe::maybe_ident(&ident.to_string());
         let is_ident_fn = Maybe::is_ident(&ident.to_string());
@@ -189,6 +194,8 @@ impl ToTokens for Define {
 				#type_base
 				pub inner: T
 			}
+			
+			impl<T: #ident_inner> Abstract for #a_ident<T> {}
 			
 			#abstract_impl
 			

@@ -2,28 +2,28 @@ use crate::types;
 
 use super::auto::{HasInner, Abstract};
 use super::container::AContainer;
-use super::item_clickable::{ItemClickable, OnItemClick};
+use super::item_clickable::{ItemClickable, ItemClickableInner};
 use super::adapted::{AAdapted, Adapted, AdaptedInner};
 use super::control::{AControl, Control, ControlInner};
 use super::member::{AMember, Member};
 
 define! {
-    List: Control + Adapted {
-	    base: {
+    List: Control + Adapted + ItemClickable {
+	    /*base: {
             pub on_item_click: Option<OnItemClick>,
-        }
+        }*/
 	    constructor: {
     	    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List>;
 	    }
 	    extends: { ItemClickable }
     }
 }
-impl<T: ListInner + 'static> AList<T> {
+/*impl<T: ListInner + 'static> AList<T> {
     #[inline]
     pub fn with_inner(inner: T) -> Self {
         Self { base: ListBase { on_item_click: None }, inner }
     }
-}
+}*/
 impl<II: ListInner, T: HasInner<I = II> + Abstract + 'static> ListInner for T {
     #[inline]
     fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List> {
@@ -36,7 +36,8 @@ impl<T: ListInner> NewList for AMember<AControl<AContainer<AAdapted<AList<T>>>>>
         <<Self as HasInner>::I as ListInner>::with_adapter(adapter)
     }
 }
-impl<T: ListInner> ItemClickable for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
+// hello E0119
+/*impl<T: ListInner> ItemClickable for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
     #[inline]
     fn on_item_click(&mut self, cb: Option<OnItemClick>) {
         self.inner.inner.inner.inner.base.on_item_click = cb;
@@ -62,7 +63,7 @@ impl<T: ListInner> ItemClickable for AMember<AControl<AContainer<AAdapted<AList<
     fn into_item_clickable(self: Box<Self>) -> Box<dyn ItemClickable> {
         self
     }
-}
+}*/
 
 impl<T: ListInner> List for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
     #[inline]

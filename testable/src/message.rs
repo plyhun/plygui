@@ -64,7 +64,7 @@ impl MessageInner for TestableMessage {
         ));
         a
     }
-    fn start(mut self) -> Result<String, ()> {
+    fn start(self) -> Result<String, ()> {
         self.actions.iter().nth(0)/*find(|a| a.id == pressed)*/.map(|a| a.title.clone()).ok_or(())
     }
     fn severity(&self) -> types::MessageSeverity {

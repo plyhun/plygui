@@ -53,5 +53,5 @@ pub fn define_abstract(item: proc_macro::TokenStream) -> proc_macro::TokenStream
 
 #[proc_macro]
 pub fn define(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	define::make(item, true)
+	define::make(item, false)
 }

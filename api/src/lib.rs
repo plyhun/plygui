@@ -16,7 +16,6 @@ pub mod layout;
 pub mod types;
 pub mod utils;
 
-mod auto;
 mod runtime;
 
 pub(crate) mod inner;

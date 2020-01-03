@@ -15,7 +15,7 @@ pub struct TestableApplication {
 pub type Application = AApplication<TestableApplication>;
 
 impl ApplicationInner for TestableApplication {
-    fn get() -> Box<Application> {
+    fn get() -> Box<dyn controls::Application> {
         let mut w = Box::new(AApplication::with_inner(
             TestableApplication {
             	root: ptr::null_mut(),

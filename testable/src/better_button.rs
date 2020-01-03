@@ -1,60 +1,37 @@
 use crate::common::{self, *};
+use super::button::TestableButton;
 
-pub type Button = AMember<AControl<AButton<TestableButton>>>;
+pub type BetterButton = AMember<AControl<AButton<TestableBetterButton>>>;
 
 #[repr(C)]
-pub struct TestableButton {
-    base: common::TestableControlBase<Button>,
-    label: String,
-    h_left_clicked: Option<callbacks::OnClick>,
+pub struct TestableBetterButton {
+    inner: TestableButton,
 }
-impl NewButtonInner<Button> for TestableButton {
-    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
-        let mut b = Box::new(AMember::with_inner(
-            AControl::with_inner(
-                AButton::with_inner(
-                    TestableButton {
-                        base: common::TestableControlBase::new(),
-                        h_left_clicked: None,
-                        label: label.as_ref().to_owned(),
-                    }
-                ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+
+impl HasLabelInner for TestableBetterButton {
+    fn label<'a>(&'a self, base: &MemberBase) -> Cow<'a, str> {
+        self.inner.label(base)
     }
-}
-impl HasLabelInner for TestableButton {
-    fn label<'a>(&'a self, _: &MemberBase) -> Cow<'a, str> {
-        Cow::Borrowed(self.label.as_ref())
-    }
-    fn set_label(&mut self, _base: &mut MemberBase, label: Cow<str>) {
-        self.label = label.into();
-        self.base.invalidate();
+    fn set_label(&mut self, base: &mut MemberBase, label: Cow<str>) {
+        self.inner.set_label(base, label)
     }
 }
 
-impl ClickableInner for TestableButton {
+impl ClickableInner for TestableBetterButton {
     fn on_click(&mut self, handle: Option<callbacks::OnClick>) {
-        self.h_left_clicked = handle;
+        self.inner.on_click(handle)
     }
     fn click(&mut self, skip_callbacks: bool) {
-        if !skip_callbacks {
-            if let Some(ref mut h_left_clicked) = self.h_left_clicked {
-                (h_left_clicked.as_mut())(unsafe { &mut *(self.base.id as *mut Button) });
-            }
-        }
+        self.inner.click(skip_callbacks)
     }
 }
 
-impl ButtonInner for TestableButton {
+impl ButtonInner for TestableBetterButton {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
         let mut b = Box::new(AMember::with_inner(
             AControl::with_inner(
                 AButton::with_inner(
-                    TestableButton {
+                    TestableBetterButton {
                         base: common::TestableControlBase::new(),
                         h_left_clicked: None,
                         label: label.as_ref().to_owned(),
@@ -67,12 +44,12 @@ impl ButtonInner for TestableButton {
         b
     }
 }
-impl Spawnable for TestableButton {
+impl Spawnable for TestableBetterButton {
     fn spawn() -> Box<dyn controls::Control> {
         Self::with_label("").into_control()
     }
 }
-impl ControlInner for TestableButton {
+impl ControlInner for TestableBetterButton {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
 	    self.base.position = (x, y);
@@ -102,13 +79,13 @@ impl ControlInner for TestableButton {
     }
 }
 
-impl HasLayoutInner for TestableButton {
+impl HasLayoutInner for TestableBetterButton {
     fn on_layout_changed(&mut self, _base: &mut MemberBase) {
         self.base.invalidate();
     }
 }
 
-impl HasNativeIdInner for TestableButton {
+impl HasNativeIdInner for TestableBetterButton {
     type Id = common::TestableId;
 
     unsafe fn native_id(&self) -> Self::Id {
@@ -116,7 +93,7 @@ impl HasNativeIdInner for TestableButton {
     }
 }
 
-impl HasSizeInner for TestableButton {
+impl HasSizeInner for TestableBetterButton {
     fn on_size_set(&mut self, base: &mut MemberBase, (width, height): (u16, u16)) -> bool {
         use plygui_api::controls::HasLayout;
 
@@ -131,15 +108,15 @@ impl HasSizeInner for TestableButton {
     }
 }
 
-impl HasVisibilityInner for TestableButton {
+impl HasVisibilityInner for TestableBetterButton {
     fn on_visibility_set(&mut self, _base: &mut MemberBase, value: types::Visibility) -> bool {
         self.base.on_set_visibility(value)
     }
 }
 
-impl MemberInner for TestableButton {}
+impl MemberInner for TestableBetterButton {}
 
-impl Drawable for TestableButton {
+impl Drawable for TestableBetterButton {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
         self.base.draw(format!("Button '{}'", self.label).as_str(), control.coords, control.measured);
     }
@@ -173,5 +150,3 @@ impl Drawable for TestableButton {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(Button);

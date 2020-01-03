@@ -1,8 +1,8 @@
 pub use crate::inner::{
-    auto::{Spawnable, HasInner, ImplInner, Abstract},
+    auto::{Spawnable, HasInner, Abstract},
     application::{AApplication, ApplicationBase, ApplicationInner},
     member::{AMember, MemberBase, MemberInner, MemberFunctions},
-    button::{AButton, ButtonInner},
+    button::{AButton, ButtonInner, NewButtonInner},
     text::{AText, TextInner},
     control::{AControl, ControlBase, ControlInner},
     container::{AContainer, ContainerInner},
