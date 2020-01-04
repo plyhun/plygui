@@ -51,9 +51,20 @@ pub struct TestableControlBase<T: controls::Control + Sized> {
 }
 
 impl<T: controls::Control + Sized> TestableControlBase<T> {
+	#[deprecated]
     pub fn new() -> TestableControlBase<T> {
         TestableControlBase {
             id: ptr::null_mut(),
+            size: (0, 0),
+		    position: (0, 0),
+		    parent: None,
+            visibility: types::Visibility::Visible,
+            _marker: PhantomData,
+        }
+    }
+    pub fn with_id(id: InnerId) -> TestableControlBase<T> {
+        TestableControlBase {
+            id,
             size: (0, 0),
 		    position: (0, 0),
 		    parent: None,

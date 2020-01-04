@@ -8,22 +8,13 @@ pub struct TestableButton {
     label: String,
     h_left_clicked: Option<callbacks::OnClick>,
 }
-impl NewButtonInner<Button> for TestableButton {
-    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
-        let mut b = Box::new(AMember::with_inner(
-            AControl::with_inner(
-                AButton::with_inner(
-                    TestableButton {
-                        base: common::TestableControlBase::new(),
-                        h_left_clicked: None,
-                        label: label.as_ref().to_owned(),
-                    }
-                ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+impl<O: controls::Button> NewButtonInner<O> for TestableButton {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableButton {
+	        base: common::TestableControlBase::with_id(u as *mut _ as *mut MemberBase),
+	        h_left_clicked: None,
+	        label: String::new(),
+        }
     }
 }
 impl HasLabelInner for TestableButton {
@@ -51,25 +42,22 @@ impl ClickableInner for TestableButton {
 
 impl ButtonInner for TestableButton {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
-        let mut b = Box::new(AMember::with_inner(
+    	let mut b: Box<mem::MaybeUninit<Button>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AButton::with_inner(
-                    TestableButton {
-                        base: common::TestableControlBase::new(),
-                        h_left_clicked: None,
-                        label: label.as_ref().to_owned(),
-                    }
+                    <Self as NewButtonInner<Button>>::with_uninit(b.as_mut())
                 ),
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+        );
+        b.as_mut_ptr().write(ab);
+        b.assume_init()
     }
 }
 impl Spawnable for TestableButton {
     fn spawn() -> Box<dyn controls::Control> {
-        Self::with_label("").into_control()
+        <Self as ButtonInner>::with_label("").into_control()
     }
 }
 impl ControlInner for TestableButton {
