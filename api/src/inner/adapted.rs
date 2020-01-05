@@ -26,8 +26,22 @@ define_abstract! {
 
 impl<T: AdaptedInner + 'static> AAdapted<T> {
     #[inline]
-    pub fn with_inner(inner: T, adapter: Box<dyn types::Adapter>) -> Self {
-        Self { base: AdaptedBase { adapter }, inner }
+    pub fn with_inner<O: Adapted>(inner: T, adapter: Box<dyn types::Adapter>, u: &mut ::std::mem::MaybeUninit<O>) -> Self {
+        let mut t = Self { base: AdaptedBase { adapter }, inner };
+        
+        let base = u as *mut _ as *mut MemberBase;
+        t.base.adapter.on_item_change(Some(AdapterInnerCallback {
+            target: base,
+            on_item_change: Self::on_item_change.into(),
+        }));
+        t
+    }
+    #[inline]
+    fn on_item_change(base: &mut MemberBase, value: types::Change) {
+        let this = base.as_any_mut().downcast_mut::<AMember<AControl<AContainer<AAdapted<T>>>>>().unwrap();
+        let this2 = this as *mut AMember<AControl<AContainer<AAdapted<T>>>>; // bck is stupid;
+        let inner = unsafe {&mut *this2}.inner_mut().inner_mut().inner_mut().inner_mut();
+        inner.on_item_change(base, value)
     }
 }
 

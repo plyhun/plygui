@@ -10,8 +10,9 @@ pub struct TestableList {
 }
 
 impl ListInner for TestableList {
-    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn controls::List> {
-        let b = Box::new(AMember::with_inner(
+	fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn controls::List> {
+        let mut b: Box<mem::MaybeUninit<List>> = Box::new_uninit();
+        let ab = AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
                     AAdapted::with_inner(
@@ -23,12 +24,16 @@ impl ListInner for TestableList {
                             }
                         ),
                         adapter,
+                        &mut b,
                     ),
                 )
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b
+        );
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl ItemClickableInner for TestableList {

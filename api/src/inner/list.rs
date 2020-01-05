@@ -33,7 +33,7 @@ impl<II: ListInner, T: HasInner<I = II> + Abstract + 'static> ListInner for T {
 impl<T: ListInner> NewList for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
     #[inline]
     fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn List> {
-        <<Self as HasInner>::I as ListInner>::with_adapter(adapter)
+        T::with_adapter(adapter)
     }
 }
 // hello E0119
