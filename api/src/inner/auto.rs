@@ -2,7 +2,6 @@ use crate::callbacks::*;
 
 use super::application::Application;
 use super::control::Control;
-use super::member::MemberInner;
 
 use std::any::Any;
 

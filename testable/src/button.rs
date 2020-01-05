@@ -4,7 +4,7 @@ pub type Button = AMember<AControl<AButton<TestableButton>>>;
 
 #[repr(C)]
 pub struct TestableButton {
-    base: common::TestableControlBase<Button>,
+    pub base: common::TestableControlBase<Button>,
     label: String,
     h_left_clicked: Option<callbacks::OnClick>,
 }
@@ -51,8 +51,11 @@ impl ButtonInner for TestableButton {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         );
-        b.as_mut_ptr().write(ab);
-        b.assume_init()
+        controls::HasLabel::set_label(&mut ab, label.as_ref().into());
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl Spawnable for TestableButton {

@@ -17,7 +17,7 @@ pub use crate::inner::{
     button::{Button, MaybeButton, NewButton},
     text::{Text, MaybeText, NewText},
     window::Window,
-    message::Message,
+    message::{Message, NewMessage},
     image::{Image, MaybeImage, NewImage},
     frame::{Frame, MaybeFrame, NewFrame},
     layout_linear::{LinearLayout, MaybeLinearLayout, NewLinearLayout},

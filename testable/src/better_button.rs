@@ -28,7 +28,7 @@ impl ClickableInner for TestableBetterButton {
 
 impl ButtonInner for TestableBetterButton {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
-        let mut b: Box<mem::MaybeUninit<BetterButton>> = Box::new_uninit();
+    	let mut b: Box<mem::MaybeUninit<BetterButton>> = Box::new_uninit();
         let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AButton::with_inner(
@@ -39,8 +39,11 @@ impl ButtonInner for TestableBetterButton {
             ),
             MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
         );
-        b.as_mut_ptr().write(ab);
-        b.assume_init()
+        controls::HasLabel::set_label(&mut ab, label.as_ref().into());
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl Spawnable for TestableBetterButton {
@@ -98,7 +101,8 @@ impl HasSizeInner for TestableBetterButton {
         let this = base.as_any_mut().downcast_mut::<BetterButton>().unwrap();
         this.set_layout_width(layout::Size::Exact(width));
         this.set_layout_width(layout::Size::Exact(height));
-        self.inner.invalidate(base);
+        let (m, c, _) = this.as_control_parts_mut();
+        self.inner.invalidate(m, c);
         
         unsafe { utils::base_to_impl_mut::<BetterButton>(base) }.call_on_size(width, height);
         
@@ -108,21 +112,21 @@ impl HasSizeInner for TestableBetterButton {
 
 impl HasVisibilityInner for TestableBetterButton {
     fn on_visibility_set(&mut self, base: &mut MemberBase, value: types::Visibility) -> bool {
-        self.inner.on_set_visibility(base, value)
+        self.inner.on_visibility_set(base, value)
     }
 }
 
 impl MemberInner for TestableBetterButton {}
 
 impl Drawable for TestableBetterButton {
-    fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        //self.base.draw(format!("Button '{}'", self.label).as_str(), control.coords, control.measured);
+    fn draw(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
+        self.inner.base.draw(format!("BetterButton '{}'", self.label(member)).as_str(), control.coords, control.measured);
     }
-    fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
-
+    fn measure(&mut self, member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
+		self.inner.measure(member, control, parent_width, parent_height)
     }
-    fn invalidate(&mut self, _member: &mut MemberBase, _control: &mut ControlBase) {
-        self.base.invalidate()
+    fn invalidate(&mut self, member: &mut MemberBase, control: &mut ControlBase) {
+        self.inner.invalidate(member, control)
     }
 }
 default_impls_as!(BetterButton);
