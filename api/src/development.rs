@@ -4,7 +4,7 @@ pub use crate::inner::{
     member::{AMember, MemberBase, MemberInner, MemberFunctions},
     button::{AButton, ButtonInner, NewButtonInner},
     text::{AText, TextInner},
-    control::{AControl, ControlBase, ControlInner},
+    control::{AControl, ControlBase, ControlInner, OuterControl},
     container::{AContainer, ContainerInner},
     container_single::{ASingleContainer, SingleContainerInner},
     container_multi::{AMultiContainer, MultiContainerInner},

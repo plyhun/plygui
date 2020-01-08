@@ -15,19 +15,46 @@ use super::image::MaybeImage;
 use super::list::MaybeList;
 use super::progress_bar::MaybeProgressBar;
 use super::text::MaybeText;
+use super::seal::Sealed;
 
-pub trait Control: Member + HasSize + HasVisibility + HasLayout + OuterDrawable
-        + MaybeButton + MaybeLinearLayout + MaybeSplitted + MaybeFrame + MaybeImage + MaybeList + MaybeProgressBar + MaybeText {
+pub trait OuterControl: Sealed {
     fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16);
     fn on_removed_from_container(&mut self, parent: &dyn Container);
 
+    #[cfg(feature = "markup")]
+    fn fill_from_markup(&mut self, markup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry);
+}
+impl<T: ControlInner> OuterControl for AMember<AControl<T>> {
+    #[inline]
+    fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
+        #[cfg(feature = "type_check")]
+        unsafe {
+            use std::any::Any;
+            if self.inner.inner.native_id().type_id() != parent.type_id() {
+                panic!("Attempt to use the control from an incompatible backend!")
+            }
+        }
+        self.inner.base.coords = Some((x, y));
+        self.inner.inner.on_added_to_container(&mut self.base, &mut self.inner.base, parent, x, y, w, h)
+    }
+    #[inline]
+    fn on_removed_from_container(&mut self, parent: &dyn Container) {
+        self.inner.inner.on_removed_from_container(&mut self.base, &mut self.inner.base, parent);
+        self.inner.base.coords = None;
+    }
+
+    #[cfg(feature = "markup")]
+    default fn fill_from_markup(&mut self, markup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry) {
+        self.inner.inner.fill_from_markup(&mut self.base, &mut self.inner.base, markup, registry)
+    }
+}
+
+pub trait Control: Member + HasSize + HasVisibility + HasLayout + OuterDrawable + OuterControl
+        + MaybeButton + MaybeLinearLayout + MaybeSplitted + MaybeFrame + MaybeImage + MaybeList + MaybeProgressBar + MaybeText {
     fn parent(&self) -> Option<&dyn Member>;
     fn parent_mut(&mut self) -> Option<&mut dyn Member>;
     fn root(&self) -> Option<&dyn Member>;
     fn root_mut(&mut self) -> Option<&mut dyn Member>;
-
-    #[cfg(feature = "markup")]
-    fn fill_from_markup(&mut self, markup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry);
 
     fn as_control(&self) -> &dyn Control;
     fn as_control_mut(&mut self) -> &mut dyn Control;
@@ -234,24 +261,6 @@ impl<T: ControlInner> HasSize for AMember<AControl<T>> {
 }
 impl<T: ControlInner> Control for AMember<AControl<T>> {
     #[inline]
-    fn on_added_to_container(&mut self, parent: &dyn Container, x: i32, y: i32, w: u16, h: u16) {
-        #[cfg(feature = "type_check")]
-        unsafe {
-            use std::any::Any;
-            if self.inner.inner.native_id().type_id() != parent.type_id() {
-                panic!("Attempt to use the control from an incompatible backend!")
-            }
-        }
-        self.inner.base.coords = Some((x, y));
-        self.inner.inner.on_added_to_container(&mut self.base, &mut self.inner.base, parent, x, y, w, h)
-    }
-    #[inline]
-    fn on_removed_from_container(&mut self, parent: &dyn Container) {
-        self.inner.inner.on_removed_from_container(&mut self.base, &mut self.inner.base, parent);
-        self.inner.base.coords = None;
-    }
-
-    #[inline]
     fn parent(&self) -> Option<&dyn Member> {
         self.inner.inner.parent()
     }
@@ -266,11 +275,6 @@ impl<T: ControlInner> Control for AMember<AControl<T>> {
     #[inline]
     fn root_mut(&mut self) -> Option<&mut dyn Member> {
         self.inner.inner.root_mut()
-    }
-
-    #[cfg(feature = "markup")]
-    default fn fill_from_markup(&mut self, markup: &crate::markup::Markup, registry: &mut crate::markup::MarkupRegistry) {
-        self.inner.inner.fill_from_markup(&mut self.base, &mut self.inner.base, markup, registry)
     }
 
     #[inline]
