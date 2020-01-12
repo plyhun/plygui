@@ -104,7 +104,7 @@ impl HasSizeInner for TestableBetterButton {
         let (m, c, _) = this.as_control_parts_mut();
         self.inner.invalidate(m, c);
         
-        unsafe { utils::base_to_impl_mut::<BetterButton>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<BetterButton>(base) }.call_on_size::<BetterButton>(width, height);
         
         true
     }

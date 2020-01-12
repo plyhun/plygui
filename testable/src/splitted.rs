@@ -137,7 +137,7 @@ impl HasSizeInner for TestableSplitted {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
         
-        unsafe { utils::base_to_impl_mut::<Splitted>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<Splitted>(base) }.call_on_size::<Splitted>(width, height);
         
         true
     }

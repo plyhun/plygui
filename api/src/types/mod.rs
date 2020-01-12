@@ -14,6 +14,11 @@ pub enum Visibility {
     Invisible,
     Gone,
 }
+impl Default for Visibility {
+    fn default() -> Self {
+        Visibility::Visible
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WindowStartSize {
@@ -26,6 +31,11 @@ pub enum Progress {
     Value(u32, u32),
     Undefined,
     None,
+}
+impl Default for Progress {
+    fn default() -> Self {
+        Progress::Undefined
+    }
 }
 
 pub type Menu = Option<Vec<MenuItem>>;

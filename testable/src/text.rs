@@ -84,7 +84,7 @@ impl HasSizeInner for TestableText {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
         
-        unsafe { utils::base_to_impl_mut::<Text>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<Text>(base) }.call_on_size::<Text>(width, height);
         
         true
     }

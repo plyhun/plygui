@@ -209,7 +209,7 @@ impl<T: ControlInner> HasVisibility for AMember<AControl<T>> {
     fn set_visibility(&mut self, visibility: types::Visibility) {
         if self.inner.inner.on_visibility_set(&mut self.base, visibility) {
             self.inner.base.visibility = visibility;
-            self.call_on_visibility(visibility);
+            self.call_on_visibility::<Self>(visibility);
         }
     }
     #[inline]
@@ -238,7 +238,7 @@ impl<T: ControlInner> HasSize for AMember<AControl<T>> {
     fn set_size(&mut self, width: u16, height: u16) {
         if self.inner.inner.on_size_set(&mut self.base, (width, height)) {
             self.inner.base.measured = (width, height);
-            self.call_on_size(width, height);
+            self.call_on_size::<Self>(width, height);
         }
     }
     #[inline]
@@ -300,15 +300,15 @@ impl<T: ControlInner> AMember<AControl<T>> {
         &mut self.inner
     }
     #[inline]
-    pub fn call_on_size(&mut self, w: u16, h: u16) {
-        let self2 = self as *mut Self;
+    pub fn call_on_size<O: Control>(&mut self, w: u16, h: u16) {
+        let self2 = self as *mut _ as *mut O;
         if let Some(ref mut cb) = self.inner.base.on_size {
             (cb.as_mut())(unsafe { &mut *self2 }, w, h);
         }
     }
     #[inline]
-    pub fn call_on_visibility(&mut self, v: types::Visibility) {
-        let self2 = self as *mut Self;
+    pub fn call_on_visibility<O: Control>(&mut self, v: types::Visibility) {
+        let self2 = self as *mut _ as *mut O;
         if let Some(ref mut cb) = self.inner.base.on_visibility {
             (cb.as_mut())(unsafe { &mut *self2 }, v);
         }
