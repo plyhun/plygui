@@ -67,15 +67,12 @@ impl TestableSplitted {
     }
 }
 impl<O: controls::Splitted> NewSplittedInner<O> for TestableSplitted {
-    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Self {
         TestableSplitted {
             base: common::TestableControlBase::with_id(u),
-            orientation: layout::Orientation::Horizontal,
-
             splitter: 0.5,
             
-            first: unsafe { mem::zeroed() },
-            second: unsafe { mem::zeroed() },
+            first, second, orientation
         }
     }
 }
@@ -87,7 +84,7 @@ impl SplittedInner for TestableSplitted {
                 AContainer::with_inner(
                     AMultiContainer::with_inner(
                         ASplitted::with_inner(
-                            <Self as NewSplittedInner<Splitted>>::with_uninit(b.as_mut())
+                            <Self as NewSplittedInner<Splitted>>::with_uninit_params(b.as_mut(), first, second, orientation)
                         ),
                     )
                 ),
@@ -95,9 +92,7 @@ impl SplittedInner for TestableSplitted {
         );
         controls::HasOrientation::set_orientation(&mut ab, orientation);
         unsafe {
-            ptr::write(&mut ab.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().first, first);
-            ptr::write(&mut ab.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().second, second);
-	        b.as_mut_ptr().write(ab);
+            b.as_mut_ptr().write(ab);
 	        b.assume_init()
         }
     }

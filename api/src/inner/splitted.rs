@@ -29,6 +29,9 @@ define! {
         constructor: {
             fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted>;
         }
+        inner_constructor_params: {
+            first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation
+        }
     }
 }
 

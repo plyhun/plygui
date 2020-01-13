@@ -101,7 +101,7 @@ impl ToTokens for Define {
         	let mut custom_implements = quote!{};
         	let mut custom_constructor = quote!{};
         	let mut custom_constructor_fn = quote!{};
-        	let custom_constructor_inner_fn = quote!{ fn with_uninit(u: &mut ::std::mem::MaybeUninit<O>) -> Self ; };
+        	let mut custom_constructor_inner_fn = quote!{ fn with_uninit(u: &mut ::std::mem::MaybeUninit<O>) -> Self ; };
         	if let Some(ref custom) = self.custom {
         	    for block in custom.blocks.iter() {
 	        		match block.name.to_string().as_str() {
@@ -139,8 +139,11 @@ impl ToTokens for Define {
 								}
 	        				};
                             custom_constructor_fn = quote!{ #custom };
-                            //custom_constructor_inner_fn = quote!{ #custom }; //TODO parameterized inner
-	        			}
+                        }
+	        			"inner_constructor_params" => {
+		        			let custom = &block.custom;
+		        			custom_constructor_inner_fn = quote!{ fn with_uninit_params(u: &mut ::std::mem::MaybeUninit<O>, #custom) -> Self ; };
+                        }
 	        			_ => panic!("Unknown custom block name :'{}'", block.name),
 	        		}
         		}
