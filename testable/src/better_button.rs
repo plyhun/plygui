@@ -36,8 +36,7 @@ impl ButtonInner for TestableBetterButton {
                         inner: <TestableButton as NewButtonInner<BetterButton>>::with_uninit(b.as_mut())
                     }
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+            )
         );
         controls::HasLabel::set_label(&mut ab, label.as_ref().into());
         unsafe {
@@ -129,4 +128,3 @@ impl Drawable for TestableBetterButton {
         self.inner.invalidate(member, control)
     }
 }
-default_impls_as!(BetterButton);

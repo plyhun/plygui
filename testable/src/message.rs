@@ -59,8 +59,7 @@ impl MessageInner for TestableMessage {
                     severity: severity,
                     actions: actions.into_iter().map(|a| a.into()).collect(),
                 }
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+            )
         ));
         a
     }
@@ -82,4 +81,3 @@ impl HasNativeIdInner for TestableMessage {
 
 impl MemberInner for TestableMessage {}
 
-default_impls_as!(Message);

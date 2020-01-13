@@ -10,10 +10,8 @@ pub struct TestableSplitted {
     base: common::TestableControlBase<Splitted>,
 
     orientation: layout::Orientation,
-
     splitter: f32,
-    moving: bool,
-    
+     
     first: Box<dyn controls::Control>,
     second: Box<dyn controls::Control>,
 }
@@ -68,32 +66,40 @@ impl TestableSplitted {
         }
     }
 }
+impl<O: controls::Splitted> NewSplittedInner<O> for TestableSplitted {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableSplitted {
+            base: common::TestableControlBase::with_id(u),
+            orientation: layout::Orientation::Horizontal,
 
+            splitter: 0.5,
+            
+            first: unsafe { mem::zeroed() },
+            second: unsafe { mem::zeroed() },
+        }
+    }
+}
 impl SplittedInner for TestableSplitted {
     fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<dyn controls::Splitted> {
-        let mut b = Box::new(AMember::with_inner(
+        let mut b: Box<mem::MaybeUninit<Splitted>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
                     AMultiContainer::with_inner(
                         ASplitted::with_inner(
-                            TestableSplitted {
-                                base: common::TestableControlBase::new(),
-                                orientation: orientation,
-        
-                                splitter: 0.5,
-                                moving: false,
-        
-                                first: first,
-                                second: second,
-                            }
+                            <Self as NewSplittedInner<Splitted>>::with_uninit(b.as_mut())
                         ),
                     )
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+            )
+        );
+        controls::HasOrientation::set_orientation(&mut ab, orientation);
+        unsafe {
+            ptr::write(&mut ab.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().first, first);
+            ptr::write(&mut ab.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().second, second);
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
     fn set_splitter(&mut self, _member: &mut MemberBase, pos: f32) {
         self.splitter = pos;
@@ -443,5 +449,3 @@ impl Drawable for TestableSplitted {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(Splitted);

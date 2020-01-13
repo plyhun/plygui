@@ -9,28 +9,35 @@ pub struct TestableFrame {
     label_padding: i32,
     child: Option<Box<dyn controls::Control>>,
 }
-
+impl<O: controls::Frame> NewFrameInner<O> for TestableFrame {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableFrame {
+            base: common::TestableControlBase::with_id(u),
+            child: None,
+            label: String::new(),
+            label_padding: 0,
+        }
+    }
+}
 impl FrameInner for TestableFrame {
     fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Frame> {
-        let mut b = Box::new(AMember::with_inner(
+        let mut b: Box<mem::MaybeUninit<Frame>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
                     ASingleContainer::with_inner(
                         AFrame::with_inner(
-                            TestableFrame {
-                                base: common::TestableControlBase::new(),
-                                child: None,
-                                label: label.as_ref().to_owned(),
-                                label_padding: 8,
-                            }
+                            <Self as NewFrameInner<Frame>>::with_uninit(b.as_mut())
                         ),
                     )
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+            )
+        );
+        controls::HasLabel::set_label(&mut ab, label.as_ref().into());
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl Spawnable for TestableFrame {
@@ -319,5 +326,3 @@ impl Drawable for TestableFrame {
 
     winuser::DefWindowProcW(hwnd, msg, wparam, lparam)
 }*/
-
-default_impls_as!(Frame);

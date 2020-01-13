@@ -11,7 +11,7 @@ pub struct TestableButton {
 impl<O: controls::Button> NewButtonInner<O> for TestableButton {
     fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
         TestableButton {
-	        base: common::TestableControlBase::with_id(u as *mut _ as *mut MemberBase),
+	        base: common::TestableControlBase::with_id(u),
 	        h_left_clicked: None,
 	        label: String::new(),
         }
@@ -48,8 +48,7 @@ impl ButtonInner for TestableButton {
                 AButton::with_inner(
                     <Self as NewButtonInner<Button>>::with_uninit(b.as_mut())
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+            )
         );
         controls::HasLabel::set_label(&mut ab, label.as_ref().into());
         unsafe {
@@ -164,5 +163,3 @@ impl Drawable for TestableButton {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(Button);

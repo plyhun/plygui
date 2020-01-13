@@ -1,7 +1,7 @@
 pub use crate::inner::{
     auto::{Spawnable, HasInner, Abstract},
     application::{AApplication, ApplicationBase, ApplicationInner},
-    member::{AMember, MemberBase, MemberInner, MemberFunctions},
+    member::{AMember, MemberBase, MemberInner},
     button::{AButton, ButtonInner, NewButtonInner},
     text::{AText, TextInner, NewTextInner},
     control::{AControl, ControlBase, ControlInner, OuterControl},

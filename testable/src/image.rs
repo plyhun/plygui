@@ -18,22 +18,30 @@ impl HasImageInner for TestableImage {
         self.bmp = arg0.into_owned();
     }
 }
+impl<O: controls::Image> NewImageInner<O> for TestableImage {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableImage {
+            base: TestableControlBase::with_id(u),
+            bmp: image::DynamicImage::new_luma8(0, 0),
+            scale: types::ImageScalePolicy::FitCenter,
+        }
+    }
+}
 impl ImageInner for TestableImage {
     fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image> {
-        let mut i = Box::new(AMember::with_inner(
+        let mut b: Box<mem::MaybeUninit<Image>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AImage::with_inner(
-                    TestableImage {
-                        base: TestableControlBase::new(),
-                        bmp: content,
-                        scale: types::ImageScalePolicy::FitCenter,
-                    }
+                    <Self as NewImageInner<Image>>::with_uninit(b.as_mut())
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-		i.inner_mut().inner_mut().inner_mut().base.id = &mut i.base;
-        i
+            )
+        );
+		ab.inner_mut().inner_mut().inner_mut().bmp = content;
+        unsafe {
+            b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
     fn set_scale(&mut self, _member: &mut MemberBase, policy: types::ImageScalePolicy) {
         if self.scale != policy {
@@ -47,7 +55,7 @@ impl ImageInner for TestableImage {
 }
 impl Spawnable for TestableImage {
     fn spawn() -> Box<dyn controls::Control> {
-        Self::with_content(image::DynamicImage::ImageRgba8(image::ImageBuffer::new(0, 0))).into_control()
+        Self::with_content(image::DynamicImage::new_luma8(0, 0)).into_control()
     }
 }
 impl ControlInner for TestableImage {
@@ -177,4 +185,3 @@ fn fmax(a: f32, b: f32) -> f32 {
     }
 }*/
 
-default_impls_as!(Image);

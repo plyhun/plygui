@@ -8,27 +8,34 @@ pub struct TestableLinearLayout {
     orientation: layout::Orientation,
     children: Vec<Box<dyn controls::Control>>,
 }
-
+impl<O: controls::LinearLayout> NewLinearLayoutInner<O> for TestableLinearLayout {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableLinearLayout {
+            base: common::TestableControlBase::with_id(u),
+            orientation: layout::Orientation::Vertical,
+            children: Vec::new(),
+        }
+    }
+}
 impl LinearLayoutInner for TestableLinearLayout {
     fn with_orientation(orientation: layout::Orientation) -> Box<dyn controls::LinearLayout> {
-        let mut b = Box::new(AMember::with_inner(
+        let mut b: Box<mem::MaybeUninit<LinearLayout>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
                     AMultiContainer::with_inner(
                         ALinearLayout::with_inner(
-                            TestableLinearLayout {
-                                base: TestableControlBase::new(),
-                                orientation: orientation,
-                                children: Vec::new(),
-                            }
+                            <Self as NewLinearLayoutInner<LinearLayout>>::with_uninit(b.as_mut())
                         ),
                     )
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+            )
+        );
+        controls::HasOrientation::set_orientation(&mut ab, orientation);
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl Spawnable for TestableLinearLayout {
@@ -314,5 +321,3 @@ impl Drawable for TestableLinearLayout {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(LinearLayout);

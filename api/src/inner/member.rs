@@ -48,10 +48,11 @@ impl<II: MemberInner, T: HasInner<I = II> + Abstract + 'static> MemberInner for 
 #[repr(C)]
 pub struct MemberBase {
     id: ids::Id,
-    functions: MemberFunctions,
     app: usize,
     tag: Option<String>,
 
+    _as_member: unsafe fn(&MemberBase) -> &dyn Member,
+    _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn Member,
     _no_threads: PhantomData<Rc<()>>,
 }
 #[repr(C)]
@@ -60,33 +61,15 @@ pub struct AMember<T: MemberInner> {
     pub inner: T,
 }
 
-#[repr(C)]
-pub struct MemberFunctions {
-    _as_any: unsafe fn(&MemberBase) -> &dyn Any,
-    _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any,
-    _as_member: unsafe fn(&MemberBase) -> &dyn Member,
-    _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn Member,
-}
-impl MemberFunctions {
-    #[inline]
-    pub fn new(_as_any: unsafe fn(&MemberBase) -> &dyn Any, _as_any_mut: unsafe fn(&mut MemberBase) -> &mut dyn Any, _as_member: unsafe fn(&MemberBase) -> &dyn Member, _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn Member) -> Self {
-        MemberFunctions {
-            _as_any,
-            _as_any_mut,
-            _as_member,
-            _as_member_mut,
-        }
-    }
-}
-
 impl MemberBase {
     #[inline]
-    pub fn with_functions(functions: MemberFunctions) -> Self {
+    pub fn with_type<T: Member>() -> Self {
         MemberBase {
             id: ids::Id::next(),
-            functions: functions,
             app: runtime::APPLICATION.with(|a| *a.borrow()),
             tag: None,
+            _as_member: crate::utils::base_to_member::<T>,
+            _as_member_mut: crate::utils::base_to_member_mut::<T>,
             _no_threads: PhantomData,
         }
     }
@@ -101,19 +84,19 @@ impl MemberBase {
     }
     #[inline]
     pub fn as_any(&self) -> &dyn Any {
-        unsafe { (self.functions._as_any)(self) }
+        unsafe { (self._as_member)(self) }.as_any()
     }
     #[inline]
     pub fn as_any_mut(&mut self) -> &mut dyn Any {
-        unsafe { (self.functions._as_any_mut)(self) }
+        unsafe { (self._as_member_mut)(self) }.as_any_mut()
     }
     #[inline]
     pub fn as_member(&self) -> &dyn Member {
-        unsafe { (self.functions._as_member)(self) }
+        unsafe { (self._as_member)(self) }
     }
     #[inline]
     pub fn as_member_mut(&mut self) -> &mut dyn Member {
-        unsafe { (self.functions._as_member_mut)(self) }
+        unsafe { (self._as_member_mut)(self) }
     }
 }
 impl<T: MemberInner> HasNativeId for AMember<T> {
@@ -167,10 +150,10 @@ impl<T: MemberInner> AsAny for AMember<T> {
 }
 impl<T: MemberInner> AMember<T> {
     #[inline]
-    pub fn with_inner(inner: T, params: MemberFunctions) -> Self {
+    pub fn with_inner(inner: T) -> Self {
         AMember {
             inner: inner,
-            base: MemberBase::with_functions(params),
+            base: MemberBase::with_type::<Self>(),
         }
     }
 }

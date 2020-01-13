@@ -17,22 +17,29 @@ impl HasProgressInner for TestableProgressBar {
         self.base.invalidate();
     }
 }
-
+impl<O: controls::ProgressBar> NewProgressBarInner<O> for TestableProgressBar {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableProgressBar {
+            base: common::TestableControlBase::with_id(u),
+            progress: Default::default(),
+        }
+    }
+}
 impl ProgressBarInner for TestableProgressBar {
     fn with_progress(arg: types::Progress) -> Box<dyn controls::ProgressBar> {
-        let mut b = Box::new(AMember::with_inner(
+        let mut b: Box<mem::MaybeUninit<ProgressBar>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AProgressBar::with_inner(
-                    TestableProgressBar {
-                        base: common::TestableControlBase::new(),
-                        progress: arg,
-                    }
+                    <Self as NewProgressBarInner<ProgressBar>>::with_uninit(b.as_mut()),
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+            )
+        );
+        controls::HasProgress::set_progress(&mut ab, arg);
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl Spawnable for TestableProgressBar {
@@ -134,5 +141,3 @@ impl Drawable for TestableProgressBar {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(ProgressBar);

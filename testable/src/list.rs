@@ -8,28 +8,33 @@ pub struct TestableList {
     items: Vec<Box<dyn controls::Control>>,
     on_item_click: Option<callbacks::OnItemClick>,
 }
-
+impl<O: controls::List> NewListInner<O> for TestableList {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableList {
+            base: common::TestableControlBase::with_id(u),
+            items: vec![],
+            on_item_click: None,
+        }
+    }
+}
 impl ListInner for TestableList {
 	fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn controls::List> {
+        let len = adapter.len();
         let mut b: Box<mem::MaybeUninit<List>> = Box::new_uninit();
-        let ab = AMember::with_inner(
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AContainer::with_inner(
                     AAdapted::with_inner(
                         AList::with_inner(
-                            TestableList {
-                                base: TestableControlBase::new(),
-                                items: Vec::with_capacity(adapter.len()),
-                                on_item_click: None,
-                            }
+                            <Self as NewListInner<List>>::with_uninit(b.as_mut())
                         ),
                         adapter,
                         &mut b,
                     ),
                 )
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+            )
         );
+        ab.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().items = Vec::with_capacity(len);
         unsafe {
 	        b.as_mut_ptr().write(ab);
 	        b.assume_init()
@@ -228,5 +233,3 @@ impl Drawable for TestableList {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(List);

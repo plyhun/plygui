@@ -69,8 +69,7 @@ impl WindowInner for TestableWindow {
                         },
                     ),
                 )
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+            )
         ));
 
         w.inner_mut().inner_mut().inner_mut().inner_mut().id = &mut w.base;
@@ -178,5 +177,3 @@ impl Drop for TestableWindow {
         }
     }
 }
-
-default_impls_as!(Window);

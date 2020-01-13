@@ -17,22 +17,29 @@ impl HasLabelInner for TestableText {
         self.base.invalidate();
     }
 }
-
+impl<O: controls::Text> NewTextInner<O> for TestableText {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableText {
+            base: common::TestableControlBase::with_id(u),
+            text: String::new(),
+        }
+    }
+}
 impl TextInner for TestableText {
     fn with_text<S: AsRef<str>>(text: S) -> Box<dyn controls::Text> {
-        let mut b: Box<Text> = Box::new(AMember::with_inner(
+        let mut b: Box<mem::MaybeUninit<Text>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
             AControl::with_inner(
                 AText::with_inner(
-                    TestableText {
-                        base: common::TestableControlBase::new(),
-                        text: text.as_ref().to_owned(),
-                    }
+                    <Self as NewTextInner<Text>>::with_uninit(b.as_mut()),
                 ),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.inner_mut().inner_mut().inner_mut().base.id = &mut b.base;
-        b
+            )
+        );
+        controls::HasLabel::set_label(&mut ab, text.as_ref().into());
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
 impl Spawnable for TestableText {
@@ -139,5 +146,3 @@ impl Drawable for TestableText {
         self.base.invalidate()
     }
 }
-
-default_impls_as!(Text);

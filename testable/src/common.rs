@@ -16,6 +16,12 @@ pub type InnerId = *mut MemberBase;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TestableId(InnerId);
 
+impl<O: controls::Control> From<&mut mem::MaybeUninit<O>> for TestableId {
+    #[inline]
+    fn from(a: &mut mem::MaybeUninit<O>) -> TestableId {
+        (a as *mut _ as InnerId).into()
+    }
+}
 impl From<InnerId> for TestableId {
     #[inline]
     fn from(a: InnerId) -> TestableId {
@@ -62,9 +68,9 @@ impl<T: controls::Control + Sized> TestableControlBase<T> {
             _marker: PhantomData,
         }
     }
-    pub fn with_id(id: InnerId) -> TestableControlBase<T> {
+    pub fn with_id<U: Into<TestableId>>(id: U) -> TestableControlBase<T> {
         TestableControlBase {
-            id,
+            id: id.into().into(),
             size: (0, 0),
 		    position: (0, 0),
 		    parent: None,

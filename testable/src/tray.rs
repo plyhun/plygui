@@ -101,8 +101,7 @@ impl TrayInner for TestableTray {
                     image: image::DynamicImage::ImageRgba8(image::ImageBuffer::new(1,1)),
                     on_close: None,
                 }
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+            )
         ));
         let this = t.as_mut();
         t.inner_mut().inner_mut().id = this as *mut _ as *mut MemberBase;
@@ -128,5 +127,3 @@ impl HasNativeIdInner for TestableTray {
 }
 
 impl MemberInner for TestableTray {}
-
-default_impls_as!(Tray);

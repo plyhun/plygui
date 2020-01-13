@@ -16,6 +16,21 @@ where
 }
 
 #[inline]
+pub(crate) unsafe fn base_to_member<T>(this: &development::MemberBase) -> &dyn controls::Member
+where
+    T: controls::Member + Sized,
+{
+    base_to_impl::<T>(this)
+}
+#[inline]
+pub(crate) unsafe fn base_to_member_mut<T>(this: &mut development::MemberBase) -> &mut dyn controls::Member
+where
+    T: controls::Member + Sized,
+{
+    base_to_impl_mut::<T>(this)
+}
+
+#[inline]
 pub fn coord_to_size(a: i32) -> u16 {
     ::std::cmp::max(0, a) as u16
 }
