@@ -113,9 +113,9 @@ impl ControlInner for TestableList {
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
-        use plygui_api::markup::MEMBER_TYPE_TABLE;
+        use plygui_api::markup::MEMBER_TYPE_LIST;
 
-        fill_from_markup_base!(self, member, markup, registry, List, [MEMBER_TYPE_TABLE]);
+        fill_from_markup_base!(self, member, markup, registry, List, [MEMBER_TYPE_LIST]);
         //fill_from_markup_items!(self, member, markup, registry);
     }
 }

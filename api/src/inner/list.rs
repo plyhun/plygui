@@ -1,6 +1,6 @@
 use crate::types;
 
-use super::auto::{HasInner, Abstract};
+use super::auto::{HasInner, Abstract, Spawnable};
 use super::container::AContainer;
 use super::item_clickable::{ItemClickable, ItemClickableInner};
 use super::adapted::{AAdapted, Adapted, AdaptedInner};
@@ -77,6 +77,12 @@ impl<T: ListInner> List for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
     #[inline]
     fn into_list(self: Box<Self>) -> Box<dyn List> {
         self
+    }
+}
+
+impl<T: ListInner> Spawnable for AMember<AControl<AContainer<AAdapted<AList<T>>>>> {
+    fn spawn() -> Box<dyn Control> {
+        <T as Spawnable>::spawn()
     }
 }
 

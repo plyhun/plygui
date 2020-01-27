@@ -1,6 +1,6 @@
 use crate::types;
 
-use super::auto::{HasInner, Abstract};
+use super::auto::{HasInner, Abstract, Spawnable};
 use super::control::{AControl, Control, ControlInner};
 use super::has_image::{HasImage, HasImageInner};
 use super::member::{AMember, MemberBase, Member};
@@ -62,3 +62,10 @@ impl<T: ImageInner> NewImage for AMember<AControl<AImage<T>>> {
         T::with_content(content)
     }
 }
+
+impl<T: ImageInner> Spawnable for AMember<AControl<AImage<T>>> {
+    fn spawn() -> Box<dyn Control> {
+        <T as Spawnable>::spawn()
+    }
+}
+

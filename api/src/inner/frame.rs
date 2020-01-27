@@ -1,4 +1,4 @@
-use super::auto::{HasInner, Abstract};
+use super::auto::{HasInner, Abstract, Spawnable};
 use super::container::AContainer;
 use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
 use super::control::{AControl, Control, ControlInner};
@@ -40,3 +40,10 @@ impl<T: FrameInner> NewFrame for AMember<AControl<AContainer<ASingleContainer<AF
         T::with_label(label)
     }
 }
+
+impl<T: FrameInner> Spawnable for AMember<AControl<AContainer<ASingleContainer<AFrame<T>>>>> {
+    fn spawn() -> Box<dyn Control> {
+        <T as Spawnable>::spawn()
+    }
+}
+

@@ -42,7 +42,7 @@ impl<T: ButtonInner> NewButton for AMember<AControl<AButton<T>>> {
 
 impl<T: ButtonInner> Spawnable for AMember<AControl<AButton<T>>> {
     fn spawn() -> Box<dyn Control> {
-        <Self as NewButton>::with_label("").into_control()
+        <T as Spawnable>::spawn()
     }
 }
 

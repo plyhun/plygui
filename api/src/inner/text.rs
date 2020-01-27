@@ -1,4 +1,4 @@
-use super::auto::{HasInner, Abstract};
+use super::auto::{HasInner, Abstract, Spawnable};
 use super::control::{AControl, Control, ControlInner};
 use super::has_label::{HasLabel, HasLabelInner};
 use super::member::{AMember, Member};
@@ -38,3 +38,10 @@ impl<T: TextInner> NewText for AMember<AControl<AText<T>>> {
         T::with_text(label)
     }
 }
+
+impl<T: TextInner> Spawnable for AMember<AControl<AText<T>>> {
+    fn spawn() -> Box<dyn Control> {
+        <T as Spawnable>::spawn()
+    }
+}
+

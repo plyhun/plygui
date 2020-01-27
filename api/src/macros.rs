@@ -28,15 +28,20 @@ macro_rules! default_pub_use {
 
 #[macro_export]
 macro_rules! default_markup_register_members {
-    () => {/*
+    () => {
         #[cfg(feature = "markup")]
         pub fn register_members(registry: &mut plygui_api::markup::MarkupRegistry) {
-            registry.register_member(plygui_api::markup::MEMBER_TYPE_BUTTON.into(), button::spawn).unwrap();
-            registry.register_member(plygui_api::markup::MEMBER_TYPE_LINEAR_LAYOUT.into(), layout_linear::spawn).unwrap();
-            registry.register_member(plygui_api::markup::MEMBER_TYPE_FRAME.into(), frame::spawn).unwrap();
-            registry.register_member(plygui_api::markup::MEMBER_TYPE_SPLITTED.into(), splitted::spawn).unwrap();
-            registry.register_member(plygui_api::markup::MEMBER_TYPE_IMAGE.into(), image::spawn).unwrap();
-        }*/
+            use plygui_api::development::Spawnable;
+            
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_BUTTON.into(), imp::Button::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_LINEAR_LAYOUT.into(), imp::LinearLayout::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_FRAME.into(), imp::Frame::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_SPLITTED.into(), imp::Splitted::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_IMAGE.into(), imp::Image::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_TEXT.into(), imp::Text::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_PROGRESS_BAR.into(), imp::ProgressBar::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_LIST.into(), imp::List::spawn).unwrap();
+        }
     };
 }
 

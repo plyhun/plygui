@@ -1,6 +1,6 @@
 use crate::layout;
 
-use super::auto::{HasInner, Abstract};
+use super::auto::{HasInner, Abstract, Spawnable};
 use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
 use super::control::{AControl, Control, ControlInner};
@@ -109,5 +109,11 @@ impl<T: SplittedInner> NewSplitted for AMember<AControl<AContainer<AMultiContain
     #[inline]
     fn with_content(first: Box<dyn Control>, second: Box<dyn Control>, orientation: layout::Orientation) -> Box<dyn Splitted> {
         T::with_content(first, second, orientation)
+    }
+}
+
+impl<T: SplittedInner> Spawnable for AMember<AControl<AContainer<AMultiContainer<ASplitted<T>>>>> {
+    fn spawn() -> Box<dyn Control> {
+        <T as Spawnable>::spawn()
     }
 }

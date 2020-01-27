@@ -1,6 +1,6 @@
 use crate::layout;
 
-use super::auto::{HasInner, Abstract};
+use super::auto::{HasInner, Abstract, Spawnable};
 use super::container::AContainer;
 use super::container_multi::{AMultiContainer, MultiContainer, MultiContainerInner};
 use super::control::{AControl, Control, ControlInner};
@@ -42,3 +42,10 @@ impl<T: LinearLayoutInner> NewLinearLayout for AMember<AControl<AContainer<AMult
         T::with_orientation(orientation)
     }
 }
+
+impl<T: LinearLayoutInner> Spawnable for AMember<AControl<AContainer<AMultiContainer<ALinearLayout<T>>>>> {
+    fn spawn() -> Box<dyn Control> {
+        <T as Spawnable>::spawn()
+    }
+}
+
