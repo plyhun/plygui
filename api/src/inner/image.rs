@@ -35,8 +35,8 @@ impl<II: ImageInner, T: HasInner<I = II> + Abstract + 'static> ImageInner for T 
 
 impl<T: ImageInner> Image for AMember<AControl<AImage<T>>> {
     fn set_scale(&mut self, policy: types::ImageScalePolicy) {
-        let base1 = self as *mut _ as *mut AMember<AControl<AImage<T>>>;
-        self.inner.inner.inner.set_scale(&mut (unsafe { (&mut *base1) }.base), policy)
+        let this = self as *mut _ as *mut AMember<AControl<AImage<T>>>;
+        self.inner.inner.inner.set_scale(&mut unsafe { &mut *this }.base, policy)
     }
     fn scale(&self) -> types::ImageScalePolicy {
         self.inner.inner.inner.scale()
