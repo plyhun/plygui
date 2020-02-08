@@ -18,6 +18,9 @@ define! {
         constructor: {
             fn with_content(content: image::DynamicImage) -> Box<dyn Image>;
         }
+        inner_constructor_params: {
+            content: image::DynamicImage
+        }
     }
 }
 

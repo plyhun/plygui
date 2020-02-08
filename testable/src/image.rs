@@ -19,10 +19,10 @@ impl HasImageInner for TestableImage {
     }
 }
 impl<O: controls::Image> NewImageInner<O> for TestableImage {
-    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, content: image::DynamicImage) -> Self {
         TestableImage {
             base: TestableControlBase::with_id(u),
-            bmp: image::DynamicImage::new_luma8(0, 0),
+            bmp: content,
             scale: types::ImageScalePolicy::FitCenter,
         }
     }
@@ -30,15 +30,14 @@ impl<O: controls::Image> NewImageInner<O> for TestableImage {
 impl ImageInner for TestableImage {
     fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image> {
         let mut b: Box<mem::MaybeUninit<Image>> = Box::new_uninit();
-        let mut ab = AMember::with_inner(
+        let ab = AMember::with_inner(
             AControl::with_inner(
                 AImage::with_inner(
-                    <Self as NewImageInner<Image>>::with_uninit(b.as_mut())
+                    <Self as NewImageInner<Image>>::with_uninit_params(b.as_mut(), content)
                 ),
             )
         );
-		ab.inner_mut().inner_mut().inner_mut().bmp = content;
-        unsafe {
+		unsafe {
             b.as_mut_ptr().write(ab);
 	        b.assume_init()
         }

@@ -1,4 +1,4 @@
-use crate::{layout, types};
+use crate::{layout, types, utils};
 
 use super::auto::{HasInner, Spawnable, Abstract};
 use super::container::Container;
@@ -318,6 +318,10 @@ impl<T: ControlInner> AMember<AControl<T>> {
         let self2 = self as *mut Self;
         let self3 = self as *mut Self;
         (&mut unsafe { &mut *self2 }.base, &mut unsafe { &mut *self3 }.inner.base, &mut self.inner.inner)
+    }
+    #[inline]
+    pub unsafe fn control_base_parts_mut(base: &mut MemberBase) -> (&mut MemberBase, &mut ControlBase, &mut T) {
+        utils::base_to_impl_mut::<Self>(base).as_control_parts_mut()
     }
     #[inline]
     pub fn spawn() -> Box<dyn Control> {
