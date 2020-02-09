@@ -12,6 +12,9 @@ define! {
         constructor: {
             fn with_orientation(orientation: layout::Orientation) -> Box<dyn LinearLayout>;
         }
+        inner_constructor_params: {
+            orientation: layout::Orientation
+        }
     }
 }
 
