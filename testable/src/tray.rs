@@ -85,7 +85,7 @@ impl HasImageInner for TestableTray {
     #[inline]
     fn set_image(&mut self, _base: &mut MemberBase, i: Cow<image::DynamicImage>) {
     	//use plygui_api::external::image::GenericImageView;
-    	let i = i.resize(SIZE, SIZE, image::FilterType::Lanczos3);
+    	let i = i.resize(SIZE, SIZE, image::imageops::FilterType::Lanczos3);
     	self.image = i.into();
     }
 }
