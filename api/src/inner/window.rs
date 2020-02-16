@@ -1,4 +1,5 @@
 use super::auto::{HasInner, Abstract};
+use super::application::Application;
 use super::closeable::{Closeable, CloseableInner};
 use super::container::AContainer;
 use super::container_single::{ASingleContainer, SingleContainer, SingleContainerInner};
@@ -15,21 +16,28 @@ define! {
             pub visibility: types::Visibility,
             pub on_size: Option<OnSize>,
             pub on_visibility: Option<OnVisibility>,
+            pub application: Box<dyn Application>,
         },
         inner: {
-            fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
             fn size(&self) -> (u16, u16);
             fn position(&self) -> (i32, i32);
+        }
+        constructor: {
+            fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
+        }
+        inner_constructor_params: {
+            title: &str, window_size: types::WindowStartSize, menu: types::Menu
         }
     }
 }
 impl<T: WindowInner> AWindow<T> {
-    pub fn with_inner(inner: T) -> Self {
+    pub fn with_inner(inner: T, application: Box<dyn Application>) -> Self {
         AWindow {
             base: WindowBase {
                 visibility: types::Visibility::Visible,
                 on_size: None,
                 on_visibility: None,
+                application,
             },
             inner,
         }
@@ -42,7 +50,7 @@ impl<T: WindowInner> HasVisibility for AMember<AContainer<ASingleContainer<AWind
     fn set_visibility(&mut self, visibility: types::Visibility) {
         if self.inner.inner.inner.inner.on_visibility_set(&mut self.base, visibility) {
             self.inner.inner.inner.base.visibility = visibility;
-            self.call_on_visibility(visibility);
+            self.call_on_visibility::<Self>(visibility);
         }
     }
     fn on_visibility(&mut self, callback: Option<OnVisibility>) {
@@ -69,7 +77,7 @@ impl<T: WindowInner> HasSize for AMember<AContainer<ASingleContainer<AWindow<T>>
     #[inline]
     fn set_size(&mut self, width: u16, height: u16) {
         if self.inner.inner.inner.inner.on_size_set(&mut self.base, (width, height)) {
-            self.call_on_size(width, height);
+            self.call_on_size::<Self>(width, height);
         }
     }
     #[inline]
@@ -112,15 +120,21 @@ impl<II: WindowInner, T: HasInner<I = II> + Abstract + 'static> WindowInner for 
         self.inner().position()
     }
 }
+impl<T: WindowInner> NewWindow for AMember<AContainer<ASingleContainer<AWindow<T>>>> {
+    #[inline]
+    fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
+        T::with_params(title, window_size, menu)
+    }
+}
 impl<T: WindowInner> AMember<AContainer<ASingleContainer<AWindow<T>>>> {
-    pub fn call_on_size(&mut self, w: u16, h: u16) {
-        let self2 = self as *mut Self;
+    pub fn call_on_size<O: Window>(&mut self, w: u16, h: u16) {
+        let self2 = self as *mut _ as *mut O;
         if let Some(ref mut cb) = self.inner.inner.inner.base.on_size {
             (cb.as_mut())(unsafe { &mut *self2 }, w, h);
         }
     }
-    pub fn call_on_visibility(&mut self, v: types::Visibility) {
-        let self2 = self as *mut Self;
+    pub fn call_on_visibility<O: Window>(&mut self, v: types::Visibility) {
+        let self2 = self as *mut _ as *mut O;
         if let Some(ref mut cb) = self.inner.inner.inner.base.on_visibility {
             (cb.as_mut())(unsafe { &mut *self2 }, v);
         }

@@ -15,13 +15,13 @@ pub trait HasNativeId: 'static {
 pub trait HasNativeIdInner: 'static {
     type Id: NativeId;
 
-    unsafe fn native_id(&self) -> Self::Id;
+    fn native_id(&self) -> Self::Id;
 }
 
 impl<II: HasNativeIdInner, T: HasInner<I = II> + Abstract + 'static> HasNativeIdInner for T {
     type Id = <T::I as HasNativeIdInner>::Id;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.inner().native_id()
     }
 }
