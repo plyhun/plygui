@@ -181,7 +181,7 @@ impl HasLayoutInner for TestableList {
 impl HasNativeIdInner for TestableList {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }

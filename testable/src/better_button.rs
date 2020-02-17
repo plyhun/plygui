@@ -88,7 +88,7 @@ impl HasLayoutInner for TestableBetterButton {
 impl HasNativeIdInner for TestableBetterButton {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         self.inner.native_id()
     }
 }

@@ -101,7 +101,7 @@ impl HasLayoutInner for TestableButton {
 impl HasNativeIdInner for TestableButton {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }

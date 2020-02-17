@@ -207,7 +207,7 @@ impl ControlInner for TestableFrame {
 impl HasNativeIdInner for TestableFrame {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }

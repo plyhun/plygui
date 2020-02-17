@@ -28,21 +28,21 @@ impl ApplicationInner for TestableApplication {
         w.inner_mut().root = w.as_mut();
         w
     }
-    fn register_window(&mut self, window: &mut Box<dyn controls::Window>) {
-    	let id = window.as_any().downcast_ref::<crate::window::Window>().unwrap().native_id();
-        self.windows.push(id);
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
+        let w = window::TestableWindow::with_params(title, size, menu);
+        self.windows.push(unsafe { TestableId::from_outer(w.native_id()) });
+        w
     }
-    fn register_tray(&mut self, tray: &mut Box<dyn controls::Tray>) {
-    	let id = tray.as_any().downcast_ref::<crate::tray::Tray>().unwrap().native_id();
-        self.trays.push(id);
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn controls::Tray> {
+    	let tray = tray::TestableTray::with_params(title, menu);
+        self.trays.push(unsafe { TestableId::from_outer(tray.native_id()) });
+        tray
     }
-    fn unregister_window(&mut self, window: &mut dyn controls::Window) {
-    	let id = window.as_any().downcast_ref::<crate::window::Window>().unwrap().native_id();
-        self.windows.retain(|t| *t != id);
+    fn remove_window(&mut self, id: Self::Id) {
+    	self.windows.retain(|t| *t != id);
     }
-    fn unregister_tray(&mut self, tray: &mut dyn controls::Tray) {
-    	let id = tray.as_any().downcast_ref::<crate::tray::Tray>().unwrap().native_id();
-        self.trays.retain(|t| *t != id);
+    fn remove_tray(&mut self, id: Self::Id) {
+    	self.trays.retain(|t| *t != id);
     }
     fn name<'a>(&'a self) -> Cow<'a, str> {
         Cow::Borrowed(self.name.as_str())
@@ -205,7 +205,7 @@ impl ApplicationInner for TestableApplication {
 impl HasNativeIdInner for TestableApplication {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         (self.root as *mut MemberBase).into()
     }
 }

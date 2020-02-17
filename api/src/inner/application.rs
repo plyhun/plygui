@@ -1,6 +1,8 @@
 use super::auto::{AsAny, HasInner, OnFrame};
 use super::has_native_id::{HasNativeId, HasNativeIdInner};
 use super::member::Member;
+use super::tray::Tray;
+use super::window::Window;
 
 use crate::{callbacks, runtime, types};
 
@@ -11,6 +13,8 @@ use std::rc::Rc;
 use std::sync::mpsc;
 
 pub trait Application: HasNativeId + AsAny + super::seal::Sealed {
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
     fn name(&self) -> ::std::borrow::Cow<'_, str>;
     fn start(&mut self);
     fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member>;
@@ -28,11 +32,11 @@ pub trait Application: HasNativeId + AsAny + super::seal::Sealed {
 
 pub trait ApplicationInner: HasNativeIdInner + 'static {
     fn get() -> Box<dyn Application>;
-    
-    fn register_window(&mut self, window: &mut Box<dyn super::window::Window>);
-    fn register_tray(&mut self, tray: &mut Box<dyn super::tray::Tray>);
-    fn unregister_window(&mut self, window: &mut dyn super::window::Window);
-    fn unregister_tray(&mut self, tray: &mut dyn super::tray::Tray);
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray>;
+
+    fn remove_window(&mut self, id: Self::Id);
+    fn remove_tray(&mut self, id: Self::Id);
 
     fn name(&self) -> Cow<'_, str>;
     fn start(&mut self);
@@ -91,6 +95,14 @@ impl<T: ApplicationInner> HasNativeId for AApplication<T> {
     }
 }
 impl<T: ApplicationInner> Application for AApplication<T> {
+    #[inline]
+    fn new_window(&mut self, title: &str, size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window> {
+        self.inner_mut().new_window(title, size, menu)
+    }
+    #[inline]
+    fn new_tray(&mut self, title: &str, menu: types::Menu) -> Box<dyn Tray> {
+        self.inner_mut().new_tray(title, menu)
+    }
     #[inline]
     fn name(&self) -> Cow<'_, str> {
         self.inner().name()

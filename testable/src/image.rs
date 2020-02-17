@@ -96,7 +96,7 @@ impl HasLayoutInner for TestableImage {
 impl HasNativeIdInner for TestableImage {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }

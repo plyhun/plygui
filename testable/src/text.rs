@@ -105,7 +105,7 @@ impl HasVisibilityInner for TestableText {
 impl HasNativeIdInner for TestableText {
     type Id = common::TestableId;
 
-    fn native_id(&self) -> Self::Id {
+    unsafe fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
