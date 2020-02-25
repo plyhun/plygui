@@ -68,7 +68,7 @@ impl CloseableInner for TestableTray {
         }
         let mut app = Application::get().unwrap();
         let app = app.as_any_mut().downcast_mut::<Application>().unwrap();
-        app.inner_mut().remove_tray(self.id.into());
+        app.inner_mut().unregister_tray(common::member_from_id::<Tray>(self.id).unwrap());
 
         println!("Tray '{}' closed ({:?})", self.label, self.id);
         true
@@ -89,31 +89,38 @@ impl HasImageInner for TestableTray {
     	self.image = i.into();
     }
 }
-
+impl<O: controls::Tray> NewTrayInner<O> for TestableTray {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, title: &str, icon: image::DynamicImage, menu: types::Menu) -> Self {
+        TestableTray {
+        	id: unsafe { mem::transmute(u) },
+            label: title.to_owned(),
+            menu: menu,
+            image: icon,
+            on_close: None,
+        }
+    }
+}
 impl TrayInner for TestableTray {
-    fn with_params<S: AsRef<str>>(title: S, menu: types::Menu) -> Box<dyn controls::Tray> {
-        let mut t = Box::new(AMember::with_inner(
+    fn with_params<S: AsRef<str>>(title: S, icon: image::DynamicImage, menu: types::Menu) -> Box<dyn controls::Tray> {
+        let mut b: Box<mem::MaybeUninit<Tray>> = Box::new_uninit();
+        let ab = AMember::with_inner(
             ATray::with_inner(
-                TestableTray {
-                	id: 0 as InnerId,
-                    label: title.as_ref().to_owned(),
-                    menu: menu,
-                    image: image::DynamicImage::ImageRgba8(image::ImageBuffer::new(1,1)),
-                    on_close: None,
-                }
+                <Self as NewTrayInner<Tray>>::with_uninit_params(b.as_mut(), title.as_ref(), icon, menu),
+	            crate::application::Application::get().unwrap(),
             )
-        ));
-        let this = t.as_mut();
-        t.inner_mut().inner_mut().id = this as *mut _ as *mut MemberBase;
-
-        /*let app = super::application::Application::get();
-		if let Some(items) = menu {
-            unsafe {
-                let menu = winuser::CreatePopupMenu();
-                common::make_menu(menu, items, &mut t.inner_mut().menu.1);
-                t.inner_mut().menu.0 = menu;
-            }
+        );
+        /*if let Some(items) = menu {
+            let menu = winuser::CreateMenu();
+            common::make_menu(menu, items, &mut w.inner_mut().inner_mut().inner_mut().menu);
+            winuser::SetMenu(id, menu);
         }*/
+        let mut t: Box<dyn controls::Tray> = unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        };
+        let app = crate::application::Application::get().unwrap();
+        let mut app = app.into_any().downcast::<crate::application::Application>().unwrap();
+        app.inner_mut().register_tray(&mut t);
         t
     }
 }
@@ -121,7 +128,7 @@ impl TrayInner for TestableTray {
 impl HasNativeIdInner for TestableTray {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.id.into()
     }
 }
