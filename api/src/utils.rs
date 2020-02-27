@@ -1,14 +1,14 @@
 use super::*;
 
 #[inline]
-pub unsafe fn base_to_impl<T>(this: &development::MemberBase) -> &T
+pub unsafe fn base_to_impl<T>(this: &sdk::MemberBase) -> &T
 where
     T: controls::Member + Sized,
 {
     &*(this as *const _ as *const T)
 }
 #[inline]
-pub unsafe fn base_to_impl_mut<T>(this: &mut development::MemberBase) -> &mut T
+pub unsafe fn base_to_impl_mut<T>(this: &mut sdk::MemberBase) -> &mut T
 where
     T: controls::Member + Sized,
 {
@@ -16,14 +16,14 @@ where
 }
 
 #[inline]
-pub(crate) unsafe fn base_to_member<T>(this: &development::MemberBase) -> &dyn controls::Member
+pub(crate) unsafe fn base_to_member<T>(this: &sdk::MemberBase) -> &dyn controls::Member
 where
     T: controls::Member + Sized,
 {
     base_to_impl::<T>(this)
 }
 #[inline]
-pub(crate) unsafe fn base_to_member_mut<T>(this: &mut development::MemberBase) -> &mut dyn controls::Member
+pub(crate) unsafe fn base_to_member_mut<T>(this: &mut sdk::MemberBase) -> &mut dyn controls::Member
 where
     T: controls::Member + Sized,
 {

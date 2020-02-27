@@ -9,7 +9,7 @@ pub use crate::inner::{
     has_orientation::{HasOrientation, MaybeHasOrientation},
     member::Member,
     control::{Control, MaybeControl},
-    application::Application,
+    application::{Application, NewApplication, CloseableSpawner},
     container::{Container, MaybeContainer},
     container_single::{SingleContainer, MaybeSingleContainer},
     container_multi::{MultiContainer, MaybeMultiContainer},

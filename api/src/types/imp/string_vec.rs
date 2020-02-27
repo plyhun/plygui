@@ -1,12 +1,12 @@
 use crate::controls::{Adapted, Control, HasLabel};
-use crate::development;
+use crate::sdk;
 use crate::types::{AsAny, Adapter, Change, Spawnable};
 use std::any::Any;
 use std::marker::PhantomData;
 
 pub struct StringVecAdapter<C: HasLabel + Spawnable> {
     items: Vec<String>,
-    on_item_change: Option<development::AdapterInnerCallback>,
+    on_item_change: Option<sdk::AdapterInnerCallback>,
     _marker: PhantomData<C>,
 }
 
@@ -71,8 +71,8 @@ impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
     	control
 	}
 }
-impl<C: HasLabel + Spawnable> development::AdapterInner for StringVecAdapter<C> {
-    fn on_item_change(&mut self, cb: Option<development::AdapterInnerCallback>) {
+impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringVecAdapter<C> {
+    fn on_item_change(&mut self, cb: Option<sdk::AdapterInnerCallback>) {
         self.on_item_change = cb;
     }
 }

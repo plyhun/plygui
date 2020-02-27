@@ -1,6 +1,6 @@
 pub use crate::inner::{
     auto::{Spawnable, HasInner, Abstract},
-    application::{AApplication, ApplicationBase, ApplicationInner},
+    application::{AApplication, ApplicationBase, ApplicationInner, NewApplicationInner},
     member::{AMember, MemberBase, MemberInner},
     button::{AButton, ButtonInner, NewButtonInner},
     text::{AText, TextInner, NewTextInner},
@@ -11,7 +11,7 @@ pub use crate::inner::{
     tray::{ATray, TrayInner, NewTrayInner},
     has_native_id::{HasNativeIdInner, NativeId},
     drawable::{Drawable, OuterDrawable},
-    closeable::CloseableInner,
+    closeable::{CloseableInner, ACloseable},
     clickable::ClickableInner,
     item_clickable::ItemClickableInner,
     has_label::HasLabelInner,
