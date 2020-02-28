@@ -40,7 +40,7 @@ impl ApplicationInner for TestableApplication {
         }
     }
     fn add_root(&mut self, m: Box<dyn controls::Closeable>) -> &mut dyn controls::Member {
-        let base = self.get_mut().base_mut(); 
+        let base = &mut self.get_mut().base; 
         
         let is_window = m.as_any().type_id() == TypeId::of::<crate::window::Window>();
         let is_tray = m.as_any().type_id() == TypeId::of::<crate::tray::Tray>();
@@ -60,7 +60,7 @@ impl ApplicationInner for TestableApplication {
         panic!("Unsupported Closeable: {:?}", m.as_any().type_id());
     }
     fn close_root(&mut self, arg: types::FindBy, skip_callbacks: bool) -> bool {
-        let base = self.get_mut().base_mut(); 
+        let base = &mut self.get_mut().base; 
         match arg {
             types::FindBy::Id(id) => {
                 (0..base.windows.len()).into_iter().find(|i| if base.windows[*i].id() == id 
@@ -109,14 +109,14 @@ impl ApplicationInner for TestableApplication {
     }
     fn start(&mut self) {
         {
-        	let base = self.get_mut().base_mut(); 
+        	let base = &mut self.get_mut().base; 
             for window in base.windows.as_mut_slice() {
         		window.as_any_mut().downcast_mut::<crate::window::Window>().unwrap().inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().draw();
         	}
         }
         loop {
             let mut frame_callbacks = 0;
-            let w = unsafe {&mut *self.root}.base_mut();
+            let w = &mut unsafe {&mut *self.root}.base;
             while frame_callbacks < defaults::MAX_FRAME_CALLBACKS {
                 match w.queue().try_recv() {
                     Ok(mut cmd) => {
@@ -134,14 +134,14 @@ impl ApplicationInner for TestableApplication {
             if self.sleep > 0 {
                 thread::sleep(time::Duration::from_millis(self.sleep as u64));
             }
-            let base = self.get_mut().base_mut(); 
+            let base = &mut self.get_mut().base; 
             if base.windows.len() < 1 && base.trays.len() < 1 {
                 break;
             }
         }
     }
     fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Member> {
-        let base = self.get_mut().base_mut(); 
+        let base = &mut self.get_mut().base; 
         for window in base.windows.as_mut_slice() {
              match arg {
                 types::FindBy::Id(id) => {
@@ -181,7 +181,7 @@ impl ApplicationInner for TestableApplication {
         None
     }
     fn find_member(&self, arg: types::FindBy) -> Option<&dyn controls::Member> {
-        let base = self.get().base(); 
+        let base = &self.get().base; 
         for window in base.windows.as_slice() {
             match arg {
                 types::FindBy::Id(id) => {
@@ -221,7 +221,7 @@ impl ApplicationInner for TestableApplication {
         None
     }
     fn exit(&mut self) {
-        let base = self.get_mut().base_mut(); 
+        let base = &mut self.get_mut().base; 
         for mut window in base.windows.drain(..) {
             window.as_any_mut().downcast_mut::<crate::window::Window>().unwrap().inner_mut().inner_mut().inner_mut().inner_mut().close(true);
         }
@@ -230,22 +230,10 @@ impl ApplicationInner for TestableApplication {
         }
     }
     fn roots<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn controls::Member)> + 'a> {
-        Box::new(MemberIterator {
-            inner: self,
-            is_tray: false,
-            index: 0,
-            needs_window: true,
-            needs_tray: true,
-        })
+        self.get().roots()
     }
     fn roots_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn controls::Member)> + 'a> {
-        Box::new(MemberIteratorMut {
-            inner: self,
-            is_tray: false,
-            index: 0,
-            needs_window: true,
-            needs_tray: true,
-        })
+        self.get_mut().roots_mut()
     }
 }
 
@@ -255,62 +243,4 @@ impl HasNativeIdInner for TestableApplication {
     fn native_id(&self) -> Self::Id {
         (self.root as *mut MemberBase).into()
     }
-}
-
-struct MemberIterator<'a> {
-    inner: &'a TestableApplication,
-    needs_window: bool,
-    needs_tray: bool,
-    is_tray: bool,
-    index: usize,
-}
-impl<'a> Iterator for MemberIterator<'a> {
-    type Item = &'a (dyn controls::Member);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.inner.get().base().windows.len() {
-            self.is_tray = true;
-            self.index = 0;
-        }
-        let ret = if self.needs_tray && self.is_tray {
-            self.inner.get().base().trays.get(self.index).map(|tray| tray.as_member())
-        } else if self.needs_window {
-            self.inner.get().base().windows.get(self.index).map(|window| window.as_member())
-        } else {
-            return None;
-        };
-        self.index += 1;
-        ret
-    }
-}
-
-struct MemberIteratorMut<'a> {
-    inner: &'a mut TestableApplication,
-    needs_window: bool,
-    needs_tray: bool,
-    is_tray: bool,
-    index: usize,
-}
-impl<'a> Iterator for MemberIteratorMut<'a> {
-    type Item = &'a mut (dyn controls::Member);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.needs_tray && self.index >= self.inner.get_mut().base_mut().windows.len() {
-            self.is_tray = true;
-            self.index = 0;
-        }
-        let ret = if self.needs_tray && self.is_tray {
-            bck_is_immensely_stupid(self.inner.get_mut().base_mut().trays.get_mut(self.index).map(|tray| tray.as_member_mut()))
-        } else if self.needs_window {
-            bck_is_immensely_stupid(self.inner.get_mut().base_mut().windows.get_mut(self.index).map(|window| window.as_member_mut()))
-        } else {
-            return None;
-        };
-        self.index += 1;
-        ret
-    }
-}
-
-fn bck_is_immensely_stupid<'a>(a: Option<&'a mut (dyn controls::Member)>) -> Option<&'static mut (dyn controls::Member)> {
-    unsafe { mem::transmute(a) }
 }

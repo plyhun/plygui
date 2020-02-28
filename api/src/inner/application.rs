@@ -102,6 +102,24 @@ impl ApplicationBase {
     pub fn queue(&mut self) -> &mut mpsc::Receiver<OnFrame> {
         &mut self.queue
     }
+    pub fn roots<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {
+        Box::new(MemberIterator {
+            inner: self,
+            is_tray: false,
+            index: 0,
+            needs_window: true,
+            needs_tray: true,
+        })
+    }
+    pub fn roots_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a> {
+        Box::new(MemberIteratorMut {
+            inner: self,
+            is_tray: false,
+            index: 0,
+            needs_window: true,
+            needs_tray: true,
+        })
+    }
 }
 impl<T: ApplicationInner> HasNativeId for AApplication<T> {
     #[inline]
@@ -136,12 +154,12 @@ impl<T: ApplicationInner> Application for AApplication<T> {
     }
     #[inline]
     fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<OnFrame> {
-        let feeder = self.base_mut().sender().clone();
+        let feeder = self.base.sender().clone();
         self.inner_mut().on_frame_async_feeder(feeder.into())
     }
     #[inline]
     fn on_frame(&mut self, cb: OnFrame) {
-        let mut feeder = self.base_mut().sender().clone().into();
+        let mut feeder = self.base.sender().clone().into();
         self.inner_mut().on_frame(&mut feeder, cb)
     }
     #[inline]
@@ -192,16 +210,6 @@ impl<T: ApplicationInner> AsAny for AApplication<T> {
     }
 }
 
-impl<T: ApplicationInner> AApplication<T> {
-    #[inline]
-    pub fn base(&self) -> &ApplicationBase {
-        &self.base
-    }
-    #[inline]
-    pub fn base_mut(&mut self) -> &mut ApplicationBase {
-        &mut self.base
-    }
-}
 impl<II: ApplicationInner, T: HasInner<I = II> + Abstract + 'static> ApplicationInner for T {
     fn with_name<S: AsRef<str>>(name: S) -> Box<dyn Application> {
         <<Self as HasInner>::I as ApplicationInner>::with_name(name)
@@ -269,3 +277,61 @@ impl CloseableSpawner for Box<dyn Application> {
     }
 }
 impl<T: ApplicationInner> super::seal::Sealed for AApplication<T> {}
+
+struct MemberIterator<'a> {
+    inner: &'a ApplicationBase,
+    needs_window: bool,
+    needs_tray: bool,
+    is_tray: bool,
+    index: usize,
+}
+impl<'a> Iterator for MemberIterator<'a> {
+    type Item = &'a (dyn Member);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.inner.windows.len() {
+            self.is_tray = true;
+            self.index = 0;
+        }
+        let ret = if self.needs_tray && self.is_tray {
+            self.inner.trays.get(self.index).map(|tray| tray.as_member())
+        } else if self.needs_window {
+            self.inner.windows.get(self.index).map(|window| window.as_member())
+        } else {
+            return None;
+        };
+        self.index += 1;
+        ret
+    }
+}
+
+struct MemberIteratorMut<'a> {
+    inner: &'a mut ApplicationBase,
+    needs_window: bool,
+    needs_tray: bool,
+    is_tray: bool,
+    index: usize,
+}
+impl<'a> Iterator for MemberIteratorMut<'a> {
+    type Item = &'a mut (dyn Member);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.needs_tray && self.index >= self.inner.windows.len() {
+            self.is_tray = true;
+            self.index = 0;
+        }
+        let ret = if self.needs_tray && self.is_tray {
+            bck_is_immensely_stupid(self.inner.trays.get_mut(self.index).map(|tray| tray.as_member_mut()))
+        } else if self.needs_window {
+            bck_is_immensely_stupid(self.inner.windows.get_mut(self.index).map(|window| window.as_member_mut()))
+        } else {
+            return None;
+        };
+        self.index += 1;
+        ret
+    }
+}
+
+fn bck_is_immensely_stupid<'a>(a: Option<&'a mut (dyn Member)>) -> Option<&'static mut (dyn Member)> {
+    unsafe { ::std::mem::transmute(a) }
+}
