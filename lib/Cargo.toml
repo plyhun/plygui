@@ -29,6 +29,6 @@ win32 = ["plygui-win32"]
 cocoa = ["plygui-cocoa"]
 testable = ["plygui-testable"]
 #https://github.com/rust-lang/cargo/issues/1197
-#native = ["win32", "cocoa", "gtk3"]
+native = ["win32", "cocoa", "gtk3"]
 type_check = ["plygui-api/type_check"]
-default = ["type_check", "testable"]
+default = ["type_check", "native"]

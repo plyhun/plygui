@@ -90,9 +90,9 @@ impl<T: CloseableInner> Closeable for AMember<T> {
     }
 }
 impl<T: CloseableInner> ACloseable<T> {
-    pub fn with_inner(inner: T, application: usize) -> Self {
+    pub fn with_inner<A: Application>(inner: T, application: &mut A) -> Self {
         Self {
-            base: CloseableBase { application },
+            base: CloseableBase { application: application as *mut _ as usize },
             inner,
         }
     }

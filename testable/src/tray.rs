@@ -108,7 +108,7 @@ impl TrayInner for TestableTray {
                 ATray::with_inner(
                     <Self as NewTrayInner<Tray>>::with_uninit_params(b.as_mut(), title.as_ref(), icon, menu),
     	        ),
-                unsafe { app.native_id() }
+                app.as_any_mut().downcast_mut::<crate::application::Application>().unwrap()
             )
         );
         /*if let Some(items) = menu {

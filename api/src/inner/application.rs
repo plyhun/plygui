@@ -29,6 +29,7 @@ define! {
             fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member>;
             fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member>;
             fn exit(self: Box<Self>);
+            fn prepare_exit(&mut self);
             fn on_frame(&mut self, cb: OnFrame);
             fn on_frame_async_feeder(&mut self) -> callbacks::AsyncFeeder<OnFrame>;
             
@@ -127,6 +128,10 @@ impl<T: ApplicationInner> Application for AApplication<T> {
     }
     #[inline]
     fn exit(mut self: Box<Self>) {
+        self.prepare_exit();
+    }
+    #[inline]
+    fn prepare_exit(&mut self) {
         self.inner_mut().exit();
     }
     #[inline]

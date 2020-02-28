@@ -74,7 +74,7 @@ impl WindowInner for TestableWindow {
                         AWindow::with_inner(
                             <Self as NewWindowInner<Window>>::with_uninit_params(b.as_mut(), title.as_ref(), window_size, menu),
     	                ),
-                        unsafe { app.native_id() }
+                        app.as_any_mut().downcast_mut::<crate::application::Application>().unwrap()
                     )
                 )
             )
