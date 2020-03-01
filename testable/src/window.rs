@@ -12,7 +12,7 @@ pub struct TestableWindow {
     on_close: Option<callbacks::OnClose>,
 }
 
-pub type Window = AMember<AContainer<ASingleContainer<AWindow<TestableWindow>>>>;
+pub type Window = AMember<AContainer<ASingleContainer<ACloseable<AWindow<TestableWindow>>>>>;
 
 impl TestableWindow {
 	pub fn draw(&mut self) {
@@ -42,45 +42,52 @@ impl HasSizeInner for TestableWindow {
     fn on_size_set(&mut self, base: &mut MemberBase, value: (u16, u16)) -> bool {
         self.size = value;
         
-        unsafe { utils::base_to_impl_mut::<Window>(base) }.call_on_size(value.0, value.1);
+        unsafe { utils::base_to_impl_mut::<Window>(base) }.call_on_size::<Window>(value.0, value.1);
         
         true
     }
 }
-
+impl<O: controls::Window> NewWindowInner<O> for TestableWindow {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Self {
+        TestableWindow {
+            id: unsafe { mem::transmute(u) },
+            label: title.to_owned(),
+            size: match window_size {
+                types::WindowStartSize::Exact(w, h) => (w, h), 
+			    types::WindowStartSize::Fullscreen => (1280, 800)
+            },
+		    position: (0, 0),
+		    visibility: types::Visibility::Visible,
+            child: None,
+            menu: menu,
+            on_close: None,
+        }
+    }
+}
 impl WindowInner for TestableWindow {
-    fn with_params<S: AsRef<str>>(title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
-        let mut w: Box<Window> = Box::new(AMember::with_inner(
+    fn with_params<S: AsRef<str>>(app: &mut dyn controls::Application, title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn controls::Window> {
+        let mut b: Box<mem::MaybeUninit<Window>> = Box::new_uninit();
+        let ab = AMember::with_inner(
             AContainer::with_inner(
                 ASingleContainer::with_inner(
-                    plygui_api::development::AWindow::with_inner(
-                        TestableWindow {
-                            id: 0 as InnerId,
-                            label: title.as_ref().to_owned(),
-                            size: match window_size {
-    	                        types::WindowStartSize::Exact(w, h) => (w, h), 
-    						    types::WindowStartSize::Fullscreen => (1280, 800)
-                            },
-    					    position: (0, 0),
-    					    visibility: types::Visibility::Visible,
-                            child: None,
-                            menu: menu,
-                            on_close: None,
-                        },
-                    ),
+                    ACloseable::with_inner(
+                        AWindow::with_inner(
+                            <Self as NewWindowInner<Window>>::with_uninit_params(b.as_mut(), title.as_ref(), window_size, menu),
+    	                ),
+                        app.as_any_mut().downcast_mut::<crate::application::Application>().unwrap()
+                    )
                 )
             )
-        ));
-
-        w.inner_mut().inner_mut().inner_mut().inner_mut().id = &mut w.base;
-
+        );
         /*if let Some(items) = menu {
             let menu = winuser::CreateMenu();
             common::make_menu(menu, items, &mut w.inner_mut().inner_mut().inner_mut().menu);
             winuser::SetMenu(id, menu);
         }*/
-
-        w
+		unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
     fn size(&self) -> (u16, u16) {
         self.size
@@ -143,28 +150,29 @@ impl SingleContainerInner for TestableWindow {
 
 impl CloseableInner for TestableWindow {
     fn close(&mut self, skip_callbacks: bool) -> bool {
-    	if !skip_callbacks {
-            if let Some(ref mut on_close) = self.on_close {
-                if !(on_close.as_mut())(unsafe { &mut *(self.id as *mut Window) }) {
-                    return false;
-                }
-            }
-        }
-        let mut app = super::application::Application::get().unwrap();
-        let app = app.as_any_mut().downcast_mut::<super::application::Application>().unwrap();
-        app.inner_mut().remove_window(self.id.into());
-
+    	use crate::plygui_api::controls::Member;
+        
+        let this = common::member_from_id::<Window>(self.id).unwrap();
+        let id = this.id();
+        this.inner_mut().inner_mut().inner_mut().application_impl_mut::<crate::application::Application>().close_root(types::FindBy::Id(id), skip_callbacks);
+        
         println!("Window '{}' closed ({:?})", self.label, self.id);
         true
     }
     fn on_close(&mut self, callback: Option<callbacks::OnClose>) {
         self.on_close = callback;
     }
+    fn application<'a>(&'a self, base: &'a MemberBase) -> &'a dyn controls::Application {
+        unsafe { utils::base_to_impl::<Window>(base) }.inner().inner().inner().application_impl::<crate::application::Application>()
+    }
+    fn application_mut<'a>(&'a mut self, base: &'a mut MemberBase) -> &'a mut dyn controls::Application {
+        unsafe { utils::base_to_impl_mut::<Window>(base) }.inner_mut().inner_mut().inner_mut().application_impl_mut::<crate::application::Application>()
+    }
 }
 impl HasNativeIdInner for TestableWindow {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.id.into()
     }
 }

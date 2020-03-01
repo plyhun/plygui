@@ -74,7 +74,7 @@ impl MessageInner for TestableMessage {
 impl HasNativeIdInner for TestableMessage {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.id.into()
     }
 }

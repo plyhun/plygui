@@ -17,5 +17,5 @@ pub use plygui_cocoa::imp;
 #[cfg(all(target_os = "windows", feature = "win32"))]
 pub use plygui_win32::imp;
 
-#[cfg(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")))]
+#[cfg(all(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")), feature = "testable"))]
 pub use plygui_testable::imp;

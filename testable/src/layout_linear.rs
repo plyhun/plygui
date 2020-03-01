@@ -160,7 +160,7 @@ impl HasLayoutInner for TestableLinearLayout {
 impl HasNativeIdInner for TestableLinearLayout {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }

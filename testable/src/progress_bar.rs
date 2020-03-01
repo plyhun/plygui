@@ -84,7 +84,7 @@ impl HasLayoutInner for TestableProgressBar {
 impl HasNativeIdInner for TestableProgressBar {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }

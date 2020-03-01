@@ -1,4 +1,4 @@
-use crate::{ids, runtime};
+use crate::{ids};
 
 use super::auto::{AsAny, HasInner, Abstract};
 use super::container::MaybeContainer;
@@ -48,7 +48,6 @@ impl<II: MemberInner, T: HasInner<I = II> + Abstract + 'static> MemberInner for 
 #[repr(C)]
 pub struct MemberBase {
     id: ids::Id,
-    app: usize,
     tag: Option<String>,
 
     _as_member: unsafe fn(&MemberBase) -> &dyn Member,
@@ -66,7 +65,6 @@ impl MemberBase {
     pub fn with_type<T: Member>() -> Self {
         MemberBase {
             id: ids::Id::next(),
-            app: runtime::APPLICATION.with(|a| *a.borrow()),
             tag: None,
             _as_member: crate::utils::base_to_member::<T>,
             _as_member_mut: crate::utils::base_to_member_mut::<T>,
