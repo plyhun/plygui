@@ -25,7 +25,7 @@ define! {
             fn with_params<S: AsRef<str>>(app: &mut dyn Application, title: S, window_size: types::WindowStartSize, menu: types::Menu) -> Box<dyn Window>;
         }
         inner_constructor_params: {
-            title: &str, window_size: types::WindowStartSize, menu: types::Menu
+            app: &mut dyn Application, title: &str, window_size: types::WindowStartSize, menu: types::Menu
         }
     }
 }

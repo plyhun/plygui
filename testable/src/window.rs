@@ -48,7 +48,7 @@ impl HasSizeInner for TestableWindow {
     }
 }
 impl<O: controls::Window> NewWindowInner<O> for TestableWindow {
-    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Self {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, _: &mut dyn controls::Application, title: &str, window_size: types::WindowStartSize, menu: types::Menu) -> Self {
         TestableWindow {
             id: unsafe { mem::transmute(u) },
             label: title.to_owned(),
@@ -72,7 +72,7 @@ impl WindowInner for TestableWindow {
                 ASingleContainer::with_inner(
                     ACloseable::with_inner(
                         AWindow::with_inner(
-                            <Self as NewWindowInner<Window>>::with_uninit_params(b.as_mut(), title.as_ref(), window_size, menu),
+                            <Self as NewWindowInner<Window>>::with_uninit_params(b.as_mut(), app, title.as_ref(), window_size, menu),
     	                ),
                         app.as_any_mut().downcast_mut::<crate::application::Application>().unwrap()
                     )

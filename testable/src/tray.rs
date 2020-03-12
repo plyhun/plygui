@@ -90,7 +90,7 @@ impl HasImageInner for TestableTray {
     }
 }
 impl<O: controls::Tray> NewTrayInner<O> for TestableTray {
-    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, title: &str, icon: image::DynamicImage, menu: types::Menu) -> Self {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, _: &mut dyn controls::Application, title: &str, icon: image::DynamicImage, menu: types::Menu) -> Self {
         TestableTray {
         	id: unsafe { mem::transmute(u) },
             label: title.to_owned(),
@@ -106,7 +106,7 @@ impl TrayInner for TestableTray {
         let ab = AMember::with_inner(
             ACloseable::with_inner(
                 ATray::with_inner(
-                    <Self as NewTrayInner<Tray>>::with_uninit_params(b.as_mut(), title.as_ref(), icon, menu),
+                    <Self as NewTrayInner<Tray>>::with_uninit_params(b.as_mut(), app, title.as_ref(), icon, menu),
     	        ),
                 app.as_any_mut().downcast_mut::<crate::application::Application>().unwrap()
             )

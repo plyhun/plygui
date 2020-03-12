@@ -13,7 +13,7 @@ define! {
         	fn with_params<S: AsRef<str>>(app: &mut dyn Application, title: S, icon: image::DynamicImage, menu: types::Menu) -> Box<dyn Tray>;
         }
         inner_constructor_params: {
-            title: &str, icon: image::DynamicImage, menu: types::Menu
+            app: &mut dyn Application, title: &str, icon: image::DynamicImage, menu: types::Menu
         }
     }
 }
