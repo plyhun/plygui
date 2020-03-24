@@ -83,6 +83,7 @@ impl Drop for ApplicationBase {
     fn drop(&mut self) {
         self.windows.clear();
         self.trays.clear();
+        crate::runtime::deinit();
     }
 }
 impl<T: ApplicationInner> AApplication<T> {
@@ -255,7 +256,9 @@ impl<II: ApplicationInner, T: HasInner<I = II> + Abstract + 'static> Application
 impl<T: ApplicationInner> NewApplication for AApplication<T> {
     #[inline]
     fn with_name<S: AsRef<str>>(name: S) -> Box<dyn Application> {
-        T::with_name(name)
+        let mut a = T::with_name(name);
+        crate::runtime::init(a.as_any_mut().downcast_mut::<Self>().unwrap());
+        a
     }
 }
 impl<'a> CloseableSpawner for &'a mut dyn Application {

@@ -1,6 +1,7 @@
 use crate::{ids};
 
 use super::auto::{AsAny, HasInner, Abstract};
+use super::application::Application;
 use super::container::MaybeContainer;
 use super::control::MaybeControl;
 use super::closeable::MaybeCloseable;
@@ -49,7 +50,7 @@ impl<II: MemberInner, T: HasInner<I = II> + Abstract + 'static> MemberInner for 
 pub struct MemberBase {
     id: ids::Id,
     tag: Option<String>,
-
+    
     _as_member: unsafe fn(&MemberBase) -> &dyn Member,
     _as_member_mut: unsafe fn(&mut MemberBase) -> &mut dyn Member,
     _no_threads: PhantomData<Rc<()>>,
@@ -70,6 +71,12 @@ impl MemberBase {
             _as_member_mut: crate::utils::base_to_member_mut::<T>,
             _no_threads: PhantomData,
         }
+    }
+    pub fn application<A: Application>(&self) -> &A {
+        crate::runtime::get().expect("Application not initialized. Please run `plygui::imp::Application::with_name()` first.")
+    }
+    pub fn application_mut<A: Application>(&mut self) -> &mut A {
+        crate::runtime::get().expect("Application not initialized. Please run `plygui::imp::Application::with_name()` first.")
     }
     pub fn id(&self) -> ids::Id {
         self.id
