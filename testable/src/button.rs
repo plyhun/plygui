@@ -1,15 +1,22 @@
 use crate::common::{self, *};
 
-pub type Button = Member<Control<TestableButton>>;
+pub type Button = AMember<AControl<AButton<TestableButton>>>;
 
 #[repr(C)]
 pub struct TestableButton {
-    base: common::TestableControlBase<Button>,
+    pub base: common::TestableControlBase<Button>,
     label: String,
     h_left_clicked: Option<callbacks::OnClick>,
-    h_on_label: Option<callbacks::OnLabel>,
 }
-
+impl<O: controls::Button> NewButtonInner<O> for TestableButton {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableButton {
+	        base: common::TestableControlBase::with_id(u),
+	        h_left_clicked: None,
+	        label: String::new(),
+        }
+    }
+}
 impl HasLabelInner for TestableButton {
     fn label<'a>(&'a self, _: &MemberBase) -> Cow<'a, str> {
         Cow::Borrowed(self.label.as_ref())
@@ -34,24 +41,27 @@ impl ClickableInner for TestableButton {
 }
 
 impl ButtonInner for TestableButton {
-    fn with_label(label: &str) -> Box<Button> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableButton {
-                    base: common::TestableControlBase::new(),
-                    h_left_clicked: None,
-                    h_on_label: None,
-                    label: label.to_owned(),
-                },
-                (),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
-        b
+    fn with_label<S: AsRef<str>>(label: S) -> Box<dyn controls::Button> {
+    	let mut b: Box<mem::MaybeUninit<Button>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
+            AControl::with_inner(
+                AButton::with_inner(
+                    <Self as NewButtonInner<Button>>::with_uninit(b.as_mut())
+                ),
+            )
+        );
+        controls::HasLabel::set_label(&mut ab, label.as_ref().into());
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
 }
-
+impl Spawnable for TestableButton {
+    fn spawn() -> Box<dyn controls::Control> {
+        <Self as ButtonInner>::with_label("").into_control()
+    }
+}
 impl ControlInner for TestableButton {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
@@ -91,7 +101,7 @@ impl HasLayoutInner for TestableButton {
 impl HasNativeIdInner for TestableButton {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
@@ -105,7 +115,7 @@ impl HasSizeInner for TestableButton {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
         
-        unsafe { utils::base_to_impl_mut::<Button>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<Button>(base) }.call_on_size::<Button>(width, height);
         
         true
     }
@@ -121,7 +131,7 @@ impl MemberInner for TestableButton {}
 
 impl Drawable for TestableButton {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw("Button", control.coords, control.measured);
+        self.base.draw(format!("Button '{}'", self.label).as_str(), control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         let old_size = control.measured;
@@ -153,10 +163,3 @@ impl Drawable for TestableButton {
         self.base.invalidate()
     }
 }
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Button::with_label("").into_control()
-}
-
-default_impls_as!(Button);

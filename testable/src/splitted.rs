@@ -3,17 +3,15 @@ use crate::common::{self, *};
 const DEFAULT_BOUND: i32 = DEFAULT_PADDING;
 const HALF_BOUND: i32 = DEFAULT_BOUND / 2;
 
-pub type Splitted = Member<Control<MultiContainer<TestableSplitted>>>;
+pub type Splitted = AMember<AControl<AContainer<AMultiContainer<ASplitted<TestableSplitted>>>>>;
 
 #[repr(C)]
 pub struct TestableSplitted {
     base: common::TestableControlBase<Splitted>,
 
     orientation: layout::Orientation,
-
     splitter: f32,
-    moving: bool,
-    
+     
     first: Box<dyn controls::Control>,
     second: Box<dyn controls::Control>,
 }
@@ -68,30 +66,35 @@ impl TestableSplitted {
         }
     }
 }
-
+impl<O: controls::Splitted> NewSplittedInner<O> for TestableSplitted {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Self {
+        TestableSplitted {
+            base: common::TestableControlBase::with_id(u),
+            splitter: 0.5,
+            
+            first, second, orientation
+        }
+    }
+}
 impl SplittedInner for TestableSplitted {
-    fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<Splitted> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                MultiContainer::with_inner(
-                    TestableSplitted {
-                        base: common::TestableControlBase::new(),
-                        orientation: orientation,
-
-                        splitter: 0.5,
-                        moving: false,
-
-                        first: first,
-                        second: second,
-                    },
-                    (),
+    fn with_content(first: Box<dyn controls::Control>, second: Box<dyn controls::Control>, orientation: layout::Orientation) -> Box<dyn controls::Splitted> {
+        let mut b: Box<mem::MaybeUninit<Splitted>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
+            AControl::with_inner(
+                AContainer::with_inner(
+                    AMultiContainer::with_inner(
+                        ASplitted::with_inner(
+                            <Self as NewSplittedInner<Splitted>>::with_uninit_params(b.as_mut(), first, second, orientation)
+                        ),
+                    )
                 ),
-                (),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.as_inner_mut().as_inner_mut().as_inner_mut().base.id = b.base_mut();
-        b
+            )
+        );
+        controls::HasOrientation::set_orientation(&mut ab, orientation);
+        unsafe {
+            b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
     fn set_splitter(&mut self, _member: &mut MemberBase, pos: f32) {
         self.splitter = pos;
@@ -113,11 +116,15 @@ impl SplittedInner for TestableSplitted {
         self.second.as_mut()
     }
 }
-
+impl Spawnable for TestableSplitted {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_content(super::text::TestableText::spawn(), super::text::TestableText::spawn(), layout::Orientation::Vertical).into_control()
+    }
+}
 impl HasNativeIdInner for TestableSplitted {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
@@ -131,7 +138,7 @@ impl HasSizeInner for TestableSplitted {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
         
-        unsafe { utils::base_to_impl_mut::<Splitted>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<Splitted>(base) }.call_on_size::<Splitted>(width, height);
         
         true
     }
@@ -351,13 +358,13 @@ impl MultiContainerInner for TestableSplitted {
 }
 
 impl HasOrientationInner for TestableSplitted {
-    fn layout_orientation(&self) -> layout::Orientation {
+    fn orientation(&self, _: &MemberBase) -> layout::Orientation {
         self.orientation
     }
-    fn set_layout_orientation(&mut self, base: &mut MemberBase, orientation: layout::Orientation) {
+    fn set_orientation(&mut self, base: &mut MemberBase, orientation: layout::Orientation) {
         if orientation != self.orientation {
             self.orientation = orientation;
-            self.update_children_layout(unsafe { utils::base_to_impl_mut::<Splitted>(base) }.as_inner().base());
+            self.update_children_layout(& (unsafe { utils::base_to_impl_mut::<Splitted>(base) }.inner()).base);
             self.base.invalidate();
         }
     }
@@ -437,10 +444,3 @@ impl Drawable for TestableSplitted {
         self.base.invalidate()
     }
 }
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Splitted::with_content(super::text::spawn(), super::text::spawn(), layout::Orientation::Vertical).into_control()
-}
-
-default_impls_as!(Splitted);

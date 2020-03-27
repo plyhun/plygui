@@ -32,7 +32,7 @@ pub struct TestableMessage {
     actions: Vec<TestableMessageAction>,
 }
 
-pub type Message = Member<TestableMessage>;
+pub type Message = AMember<AMessage<TestableMessage>>;
 
 impl HasLabelInner for TestableMessage {
     fn label(&self, _base: &MemberBase) -> Cow<str> {
@@ -44,25 +44,26 @@ impl HasLabelInner for TestableMessage {
 }
 
 impl MessageInner for TestableMessage {
-    fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<Member<Self>> {
+    fn with_actions(content: types::TextContent, severity: types::MessageSeverity, actions: Vec<(String, callbacks::Action)>, parent: Option<&dyn controls::Member>) -> Box<dyn controls::Message> {
         let (label, text) = match content {
             types::TextContent::Plain(text) => (String::new(/* TODO app name here? */), text),
             types::TextContent::LabelDescription(label, description) => (label, description),
         };
-        let a: Box<Message> = Box::new(Member::with_inner(
-            TestableMessage {
-                id: ptr::null_mut(),
-                parent: parent.map(|p|p.id()),
-                label: label,
-                text: text,
-                severity: severity,
-                actions: actions.into_iter().map(|a| a.into()).collect(),
-            },
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
+        let a: Box<Message> = Box::new(AMember::with_inner(
+            AMessage::with_inner(
+                TestableMessage {
+                    id: ptr::null_mut(),
+                    parent: parent.map(|p|p.id()),
+                    label: label,
+                    text: text,
+                    severity: severity,
+                    actions: actions.into_iter().map(|a| a.into()).collect(),
+                }
+            )
         ));
         a
     }
-    fn start(mut self) -> Result<String, ()> {
+    fn start(self) -> Result<String, ()> {
         self.actions.iter().nth(0)/*find(|a| a.id == pressed)*/.map(|a| a.title.clone()).ok_or(())
     }
     fn severity(&self) -> types::MessageSeverity {
@@ -73,11 +74,10 @@ impl MessageInner for TestableMessage {
 impl HasNativeIdInner for TestableMessage {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.id.into()
     }
 }
 
 impl MemberInner for TestableMessage {}
 
-default_impls_as!(Message);

@@ -1,5 +1,8 @@
+use crate::custom_code_block::Custom;
+use crate::maybe::Maybe;
+
 use heck::*;
-use proc_macro2::Span;
+use proc_macro2::{TokenStream, Span};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
@@ -37,7 +40,7 @@ pub(crate) struct Has {
     _colon: Option<Token![:]>,
     extends: Option<Punctuated<Ident, Token![+]>>,
     _brace: Option<token::Brace>,
-    custom: Option<proc_macro2::TokenStream>,
+    custom: Option<Custom>,
     use_reactor: bool, 
     use_get_set: bool,
 }
@@ -132,58 +135,63 @@ impl ToTokens for Has {
             .unwrap_or(vec![]);
 
         let on_ident = Ident::new(&ident.to_camel_case(), Span::call_site());
-        let mut on = crate::on::On {
-            name: on_ident.clone(),
-            paren: token::Paren { span: Span::call_site() },
-            params: Punctuated::new(),
-            ret: crate::on::OnReturnParams::Single(
-                token::RArrow { spans: [Span::call_site(), Span::call_site()] },
-                Type::Path(TypePath {
-                    qself: None,
-                    path: Path {
-                        leading_colon: None,
-                        segments: Punctuated::from_iter(
-                            vec![PathSegment {
-                                ident: Ident::new("bool", Span::call_site()),
-                                arguments: PathArguments::None,
-                            }]
-                            .into_iter(),
-                        ),
-                    },
-                }),
-            ),
-            default_ret: Some(Ident::new("true", Span::call_site())),
-        };
-        let tto = TypeReference {
-            and_token: token::And { spans: [Span::call_site()] },
-            lifetime: None,
-            mutability: Some(token::Mut { span: Span::call_site() }),
-            elem: Box::new(Type::TraitObject(TypeTraitObject {
-                dyn_token: Some(token::Dyn { span: Span::call_site() }),
-                bounds: Punctuated::from_iter(
-                    vec![TypeParamBound::Trait(TraitBound {
-                        paren_token: None,
-                        modifier: TraitBoundModifier::None,
-                        lifetimes: None,
+        
+        let on = if self.use_reactor {
+            let mut on = crate::on::On {
+                name: on_ident.clone(),
+                paren: token::Paren { span: Span::call_site() },
+                params: Punctuated::new(),
+                ret: crate::on::OnReturnParams::Single(
+                    token::RArrow { spans: [Span::call_site(), Span::call_site()] },
+                    Type::Path(TypePath {
+                        qself: None,
                         path: Path {
                             leading_colon: None,
                             segments: Punctuated::from_iter(
                                 vec![PathSegment {
-                                    ident: has_ident.clone(),
+                                    ident: Ident::new("bool", Span::call_site()),
                                     arguments: PathArguments::None,
                                 }]
                                 .into_iter(),
                             ),
                         },
-                    })]
-                    .into_iter(),
+                    }),
                 ),
-            })),
-        };
-        on.params.push(Type::Reference(tto));
-        self.params.iter().for_each(|i| on.params.push(i.clone()));
-        
-        let custom = &self.custom;
+                default_ret: Some(Ident::new("true", Span::call_site())),
+            };
+            let tto = TypeReference {
+                and_token: token::And { spans: [Span::call_site()] },
+                lifetime: None,
+                mutability: Some(token::Mut { span: Span::call_site() }),
+                elem: Box::new(Type::TraitObject(TypeTraitObject {
+                    dyn_token: Some(token::Dyn { span: Span::call_site() }),
+                    bounds: Punctuated::from_iter(
+                        vec![TypeParamBound::Trait(TraitBound {
+                            paren_token: None,
+                            modifier: TraitBoundModifier::None,
+                            lifetimes: None,
+                            path: Path {
+                                leading_colon: None,
+                                segments: Punctuated::from_iter(
+                                    vec![PathSegment {
+                                        ident: has_ident.clone(),
+                                        arguments: PathArguments::None,
+                                    }]
+                                    .into_iter(),
+                                ),
+                            },
+                        })]
+                        .into_iter(),
+                    ),
+                })),
+            };
+            on.params.push(Type::Reference(tto));
+            self.params.iter().for_each(|i| on.params.push(i.clone()));
+            
+            let mut stream = TokenStream::new();
+            on.to_tokens(&mut stream);
+            stream
+        } else { quote!{} };
         
         let reactor = if self.use_reactor && !self.use_get_set {
             quote! {
@@ -214,24 +222,50 @@ impl ToTokens for Has {
                 fn #on_ident_fn(&mut self #(,#extends_base_names: &mut #extends_base)* ,callback: Option<#on_ident>);
             }
         } else { quote! {} };
+        
+        let (custom_trait, custom_inner) = {
+        	let mut custom_trait = quote!{};
+        	let mut custom_inner = quote!{};
+        	if let Some(ref custom) = self.custom {
+        		for block in [custom.blocks.get(0), custom.blocks.get(1)].iter() {
+	        		if let Some(ref custom) = block {
+		        		match custom.name.to_string().as_str() {
+		        			"outer" => {
+		        				custom_trait = custom.custom.clone();
+		        			},
+		        			"inner" => {
+		        				custom_inner = custom.custom.clone();
+		        			},
+		        			_ => panic!("Unsupported custom block name :'{}'", custom.name),
+		        		}
+		        	}
+        		}
+        	}
+        	(custom_trait, custom_inner)
+        };
 
+        let maybe = Maybe {
+            name: has_ident.clone()
+        };
+        
         let expr = quote! {
             pub trait #has_ident: AsAny + 'static #(+#extends)* {
                 fn #ident_fn(&self) -> #return_params ;
                 fn #set_ident_fn(&mut self #(,#param_names: #params)*);
                 #on_ident_fn
 
-                #custom
+                #custom_trait
                 #as_into
             }
             pub trait #has_ident_inner: 'static #(+#extends_inner)* {
                 #getsetter
                 #on_ident_inner_fn
                 #reactor
-                #custom
+                #custom_inner
             }
 
             #on
+            #maybe
         };
         expr.to_tokens(tokens);
     }

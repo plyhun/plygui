@@ -1,4 +1,4 @@
-pub use plygui_api::development::*;
+pub use plygui_api::sdk::*;
 pub use plygui_api::{callbacks, controls, defaults, ids, layout, types, utils};
 pub use plygui_api::external::image;
 
@@ -16,6 +16,12 @@ pub type InnerId = *mut MemberBase;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TestableId(InnerId);
 
+impl<O: controls::Control> From<&mut mem::MaybeUninit<O>> for TestableId {
+    #[inline]
+    fn from(a: &mut mem::MaybeUninit<O>) -> TestableId {
+        (a as *mut _ as InnerId).into()
+    }
+}
 impl From<InnerId> for TestableId {
     #[inline]
     fn from(a: InnerId) -> TestableId {
@@ -34,7 +40,11 @@ impl From<TestableId> for usize {
         a.0 as usize
     }
 }
-impl NativeId for TestableId {}
+impl NativeId for TestableId {
+    unsafe fn from_outer(arg: usize) -> Self {
+        TestableId(arg as *mut MemberBase)
+    }
+}
 
 #[repr(C)]
 pub struct TestableControlBase<T: controls::Control + Sized> {
@@ -47,9 +57,20 @@ pub struct TestableControlBase<T: controls::Control + Sized> {
 }
 
 impl<T: controls::Control + Sized> TestableControlBase<T> {
+	#[deprecated]
     pub fn new() -> TestableControlBase<T> {
         TestableControlBase {
             id: ptr::null_mut(),
+            size: (0, 0),
+		    position: (0, 0),
+		    parent: None,
+            visibility: types::Visibility::Visible,
+            _marker: PhantomData,
+        }
+    }
+    pub fn with_id<U: Into<TestableId>>(id: U) -> TestableControlBase<T> {
+        TestableControlBase {
+            id: id.into().into(),
             size: (0, 0),
 		    position: (0, 0),
 		    parent: None,

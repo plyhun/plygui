@@ -1,47 +1,46 @@
 use crate::common::{self, *};
 
-pub type Image = Member<Control<TestableImage>>;
+pub type Image = AMember<AControl<AImage<TestableImage>>>;
 
 #[repr(C)]
 pub struct TestableImage {
     base: TestableControlBase<Image>,
 
-    bmp: Option<image::DynamicImage>,
+    bmp: image::DynamicImage,
     scale: types::ImageScalePolicy,
 }
 
-impl TestableImage {
-    fn install_image(&mut self, content: image::DynamicImage) {
-		self.bmp = Some(content);
+impl HasImageInner for TestableImage {
+    fn image(&self, _: &MemberBase) -> Cow<image::DynamicImage> {
+        Cow::Borrowed(&self.bmp)
     }
-    fn remove_image(&mut self) {
-        self.bmp = None;
-    }
-}
-
-impl Drop for TestableImage {
-    fn drop(&mut self) {
-        self.remove_image();
+    fn set_image(&mut self, _: &mut MemberBase, arg0: Cow<image::DynamicImage>) {
+        self.bmp = arg0.into_owned();
     }
 }
-
+impl<O: controls::Image> NewImageInner<O> for TestableImage {
+    fn with_uninit_params(u: &mut mem::MaybeUninit<O>, content: image::DynamicImage) -> Self {
+        TestableImage {
+            base: TestableControlBase::with_id(u),
+            bmp: content,
+            scale: types::ImageScalePolicy::FitCenter,
+        }
+    }
+}
 impl ImageInner for TestableImage {
     fn with_content(content: image::DynamicImage) -> Box<dyn controls::Image> {
-        let mut i = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableImage {
-                    base: TestableControlBase::new(),
-
-                    bmp: None,
-                    scale: types::ImageScalePolicy::FitCenter,
-                },
-                (),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-		i.as_inner_mut().as_inner_mut().base.id = i.base_mut();
-        i.as_inner_mut().as_inner_mut().install_image(content);
-        i
+        let mut b: Box<mem::MaybeUninit<Image>> = Box::new_uninit();
+        let ab = AMember::with_inner(
+            AControl::with_inner(
+                AImage::with_inner(
+                    <Self as NewImageInner<Image>>::with_uninit_params(b.as_mut(), content)
+                ),
+            )
+        );
+		unsafe {
+            b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
     }
     fn set_scale(&mut self, _member: &mut MemberBase, policy: types::ImageScalePolicy) {
         if self.scale != policy {
@@ -53,7 +52,11 @@ impl ImageInner for TestableImage {
         self.scale
     }
 }
-
+impl Spawnable for TestableImage {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_content(image::DynamicImage::new_luma8(0, 0)).into_control()
+    }
+}
 impl ControlInner for TestableImage {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
@@ -93,7 +96,7 @@ impl HasLayoutInner for TestableImage {
 impl HasNativeIdInner for TestableImage {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
@@ -107,7 +110,7 @@ impl HasSizeInner for TestableImage {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
         
-        unsafe { utils::base_to_impl_mut::<Image>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<Image>(base) }.call_on_size::<Image>(width, height);
         
         true
     }
@@ -136,14 +139,14 @@ impl Drawable for TestableImage {
                     layout::Size::MatchParent => w,
                     layout::Size::Exact(w) => w,
                     layout::Size::WrapContent => {
-                        if let Some(ref bmp) = self.bmp {bmp.dimensions().0 as u16 } else { 0 }
+                        self.bmp.dimensions().0 as u16
                     }
                 };
                 let h = match control.layout.height {
                     layout::Size::MatchParent => h,
                     layout::Size::Exact(h) => h,
                     layout::Size::WrapContent => {
-                        if let Some(ref bmp) = self.bmp {bmp.dimensions().1 as u16 } else { 0 }
+                        self.bmp.dimensions().1 as u16
                     }
                 };
                 (cmp::max(0, w as i32) as u16, cmp::max(0, h as i32) as u16)
@@ -181,4 +184,3 @@ fn fmax(a: f32, b: f32) -> f32 {
     }
 }*/
 
-default_impls_as!(Image);

@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type Text = Member<Control<TestableText>>;
+pub type Text = AMember<AControl<AText<TestableText>>>;
 
 #[repr(C)]
 pub struct TestableText {
@@ -17,24 +17,36 @@ impl HasLabelInner for TestableText {
         self.base.invalidate();
     }
 }
-
-impl TextInner for TestableText {
-    fn with_text(text: &str) -> Box<Text> {
-        let mut b: Box<Text> = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableText {
-                    base: common::TestableControlBase::new(),
-                    text: text.to_owned(),
-                },
-                (),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
-        b
+impl<O: controls::Text> NewTextInner<O> for TestableText {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableText {
+            base: common::TestableControlBase::with_id(u),
+            text: String::new(),
+        }
     }
 }
-
+impl TextInner for TestableText {
+    fn with_text<S: AsRef<str>>(text: S) -> Box<dyn controls::Text> {
+        let mut b: Box<mem::MaybeUninit<Text>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
+            AControl::with_inner(
+                AText::with_inner(
+                    <Self as NewTextInner<Text>>::with_uninit(b.as_mut()),
+                ),
+            )
+        );
+        controls::HasLabel::set_label(&mut ab, text.as_ref().into());
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
+    }
+}
+impl Spawnable for TestableText {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_text("").into_control()
+    }
+}
 impl ControlInner for TestableText {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, px: i32, py: i32, _pw: u16, _ph: u16) {
 	    self.base.parent = Some(unsafe {parent.native_id() as InnerId});
@@ -58,8 +70,8 @@ impl ControlInner for TestableText {
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
-        use plygui_api::markup::MEMBER_TYPE_BUTTON;
-        fill_from_markup_base!(self, member, markup, registry, Text, [MEMBER_TYPE_BUTTON]);
+        use plygui_api::markup::MEMBER_TYPE_TEXT;
+        fill_from_markup_base!(self, member, markup, registry, Text, [MEMBER_TYPE_TEXT]);
         fill_from_markup_label!(self, member, markup);
     }
 }
@@ -79,7 +91,7 @@ impl HasSizeInner for TestableText {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
         
-        unsafe { utils::base_to_impl_mut::<Text>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<Text>(base) }.call_on_size::<Text>(width, height);
         
         true
     }
@@ -93,7 +105,7 @@ impl HasVisibilityInner for TestableText {
 impl HasNativeIdInner for TestableText {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
@@ -102,7 +114,7 @@ impl MemberInner for TestableText {}
 
 impl Drawable for TestableText {
     fn draw(&mut self, _member: &mut MemberBase, control: &mut ControlBase) {
-        self.base.draw("Text", control.coords, control.measured);
+        self.base.draw(format!("Text '{}'", self.text).as_str(), control.coords, control.measured);
     }
     fn measure(&mut self, _member: &mut MemberBase, control: &mut ControlBase, parent_width: u16, parent_height: u16) -> (u16, u16, bool) {
         let old_size = control.measured;
@@ -134,10 +146,3 @@ impl Drawable for TestableText {
         self.base.invalidate()
     }
 }
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    Text::empty().into_control()
-}
-
-default_impls_as!(Text);

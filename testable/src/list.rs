@@ -1,35 +1,79 @@
 use crate::common::{self, *};
 
-pub type List = Member<Control<Adapter<TestableList>>>;
+pub type List = AMember<AControl<AContainer<AAdapted<AList<TestableList>>>>>;
 
 #[repr(C)]
 pub struct TestableList {
     base: TestableControlBase<List>,
-    children: Vec<Box<dyn controls::Control>>,
+    items: Vec<Box<dyn controls::Control>>,
+    on_item_click: Option<callbacks::OnItemClick>,
 }
-
-impl AdapterViewInner for TestableList {
-    fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<List> {
-        let b = Box::new(Member::with_inner(
-            Control::with_inner(
-                Adapter::with_inner(
-                    TestableList {
-                        base: TestableControlBase::new(),
-                        children: Vec::with_capacity(adapter.len()),
-                    },
-                    adapter,
-                ),
-                (),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b
-    }
-    fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
-        
+impl<O: controls::List> NewListInner<O> for TestableList {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableList {
+            base: common::TestableControlBase::with_id(u),
+            items: vec![],
+            on_item_click: None,
+        }
     }
 }
-
+impl ListInner for TestableList {
+	fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn controls::List> {
+        let len = adapter.len();
+        let mut b: Box<mem::MaybeUninit<List>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
+            AControl::with_inner(
+                AContainer::with_inner(
+                    AAdapted::with_inner(
+                        AList::with_inner(
+                            <Self as NewListInner<List>>::with_uninit(b.as_mut())
+                        ),
+                        adapter,
+                        &mut b,
+                    ),
+                )
+            )
+        );
+        ab.inner_mut().inner_mut().inner_mut().inner_mut().inner_mut().items = Vec::with_capacity(len);
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
+    }
+}
+impl ItemClickableInner for TestableList {
+    fn item_click(&mut self, i: usize, item_view: &mut dyn controls::Control, skip_callbacks: bool) {
+        if !skip_callbacks{
+            let self2 = self.base.as_outer_mut();
+            if let Some(ref mut callback) = self.on_item_click {
+                (callback.as_mut())(self2, i, item_view)
+            }
+        }
+    }
+    fn on_item_click(&mut self, callback: Option<callbacks::OnItemClick>) {
+        self.on_item_click = callback;
+    }
+}
+impl AdaptedInner for TestableList {
+    fn on_item_change(&mut self, _base: &mut MemberBase, value: types::Change) {
+        match value {
+            types::Change::Added(index) => {
+                println!("item added {}", index);
+            },
+            types::Change::Removed(index) => {
+                println!("item removed {}", index);
+            },
+            types::Change::Edited(index) => {
+                println!("item edited {}", index);
+            }
+        }
+    }
+}
+impl Spawnable for TestableList {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_adapter(Box::new(types::imp::StringVecAdapter::<crate::imp::Text>::new())).into_control()
+    }
+}
 impl ControlInner for TestableList {
     fn parent(&self) -> Option<&dyn controls::Member> {
         self.base.parent().map(|p| p.as_member())
@@ -47,7 +91,7 @@ impl ControlInner for TestableList {
         self.base.parent = Some(unsafe {parent.native_id() as InnerId});
 	    self.base.position = (px, py);
 
-        let (member, _, adapter) = List::adapter_base_parts_mut(member);
+        let (member, _, adapter, _) = List::as_adapted_parts_mut(unsafe { utils::base_to_impl_mut(member) });
 
         let mut y = 0;
         for i in 0..adapter.adapter.len() {
@@ -55,44 +99,44 @@ impl ControlInner for TestableList {
             let mut item = adapter.adapter.spawn_item_view(i, self2);
             item.on_added_to_container(self2, 0, y, utils::coord_to_size(pw as i32) as u16, utils::coord_to_size(ph as i32) as u16);
             let (_, yy) = item.size();
-            self.children.push(item);
+            self.items.push(item);
             y += yy as i32;
         }
     }
     fn on_removed_from_container(&mut self, member: &mut MemberBase, _control: &mut ControlBase, _: &dyn controls::Container) {
-        for ref mut child in self.children.as_mut_slice() {
+        for ref mut item in self.items.as_mut_slice() {
             let self2: &mut List = unsafe { utils::base_to_impl_mut(member) };
-            child.on_removed_from_container(self2);
+            item.on_removed_from_container(self2);
         }
         self.base.parent = None;
     }
 
     #[cfg(feature = "markup")]
     fn fill_from_markup(&mut self, member: &mut MemberBase, _control: &mut ControlBase, markup: &plygui_api::markup::Markup, registry: &mut plygui_api::markup::MarkupRegistry) {
-        use plygui_api::markup::MEMBER_TYPE_TABLE;
+        use plygui_api::markup::MEMBER_TYPE_LIST;
 
-        fill_from_markup_base!(self, member, markup, registry, List, [MEMBER_TYPE_TABLE]);
-        //fill_from_markup_children!(self, member, markup, registry);
+        fill_from_markup_base!(self, member, markup, registry, List, [MEMBER_TYPE_LIST]);
+        //fill_from_markup_items!(self, member, markup, registry);
     }
 }
 impl ContainerInner for TestableList {
     fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
-        for child in self.children.as_mut_slice() {
+        for item in self.items.as_mut_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
-                    if child.as_member_mut().id() == *id {
-                        return Some(child.as_mut());
+                    if item.as_member_mut().id() == *id {
+                        return Some(item.as_mut());
                     }
                 }
                 types::FindBy::Tag(ref tag) => {
-                    if let Some(mytag) = child.as_member_mut().tag() {
+                    if let Some(mytag) = item.as_member_mut().tag() {
                         if tag.as_str() == mytag {
-                            return Some(child.as_mut());
+                            return Some(item.as_mut());
                         }
                     }
                 }
             }
-            if let Some(c) = child.is_container_mut() {
+            if let Some(c) = item.is_container_mut() {
                 let ret = c.find_control_mut(arg.clone());
                 if ret.is_none() {
                     continue;
@@ -103,22 +147,22 @@ impl ContainerInner for TestableList {
         None
     }
     fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
-        for child in self.children.as_slice() {
+        for item in self.items.as_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
-                    if child.as_member().id() == *id {
-                        return Some(child.as_ref());
+                    if item.as_member().id() == *id {
+                        return Some(item.as_ref());
                     }
                 }
                 types::FindBy::Tag(ref tag) => {
-                    if let Some(mytag) = child.as_member().tag() {
+                    if let Some(mytag) = item.as_member().tag() {
                         if tag.as_str() == mytag {
-                            return Some(child.as_ref());
+                            return Some(item.as_ref());
                         }
                     }
                 }
             }
-            if let Some(c) = child.is_container() {
+            if let Some(c) = item.is_container() {
                 let ret = c.find_control(arg.clone());
                 if ret.is_none() {
                     continue;
@@ -137,7 +181,7 @@ impl HasLayoutInner for TestableList {
 impl HasNativeIdInner for TestableList {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
@@ -189,13 +233,3 @@ impl Drawable for TestableList {
         self.base.invalidate()
     }
 }
-
-/*#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    List::with_dimensions(0, 0).into_control()
-}*/
-fn on_item_change(this: &mut dyn controls::AdapterView, i: usize) {
-    
-}
-
-default_impls_as!(List);

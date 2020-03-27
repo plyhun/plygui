@@ -1,6 +1,6 @@
 use crate::common::{self, *};
 
-pub type ProgressBar = Member<Control<TestableProgressBar>>;
+pub type ProgressBar = AMember<AControl<AProgressBar<TestableProgressBar>>>;
 
 #[repr(C)]
 pub struct TestableProgressBar {
@@ -17,24 +17,36 @@ impl HasProgressInner for TestableProgressBar {
         self.base.invalidate();
     }
 }
-
-impl ProgressBarInner for TestableProgressBar {
-    fn with_progress(arg: types::Progress) -> Box<ProgressBar> {
-        let mut b = Box::new(Member::with_inner(
-            Control::with_inner(
-                TestableProgressBar {
-                    base: common::TestableControlBase::new(),
-                    progress: arg,
-                },
-                (),
-            ),
-            MemberFunctions::new(_as_any, _as_any_mut, _as_member, _as_member_mut),
-        ));
-        b.as_inner_mut().as_inner_mut().base.id = b.base_mut();
-        b
+impl<O: controls::ProgressBar> NewProgressBarInner<O> for TestableProgressBar {
+    fn with_uninit(u: &mut mem::MaybeUninit<O>) -> Self {
+        TestableProgressBar {
+            base: common::TestableControlBase::with_id(u),
+            progress: Default::default(),
+        }
     }
 }
-
+impl ProgressBarInner for TestableProgressBar {
+    fn with_progress(arg: types::Progress) -> Box<dyn controls::ProgressBar> {
+        let mut b: Box<mem::MaybeUninit<ProgressBar>> = Box::new_uninit();
+        let mut ab = AMember::with_inner(
+            AControl::with_inner(
+                AProgressBar::with_inner(
+                    <Self as NewProgressBarInner<ProgressBar>>::with_uninit(b.as_mut()),
+                ),
+            )
+        );
+        controls::HasProgress::set_progress(&mut ab, arg);
+        unsafe {
+	        b.as_mut_ptr().write(ab);
+	        b.assume_init()
+        }
+    }
+}
+impl Spawnable for TestableProgressBar {
+    fn spawn() -> Box<dyn controls::Control> {
+        Self::with_progress(types::Progress::None).into_control()
+    }
+}
 impl ControlInner for TestableProgressBar {
     fn on_added_to_container(&mut self, _member: &mut MemberBase, _control: &mut ControlBase, parent: &dyn controls::Container, x: i32, y: i32, _pw: u16, _ph: u16) {
         self.base.parent = Some(unsafe { parent.native_id() as InnerId });
@@ -72,7 +84,7 @@ impl HasLayoutInner for TestableProgressBar {
 impl HasNativeIdInner for TestableProgressBar {
     type Id = common::TestableId;
 
-    unsafe fn native_id(&self) -> Self::Id {
+    fn native_id(&self) -> Self::Id {
         self.base.id.into()
     }
 }
@@ -86,7 +98,7 @@ impl HasSizeInner for TestableProgressBar {
         this.set_layout_width(layout::Size::Exact(height));
         self.base.invalidate();
 
-        unsafe { utils::base_to_impl_mut::<ProgressBar>(base) }.call_on_size(width, height);
+        unsafe { utils::base_to_impl_mut::<ProgressBar>(base) }.call_on_size::<ProgressBar>(width, height);
 
         true
     }
@@ -129,10 +141,3 @@ impl Drawable for TestableProgressBar {
         self.base.invalidate()
     }
 }
-
-#[allow(dead_code)]
-pub(crate) fn spawn() -> Box<dyn controls::Control> {
-    ProgressBar::with_progress(types::Progress::None).into_control()
-}
-
-default_impls_as!(ProgressBar);

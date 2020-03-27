@@ -3,7 +3,7 @@ pub use plygui_api::controls::*;
 pub use plygui_api::external;
 pub use plygui_api::ids::*;
 pub use plygui_api::layout;
-pub use plygui_api::types::*;
+pub use plygui_api::types::{*, self};
 pub use plygui_api::utils;
 
 pub mod common;
@@ -17,7 +17,5 @@ pub use plygui_cocoa::imp;
 #[cfg(all(target_os = "windows", feature = "win32"))]
 pub use plygui_win32::imp;
 
-#[cfg(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")))]
+#[cfg(all(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")), feature = "testable"))]
 pub use plygui_testable::imp;
-
-use plygui_api::development;

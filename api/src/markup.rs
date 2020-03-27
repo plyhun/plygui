@@ -34,7 +34,7 @@ pub const MEMBER_TYPE_BUTTON: &str = "Button";
 pub const MEMBER_TYPE_TEXT: &str = "Text";
 pub const MEMBER_TYPE_IMAGE: &str = "Image";
 pub const MEMBER_TYPE_PROGRESS_BAR: &str = "ProgressBar";
-pub const MEMBER_TYPE_TABLE: &str = "Table";
+pub const MEMBER_TYPE_LIST: &str = "List";
 
 pub struct MarkupRegistry {
     spawners: HashMap<MemberType, MemberSpawner>,
@@ -235,7 +235,7 @@ impl<'de> Visitor<'de> for MarkupVisitor {
     }
 }
 
-pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<dyn super::controls::Control> {
+pub fn parse_markup(json: &str, registry: &mut MarkupRegistry) -> Box<dyn crate::controls::Control> {
     let markup: Markup = serde_json::from_str(json).unwrap();
 
     let mut control = registry.member(&markup.member_type).unwrap()();
@@ -251,17 +251,17 @@ macro_rules! bind_markup_callback {
 }
 #[macro_export]
 macro_rules! fill_from_markup_base {
-    ($this: expr, $mem: expr, $mrk: ident, $reg: ident, $typ:ty, [$($arg:ident),+]) => {
-        if !&[$($arg),+].contains(&$mrk.member_type.as_str()) {
-            match $mrk.id {
-                Some(ref id) => panic!("Markup does not belong to {}: {} ({})", stringify!($typ), $mrk.member_type, id),
-                None => panic!("Markup does not belong to {}: {}", stringify!($typ), $mrk.member_type),
-            }
-        }
-        if let Some(ref id) = $mrk.id {
-            $reg.store_id(&id, $mem.id()).unwrap();
-        }
-    }
+	($this: expr, $mem: expr, $mrk: ident, $reg: ident, $typ:ty, [$($arg:ident),+]) => {
+		if !&[$($arg),+].contains(&$mrk.member_type.as_str()) {
+			match $mrk.id {
+				Some(ref id) => panic!("Markup does not belong to {}: {} ({})", stringify!($typ), $mrk.member_type, id),
+				None => panic!("Markup does not belong to {}: {}", stringify!($typ), $mrk.member_type),
+			}
+		}
+    	if let Some(ref id) = $mrk.id {
+    		$reg.store_id(&id, $mem.id()).unwrap();
+    	}
+	}
 }
 #[macro_export]
 macro_rules! fill_from_markup_label {
@@ -272,12 +272,12 @@ macro_rules! fill_from_markup_label {
 }
 #[macro_export]
 macro_rules! fill_from_markup_callbacks {
-    ($this: expr, $mrk: ident, $reg: ident, [$($cbname:ident => $cbtyp:ty),+]) => {
-        $(if let Some(callback) = $mrk.attributes.get(stringify!($cbname)) {
-            let callback: $cbtyp = $reg.pop_callback(callback.as_attribute()).unwrap();
-            $this.$cbname(Some(callback));
-        })+
-    }
+	($this: expr, $mrk: ident, $reg: ident, [$($cbname:ident => $cbtyp:ty),+]) => {
+		$(if let Some(callback) = $mrk.attributes.get(stringify!($cbname)) {
+    		let callback: $cbtyp = $reg.pop_callback(callback.as_attribute()).unwrap();
+    		$this.$cbname(Some(callback));
+    	})+
+	}
 }
 #[macro_export]
 macro_rules! fill_from_markup_children {

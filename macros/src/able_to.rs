@@ -8,6 +8,7 @@ use syn::{braced, parenthesized, parse_macro_input, token, Ident, Lifetime, Path
 use std::iter::FromIterator;
 
 use crate::on::*;
+use crate::maybe::Maybe;
 
 pub fn make(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let parsed = parse_macro_input!(item as AbleTo);
@@ -104,8 +105,10 @@ impl Parse for AbleTo {
 
 impl ToTokens for AbleTo {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let ident = &self.name.to_string().to_camel_case();
-
+        let ident = Ident::new(&self.name.to_string().to_camel_case(), Span::call_site());
+        
+        //let a_ident = Ident::new(&format!("A{}", ident).to_camel_case(), Span::call_site());
+        //let ident_base = Ident::new(&format!("{}Base", ident).to_camel_case(), Span::call_site());
         let ident_able = Ident::new(&format!("{}able", ident).to_camel_case(), Span::call_site());
         let ident_able_inner = Ident::new(&format!("{}ableInner", ident).to_camel_case(), Span::call_site());
 
@@ -139,9 +142,8 @@ impl ToTokens for AbleTo {
         let static_ = Lifetime::new("'static", Span::call_site());
         let static_inner = Lifetime::new("'static", Span::call_site());
 
-        let on_ident = Ident::new(&ident.to_camel_case(), Span::call_site());
         let mut on = crate::on::On {
-            name: on_ident.clone(),
+            name: ident.clone(),
             paren: token::Paren { span: Span::call_site() },
             //ident_owner_camel: ident_able.clone(),
             params: Punctuated::new(),
@@ -179,6 +181,10 @@ impl ToTokens for AbleTo {
             params.iter().for_each(|i| on.params.push(i.clone()));
         }
 
+        let maybe = Maybe {
+            name: ident_able.clone()
+        };
+        
         let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
 
         let expr = quote! {
@@ -197,6 +203,18 @@ impl ToTokens for AbleTo {
             }
 
             #on
+            #maybe
+            /*
+            #[repr(C)]
+			pub struct #ident_base {
+				pub callback: Option<#on_ident>
+			}
+            
+            #[repr(C)]
+			pub struct #a_ident<T: #ident_able_inner> {
+				pub base: #ident_base,
+				pub inner: T,
+			}*/
         };
         expr.to_tokens(tokens);
     }

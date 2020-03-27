@@ -21,13 +21,14 @@ plygui-win32 = { version = "0.0.1", path = "../../plygui-win32", optional = true
 plygui-cocoa = { version = "0.0.1", path = "../../plygui-cocoa", optional = true }
 
 [target.'cfg(not(any(feature = "gtk3", feature = "cocoa", feature = "win32")))'.dependencies]
-plygui-testable = { version = "0.0.1", path = "../testable" }
+plygui-testable = { version = "0.0.1", path = "../testable", optional = true }
 
 [features]
 gtk3 = ["plygui-gtk"]
 win32 = ["plygui-win32"]
 cocoa = ["plygui-cocoa"]
+testable = ["plygui-testable"]
 #https://github.com/rust-lang/cargo/issues/1197
-#native = ["win32", "cocoa", "gtk3"]
+native = ["win32", "cocoa", "gtk3"]
 type_check = ["plygui-api/type_check"]
-default = ["type_check"]
+default = ["type_check", "native"]

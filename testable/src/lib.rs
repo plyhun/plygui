@@ -1,4 +1,5 @@
 //#![feature(core_intrinsics)]
+#![feature(new_uninit)]
 
 #[macro_use]
 extern crate plygui_api;
@@ -17,6 +18,8 @@ mod tray;
 mod window;
 mod progress_bar;
 mod list;
+
+mod better_button; 
 
 default_markup_register_members!();
 default_pub_use!();
