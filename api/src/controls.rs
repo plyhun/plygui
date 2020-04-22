@@ -28,4 +28,5 @@ pub use crate::inner::{
     closeable::{Closeable, MaybeCloseable},
     adapted::{Adapted, MaybeAdapted},
     list::{List, MaybeList, NewList},
+    tree::{Tree, MaybeTree, NewTree},
 };
