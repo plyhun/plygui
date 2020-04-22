@@ -8,5 +8,11 @@ pub trait AdapterInner: 'static {
 
 pub trait Adapter: AdapterInner + AsAny {
 	fn len(&self) -> usize;
-	fn spawn_item_view(&mut self, i: usize, parent: &dyn Adapted) -> Box<dyn Control>;
+	fn spawn_item_view(&mut self, indexes: &[usize], node: AdapterNode, parent: &dyn Adapted) -> Box<dyn Control>;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AdapterNode {
+	Leaf,
+	Branch(bool),
 }

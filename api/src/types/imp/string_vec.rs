@@ -1,6 +1,6 @@
 use crate::controls::{Adapted, Control, HasLabel};
 use crate::sdk;
-use crate::types::{AsAny, Adapter, Change, Spawnable};
+use crate::types::{AsAny, Adapter, Change, Spawnable, AdapterNode};
 use std::any::Any;
 use std::marker::PhantomData;
 
@@ -65,9 +65,9 @@ impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
     fn len(&self) -> usize {
         self.items.len()
     }
-	fn spawn_item_view(&mut self, i: usize, _parent: &dyn Adapted) -> Box<dyn Control> {
+	fn spawn_item_view(&mut self, indexes: &[usize], _node: AdapterNode, _parent: &dyn Adapted) -> Box<dyn Control> {
 	    let mut control = C::spawn();
-	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[i].as_str().into());
+	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[indexes[0]].as_str().into());
     	control
 	}
 }

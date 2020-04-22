@@ -28,6 +28,7 @@ pub mod frame;
 pub mod image;
 pub mod layout_linear;
 pub mod list;
+pub mod tree;
 pub mod message;
 pub mod progress_bar;
 pub mod splitted;

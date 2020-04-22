@@ -4,7 +4,7 @@ pub mod imp;
 
 pub use crate::inner::{
     auto::{AsAny, Spawnable},
-    adapter::Adapter,
+    adapter::{AdapterNode, Adapter},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

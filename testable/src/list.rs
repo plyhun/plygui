@@ -96,7 +96,7 @@ impl ControlInner for TestableList {
         let mut y = 0;
         for i in 0..adapter.adapter.len() {
             let self2: &mut List = unsafe { utils::base_to_impl_mut(member) };
-            let mut item = adapter.adapter.spawn_item_view(i, self2);
+            let mut item = adapter.adapter.spawn_item_view(&[i], types::AdapterNode::Leaf, self2);
             item.on_added_to_container(self2, 0, y, utils::coord_to_size(pw as i32) as u16, utils::coord_to_size(ph as i32) as u16);
             let (_, yy) = item.size();
             self.items.push(item);
