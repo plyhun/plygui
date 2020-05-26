@@ -1,4 +1,4 @@
-use crate::{controls, types};
+use crate::{controls, types::{adapter}};
 
 pub use crate::inner::{
 	auto::OnFrame,
@@ -111,4 +111,4 @@ macro_rules! callback {
 //callback!(OnFrame, FnMut(&mut dyn controls::Window) -> bool);
 callback!(Action, FnMut(&mut dyn controls::Member) -> bool);
 
-on!(ItemChange (&mut MemberBase, types::Change));
+on!(ItemChange (&mut MemberBase, adapter::Change));

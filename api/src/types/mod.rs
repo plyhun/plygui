@@ -2,9 +2,13 @@ use crate::controls;
 
 pub mod imp;
 
+pub mod adapter {
+	pub use crate::inner::adapter::{Node, Change};
+}
+
 pub use crate::inner::{
     auto::{AsAny, Spawnable},
-    adapter::{AdapterNode, Adapter},
+    adapter::{Adapter},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,12 +81,6 @@ pub enum ImageScalePolicy {
 pub enum FindBy {
     Id(crate::ids::Id),
     Tag(String),
-}
-#[derive(Debug, Clone, PartialEq)]
-pub enum Change {
-    Added(usize),
-    Removed(usize),
-    Edited(usize)
 }
 
 pub enum ApplicationResult {
