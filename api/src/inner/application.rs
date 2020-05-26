@@ -26,8 +26,8 @@ define! {
         outer: {
             fn name(&self) -> ::std::borrow::Cow<'_, str>;
             fn start(&mut self);
-            fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member>;
-            fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member>;
+            fn find_member_mut<'a>(&'a mut self, arg: &'a types::FindBy) -> Option<&'a mut dyn Member>;
+            fn find_member<'a>(&'a self, arg: &'a types::FindBy) -> Option<&'a dyn Member>;
             fn exit(self: Box<Self>);
             fn prepare_exit(&mut self);
             fn on_frame(&mut self, cb: OnFrame);
@@ -49,8 +49,8 @@ define! {
             fn name(&self) -> Cow<'_, str>;
             fn start(&mut self);
         
-            fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member>;
-            fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member>;
+            fn find_member_mut<'a>(&'a mut self, arg: &'a types::FindBy) -> Option<&'a mut dyn Member>;
+            fn find_member<'a>(&'a self, arg: &'a types::FindBy) -> Option<&'a dyn Member>;
         
             fn exit(&mut self);
         
@@ -138,11 +138,11 @@ impl<T: ApplicationInner> Application for AApplication<T> {
         self.inner_mut().start()
     }
     #[inline]
-    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member> {
+    fn find_member_mut<'a>(&'a mut self, arg: &'a types::FindBy) -> Option<&'a mut dyn Member> {
         self.inner_mut().find_member_mut(arg)
     }
     #[inline]
-    fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member> {
+    fn find_member<'a>(&'a self, arg: &'a types::FindBy) -> Option<&'a dyn Member> {
         self.inner().find_member(arg)
     }
     #[inline]
@@ -229,10 +229,10 @@ impl<II: ApplicationInner, T: HasInner<I = II> + Abstract + 'static> Application
         self.inner_mut().start()
     }
 
-    fn find_member_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn Member> {
+    fn find_member_mut<'a>(&'a mut self, arg: &'a types::FindBy) -> Option<&'a mut dyn Member> {
         self.inner_mut().find_member_mut(arg)
     }
-    fn find_member(&self, arg: types::FindBy) -> Option<&dyn Member> {
+    fn find_member<'a>(&'a self, arg: &'a types::FindBy) -> Option<&'a dyn Member> {
         self.inner().find_member(arg)
     }
 

@@ -55,16 +55,16 @@ impl ItemClickableInner for TestableList {
     }
 }
 impl AdaptedInner for TestableList {
-    fn on_item_change(&mut self, _base: &mut MemberBase, value: types::Change) {
+    fn on_item_change<'a>(&mut self, _: &mut MemberBase, value: adapter::Change<'a>) {
         match value {
-            types::Change::Added(index) => {
-                println!("item added {}", index);
+            adapter::Change::Added(index,_) => {
+                println!("item added {}", index[0]);
             },
-            types::Change::Removed(index) => {
-                println!("item removed {}", index);
+            adapter::Change::Removed(index) => {
+                println!("item removed {}", index[0]);
             },
-            types::Change::Edited(index) => {
-                println!("item edited {}", index);
+            adapter::Change::Edited(index,_) => {
+                println!("item edited {}", index[0]);
             }
         }
     }
@@ -96,7 +96,7 @@ impl ControlInner for TestableList {
         let mut y = 0;
         for i in 0..adapter.adapter.len() {
             let self2: &mut List = unsafe { utils::base_to_impl_mut(member) };
-            let mut item = adapter.adapter.spawn_item_view(&[i], types::AdapterNode::Leaf, self2);
+            let mut item = adapter.adapter.spawn_item_view(&[i], adapter::Node::Leaf, self2);
             item.on_added_to_container(self2, 0, y, utils::coord_to_size(pw as i32) as u16, utils::coord_to_size(ph as i32) as u16);
             let (_, yy) = item.size();
             self.items.push(item);
@@ -120,7 +120,7 @@ impl ControlInner for TestableList {
     }
 }
 impl ContainerInner for TestableList {
-    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+    fn find_control_mut<'a>(&'a mut self, arg: &'a types::FindBy) -> Option<&'a mut dyn controls::Control> {
         for item in self.items.as_mut_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
@@ -137,7 +137,7 @@ impl ContainerInner for TestableList {
                 }
             }
             if let Some(c) = item.is_container_mut() {
-                let ret = c.find_control_mut(arg.clone());
+                let ret = c.find_control_mut(arg);
                 if ret.is_none() {
                     continue;
                 }
@@ -146,7 +146,7 @@ impl ContainerInner for TestableList {
         }
         None
     }
-    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+    fn find_control<'a>(&'a self, arg: &'a types::FindBy) -> Option<&'a dyn controls::Control> {
         for item in self.items.as_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
@@ -163,7 +163,7 @@ impl ContainerInner for TestableList {
                 }
             }
             if let Some(c) = item.is_container() {
-                let ret = c.find_control(arg.clone());
+                let ret = c.find_control(arg);
                 if ret.is_none() {
                     continue;
                 }

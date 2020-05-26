@@ -1,4 +1,4 @@
-use crate::{callbacks, types, utils};
+use crate::{callbacks, types::{self, adapter}, utils};
 
 use super::auto::{HasInner, Abstract};
 use super::container::{Container, ContainerInner, AContainer};
@@ -19,7 +19,7 @@ define_abstract! {
             }
         }
         inner: {
-            fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change);
+            fn on_item_change<'a>(&mut self, base: &mut MemberBase, value: adapter::Change<'a>);
         }
     }
 }
@@ -37,7 +37,7 @@ impl<T: AdaptedInner + 'static> AAdapted<T> {
         t
     }
     #[inline]
-    fn on_item_change(base: &mut MemberBase, value: types::Change) {
+    fn on_item_change(base: &mut MemberBase, value: adapter::Change) {
         let this = base.as_any_mut().downcast_mut::<AMember<AControl<AContainer<AAdapted<T>>>>>().unwrap();
         let this2 = this as *mut AMember<AControl<AContainer<AAdapted<T>>>>; // bck is stupid;
         let inner = unsafe {&mut *this2}.inner_mut().inner_mut().inner_mut().inner_mut();
@@ -62,7 +62,7 @@ pub struct AdapterInnerCallback {
     on_item_change: callbacks::OnItemChange,
 }
 impl AdapterInnerCallback {
-    pub fn on_item_change(&mut self, value: types::Change) {
+    pub fn on_item_change(&mut self, value: adapter::Change) {
         if !self.target.is_null() {
             (self.on_item_change.as_mut())(unsafe {&mut *self.target}, value)
         }
@@ -94,7 +94,7 @@ impl<T: AdaptedInner> Adapted for AMember<AControl<AContainer<AAdapted<T>>>> {
 }
 impl<II: AdaptedInner, T: HasInner<I = II> + Abstract + 'static> AdaptedInner for T {
     #[inline]
-    fn on_item_change(&mut self, base: &mut MemberBase, value: types::Change) {
+    fn on_item_change(&mut self, base: &mut MemberBase, value: adapter::Change) {
         self.inner_mut().on_item_change(base, value)
     }
 }

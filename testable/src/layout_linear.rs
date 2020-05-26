@@ -188,7 +188,7 @@ impl HasVisibilityInner for TestableLinearLayout {
 }
 
 impl ContainerInner for TestableLinearLayout {
-    fn find_control_mut(&mut self, arg: types::FindBy) -> Option<&mut dyn controls::Control> {
+    fn find_control_mut<'a>(&'a mut self, arg: &'a types::FindBy) -> Option<&'a mut dyn controls::Control> {
         for child in self.children.as_mut_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
@@ -205,7 +205,7 @@ impl ContainerInner for TestableLinearLayout {
                 }
             }
             if let Some(c) = child.is_container_mut() {
-                let ret = c.find_control_mut(arg.clone());
+                let ret = c.find_control_mut(arg);
                 if ret.is_none() {
                     continue;
                 }
@@ -214,7 +214,7 @@ impl ContainerInner for TestableLinearLayout {
         }
         None
     }
-    fn find_control(&self, arg: types::FindBy) -> Option<&dyn controls::Control> {
+    fn find_control<'a>(&'a self, arg: &'a types::FindBy) -> Option<&'a dyn controls::Control> {
         for child in self.children.as_slice() {
             match arg {
                 types::FindBy::Id(ref id) => {
@@ -231,7 +231,7 @@ impl ContainerInner for TestableLinearLayout {
                 }
             }
             if let Some(c) = child.is_container() {
-                let ret = c.find_control(arg.clone());
+                let ret = c.find_control(arg);
                 if ret.is_none() {
                     continue;
                 }
