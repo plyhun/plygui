@@ -22,6 +22,7 @@ macro_rules! default_pub_use {
             pub use crate::tray::Tray;
             pub use crate::window::Window;
             pub use crate::list::List;
+            pub use crate::tree::Tree;
         }
     };
 }

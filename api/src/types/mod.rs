@@ -77,10 +77,10 @@ pub enum ImageScalePolicy {
     FitCenter,  // TODO variants
                 // TODO Tile
 }
-#[derive(Debug, Clone, PartialEq)]
-pub enum FindBy {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FindBy<'a> {
     Id(crate::ids::Id),
-    Tag(String),
+    Tag(&'a str),
 }
 
 pub enum ApplicationResult {
