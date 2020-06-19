@@ -65,6 +65,9 @@ impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
     fn len(&self) -> usize {
         self.items.len()
     }
+    fn node_at(&self, _: usize) -> adapter::Node {
+        adapter::Node::Leaf
+    }
 	fn spawn_item_view(&mut self, indexes: &[usize], _node: adapter::Node, _parent: &dyn Adapted) -> Box<dyn Control> {
 	    let mut control = C::spawn();
 	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[indexes[0]].as_str().into());
