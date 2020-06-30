@@ -10,9 +10,14 @@ pub struct StringVecAdapter<C: HasLabel + Spawnable> {
     _marker: PhantomData<C>,
 }
 
+impl<C: HasLabel + Spawnable> From<Vec<String>> for StringVecAdapter<C> {
+    fn from(a: Vec<String>) -> Self {
+        StringVecAdapter { items: a, on_item_change: None, _marker: PhantomData }
+    }
+}
 impl<C: HasLabel + Spawnable> StringVecAdapter<C> {
     pub fn new() -> Self {
-        StringVecAdapter { items: Vec::new(), on_item_change: None, _marker: PhantomData }
+        Self::from(Vec::new())
     }
     pub fn with_iterator<'a, T, I>(i: I) -> Self where T: AsRef<str>, I: Iterator<Item=T> {
         let mut t = Self::new();

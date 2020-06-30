@@ -83,6 +83,31 @@ pub enum FindBy<'a> {
     Tag(&'a str),
 }
 
+#[derive(Debug, Clone)]
+pub struct RecursiveHashMap<K: Sized>{ pub inner: ::std::collections::HashMap<K, Option<RecursiveHashMap<K>>> }
+
+#[derive(Debug, Clone)]
+pub struct RecursiveTupleVec<K: Sized>{ pub id: K, value: Option<Vec<RecursiveTupleVec<K>>> }
+
+impl<K: Sized> RecursiveTupleVec<K> {
+    pub fn get_mut(&mut self, indexes: &[usize]) -> Option<&mut K> {
+        let mut value = self.value.as_mut();
+        if let Some(ivalue) = value {
+            let len = ivalue.len();
+            for i in 0..indexes.len() {
+                if indexes[i] < len {
+                    if i == len-1 {
+                        return Some(&mut ivalue[indexes[i]].id);
+                    } else {
+                        value = ivalue[indexes[i]].value.as_mut();
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+
 pub enum ApplicationResult {
     New(Box<dyn controls::Application>),
     Existing(Box<dyn controls::Application>),
