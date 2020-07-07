@@ -84,27 +84,88 @@ pub enum FindBy<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct RecursiveHashMap<K: Sized>{ pub inner: ::std::collections::HashMap<K, Option<RecursiveHashMap<K>>> }
-
-#[derive(Debug, Clone)]
-pub struct RecursiveTupleVec<K: Sized>{ pub id: K, value: Option<Vec<RecursiveTupleVec<K>>> }
+pub struct RecursiveTupleVec<K: Sized>{ pub id: K, pub value: Option<Vec<RecursiveTupleVec<K>>> }
 
 impl<K: Sized> RecursiveTupleVec<K> {
-    pub fn get_mut(&mut self, indexes: &[usize]) -> Option<&mut K> {
-        let mut value = self.value.as_mut();
+    
+}
+
+impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
+    pub fn with_value(id: K, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
+        Self { id, value }
+    }
+    fn put_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, mut new: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+        println!("{}, {:?}, {:#?}", passed, indexes, value);
+        if indexes.len() == (passed+1) {
+            if let Some(value) = value {
+                if value.len() > indexes[passed] {
+                    if new.is_some() {
+                        if let Some(ref mut new) = new {
+                            ::std::mem::swap(new, &mut value[indexes[passed]]);
+                        }
+                        Ok(new)
+                    } else {
+                        Ok(Some(value.remove(indexes[passed])))
+                    }
+                } else {
+                    if value.len() == indexes[passed] {
+                        if new.is_some() {
+                            value.push(new.unwrap());
+                        }
+                        Ok(None)
+                    } else {// here
+                        Err(indexes)
+                    }
+                }
+            } else {
+                Err(indexes)
+            }
+        } else if indexes.len() > (passed+1) {
+            if let Some(value) = value {
+                Self::put_inner(value[indexes[passed]].value.as_mut(), indexes, passed+1, new)
+            } else {
+                Err(&indexes[..passed])
+            }
+        } else {
+            Err(indexes)
+        }
+    }
+    pub fn put<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+        Self::put_inner(self.value.as_mut(), indexes, 0, value)
+    }
+    
+    fn get_mut_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
         if let Some(ivalue) = value {
             let len = ivalue.len();
-            for i in 0..indexes.len() {
-                if indexes[i] < len {
-                    if i == len-1 {
-                        return Some(&mut ivalue[indexes[i]].id);
-                    } else {
-                        value = ivalue[indexes[i]].value.as_mut();
-                    }
+            if indexes[0] < len {
+                if len <= 1 {
+                    return Some(&mut ivalue[indexes[0]]);
+                } else {
+                    return Self::get_mut_inner(ivalue[indexes[0]].value.as_mut(), &indexes[1..]);
                 }
             }
         }
         None
+    }
+    pub fn get_mut<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
+        Self::get_mut_inner(self.value.as_mut(), indexes)
+    }
+    
+    fn get_inner<'a, 'b: 'a>(value: Option<&'a Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
+        if let Some(ivalue) = value {
+            let len = ivalue.len();
+            if indexes[0] < len {
+                if len <= 1 {
+                    return Some(&ivalue[indexes[0]]);
+                } else {
+                    return Self::get_inner(ivalue[indexes[0]].value.as_ref(), &indexes[1..]);
+                }
+            }
+        }
+        None
+    }
+    pub fn get<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
+        Self::get_inner(self.value.as_ref(), indexes)
     }
 }
 
