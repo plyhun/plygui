@@ -86,16 +86,76 @@ pub enum FindBy<'a> {
 #[derive(Debug, Clone)]
 pub struct RecursiveTupleVec<K: Sized>{ pub id: K, pub value: Option<Vec<RecursiveTupleVec<K>>> }
 
-impl<K: Sized> RecursiveTupleVec<K> {
-    
+impl<K: Sized + Default> Default for RecursiveTupleVec<K> {
+    fn default() -> Self {
+        Self {
+            id: Default::default(), value: None,
+        }
+    }
+}
+impl<K: Sized + Default> RecursiveTupleVec<K> {
+    fn put_with_defaults_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, mut new: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+        if indexes.len() == (passed+1) {
+            if let Some(value) = value {
+                if value.len() > indexes[passed] {
+                    if new.is_some() {
+                        if let Some(ref mut new) = new {
+                            ::std::mem::swap(new, &mut value[indexes[passed]]);
+                        }
+                        Ok(new)
+                    } else {
+                        Ok(Some(value.remove(indexes[passed])))
+                    }
+                } else {
+                    if value.len() == indexes[passed] {
+                        if new.is_some() {
+                            value.push(new.unwrap());
+                        }
+                        Ok(None)
+                    } else {
+                        value.push(Default::default());
+                        Self::put_with_defaults_inner(value[indexes[passed]].value.as_mut(), indexes, passed+1, new)
+                    }
+                }
+            } else {
+                Err(indexes)
+            }
+        } else if indexes.len() > (passed+1) {
+            if let Some(value) = value {
+                Self::put_with_defaults_inner(value[indexes[passed]].value.as_mut(), indexes, passed+1, new)
+            } else {
+                Err(&indexes[..passed])
+            }
+        } else {
+            panic!("Should not happen: indexes.len({}) < passed=1({})", indexes.len(), (passed+1))
+        }
+    }
+    pub fn put_with_defaults<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+        Self::put_with_defaults_inner(self.value.as_mut(), indexes, 0, value)
+    }
 }
 
-impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
+impl<K: Sized> RecursiveTupleVec<K> {
+    pub fn get_mut_at_vec<'a, 'b:'a, A: AsMut<[Self]>>(this: &'a mut A, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
+        let this = this.as_mut();
+        if this.len() > indexes[0] {
+            this[indexes[0]].get_mut(&indexes[1..])
+        } else {
+            None
+        }
+    }
+    pub fn get_at_vec<'a, 'b:'a, A: AsRef<[Self]>>(this: &'a A, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
+        let this = this.as_ref();
+        if this.len() > indexes[0] {
+            this[indexes[0]].get(&indexes[1..])
+        } else {
+            None
+        }
+    }
     pub fn with_value(id: K, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
         Self { id, value }
     }
     fn put_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, mut new: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
-        println!("{}, {:?}, {:#?}", passed, indexes, value);
         if indexes.len() == (passed+1) {
             if let Some(value) = value {
                 if value.len() > indexes[passed] {

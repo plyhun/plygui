@@ -9,6 +9,16 @@ pub struct StringTupleVecAdapter<C: HasLabel + Spawnable> {
     on_item_change: Option<sdk::AdapterInnerCallback>,
     _marker: PhantomData<C>,
 }
+impl <C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
+    pub fn new() -> Self {
+        Self::from(Vec::new())
+    }
+}
+impl<C: HasLabel + Spawnable> From<Vec<RecursiveTupleVec<String>>> for StringTupleVecAdapter<C> {
+    fn from(a: Vec<RecursiveTupleVec<String>>) -> Self {
+        StringTupleVecAdapter { items: a, on_item_change: None, _marker: PhantomData }
+    }
+}
 impl<C: HasLabel + Spawnable> AsAny for StringTupleVecAdapter<C> {
     #[inline]
     fn as_any(&self) -> &dyn Any {
@@ -32,7 +42,9 @@ impl<C: HasLabel + Spawnable> Adapter for StringTupleVecAdapter<C> {
     }
 	fn spawn_item_view(&mut self, indexes: &[usize], _node: adapter::Node, _parent: &dyn Adapted) -> Box<dyn Control> {
 	    let mut control = C::spawn();
-	    //control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[indexes[0]].as_str().into());
+	    if let Some(item) = RecursiveTupleVec::get_mut_at_vec(&mut self.items, indexes) {
+    	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(item.id.as_str().into());
+	    }
     	control
 	}
 }
