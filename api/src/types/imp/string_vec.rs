@@ -67,10 +67,14 @@ impl<C: HasLabel + Spawnable> AsAny for StringVecAdapter<C> {
     }
 }
 impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
-    fn len(&self) -> usize {
-        self.items.len()
+    fn len_at(&self, indexes: &[usize]) -> usize {
+        if indexes.len() == 0 {
+            self.items.len()
+        } else {
+            0
+        }
     }
-    fn node_at(&self, _: usize) -> adapter::Node {
+    fn node_at(&self, _: &[usize]) -> adapter::Node {
         adapter::Node::Leaf
     }
 	fn spawn_item_view(&mut self, indexes: &[usize], _node: adapter::Node, _parent: &dyn Adapted) -> Box<dyn Control> {

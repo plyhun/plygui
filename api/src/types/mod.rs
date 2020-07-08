@@ -138,16 +138,30 @@ impl<K: Sized + Default> RecursiveTupleVec<K> {
 impl<K: Sized> RecursiveTupleVec<K> {
     pub fn get_mut_at_vec<'a, 'b:'a, A: AsMut<[Self]>>(this: &'a mut A, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
         let this = this.as_mut();
-        if this.len() > indexes[0] {
-            this[indexes[0]].get_mut(&indexes[1..])
+        if indexes.len() == 0 || this.len() == 0 {
+            return None;
+        }
+        let index = indexes[0];
+        let valid_index = this.len()-1;
+        if valid_index == index { 
+            Some(&mut this[index])
+        } else if valid_index > index {
+            this[index].get_mut(&indexes[1..])
         } else {
             None
         }
     }
     pub fn get_at_vec<'a, 'b:'a, A: AsRef<[Self]>>(this: &'a A, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
         let this = this.as_ref();
-        if this.len() > indexes[0] {
-            this[indexes[0]].get(&indexes[1..])
+        if indexes.len() == 0 || this.len() == 0 {
+            return None;
+        }
+        let index = indexes[0];
+        let valid_index = this.len()-1;
+        if valid_index == index { 
+            Some(&this[index])
+        } else if valid_index > index {
+            this[index].get(&indexes[1..])
         } else {
             None
         }
@@ -195,6 +209,9 @@ impl<K: Sized> RecursiveTupleVec<K> {
     }
     
     fn get_mut_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
+        if indexes.len() < 1 {
+            return None;
+        }
         if let Some(ivalue) = value {
             let len = ivalue.len();
             if indexes[0] < len {
@@ -212,6 +229,9 @@ impl<K: Sized> RecursiveTupleVec<K> {
     }
     
     fn get_inner<'a, 'b: 'a>(value: Option<&'a Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
+        if indexes.len() < 1 {
+            return None;
+        }
         if let Some(ivalue) = value {
             let len = ivalue.len();
             if indexes[0] < len {
