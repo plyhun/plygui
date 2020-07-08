@@ -34,11 +34,23 @@ impl<C: HasLabel + Spawnable> AsAny for StringTupleVecAdapter<C> {
     }
 }
 impl<C: HasLabel + Spawnable> Adapter for StringTupleVecAdapter<C> {
-    fn len(&self) -> usize {
-        self.items.len()
+    fn len_at(&self, indexes: &[usize]) -> usize {
+        if indexes.len() == 0 {
+            self.items.len()
+        } else {
+            if let Some(item) = RecursiveTupleVec::get_at_vec(&self.items, indexes) {
+                item.value.as_ref().unwrap().len() // TODO
+            } else {
+                0
+            }
+        }
     }
-    fn node_at(&self, _: usize) -> adapter::Node {
-        adapter::Node::Leaf
+    fn node_at(&self, indexes: &[usize]) -> adapter::Node {
+        if RecursiveTupleVec::get_at_vec(&self.items, indexes).is_some() {
+            adapter::Node::Branch(true)
+        } else {
+            adapter::Node::Leaf
+        }
     }
 	fn spawn_item_view(&mut self, indexes: &[usize], _node: adapter::Node, _parent: &dyn Adapted) -> Box<dyn Control> {
 	    let mut control = C::spawn();

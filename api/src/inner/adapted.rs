@@ -14,8 +14,8 @@ define_abstract! {
             fn adapter(&self) -> &dyn types::Adapter;
             fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
             
-            fn len(&self) -> usize {
-                self.adapter().len()
+            fn len_at(&self, indexes: &[usize]) -> usize {
+                self.adapter().len_at(indexes)
             }
         }
         inner: {
