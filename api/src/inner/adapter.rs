@@ -7,9 +7,9 @@ pub trait AdapterInner: 'static {
 }
 
 pub trait Adapter: AdapterInner + AsAny {
-	fn len_at(&self, indexes: &[usize]) -> usize;
-	fn node_at(&self, indexes: &[usize]) -> Node;
-	fn spawn_item_view(&mut self, indexes: &[usize], node: Node, parent: &dyn Adapted) -> Box<dyn Control>;
+	fn len_at(&self, indexes: &[usize]) -> Option<usize>;
+	fn node_at(&self, indexes: &[usize]) -> Option<Node>;
+	fn spawn_item_view(&mut self, indexes: &[usize], parent: &dyn Adapted) -> Option<Box<dyn Control>>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
