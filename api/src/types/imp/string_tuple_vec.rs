@@ -5,18 +5,18 @@ use std::any::Any;
 use std::marker::PhantomData;
 
 pub struct StringTupleVecAdapter<C: HasLabel + Spawnable> {
-    items: Vec<RecursiveTupleVec<String>>,
+    item: RecursiveTupleVec<String>,
     on_item_change: Option<sdk::AdapterInnerCallback>,
     _marker: PhantomData<C>,
 }
 impl <C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
     pub fn new() -> Self {
-        Self::from(Vec::new())
+        Self::from(RecursiveTupleVec::default())
     }
 }
-impl<C: HasLabel + Spawnable> From<Vec<RecursiveTupleVec<String>>> for StringTupleVecAdapter<C> {
-    fn from(a: Vec<RecursiveTupleVec<String>>) -> Self {
-        StringTupleVecAdapter { items: a, on_item_change: None, _marker: PhantomData }
+impl<C: HasLabel + Spawnable> From<RecursiveTupleVec<String>> for StringTupleVecAdapter<C> {
+    fn from(a: RecursiveTupleVec<String>) -> Self {
+        StringTupleVecAdapter { item: a, on_item_change: None, _marker: PhantomData }
     }
 }
 impl<C: HasLabel + Spawnable> AsAny for StringTupleVecAdapter<C> {
@@ -34,30 +34,27 @@ impl<C: HasLabel + Spawnable> AsAny for StringTupleVecAdapter<C> {
     }
 }
 impl<C: HasLabel + Spawnable> Adapter for StringTupleVecAdapter<C> {
-    fn len_at(&self, indexes: &[usize]) -> usize {
+    fn len_at(&self, indexes: &[usize]) -> Option<usize> {
         if indexes.len() == 0 {
-            self.items.len()
-        } else {
-            if let Some(item) = RecursiveTupleVec::get_at_vec(&self.items, indexes) {
-                item.value.as_ref().unwrap().len() // TODO
+            if let Some(ref value) = self.item.value {
+                Some(value.len())
             } else {
-                0
+                None
             }
-        }
-    }
-    fn node_at(&self, indexes: &[usize]) -> adapter::Node {
-        if RecursiveTupleVec::get_at_vec(&self.items, indexes).is_some() {
-            adapter::Node::Branch(true)
         } else {
-            adapter::Node::Leaf
+            self.item.get(indexes).and_then(|n| n.value.as_ref()).map(|n| n.len())
         }
     }
-	fn spawn_item_view(&mut self, indexes: &[usize], _node: adapter::Node, _parent: &dyn Adapted) -> Box<dyn Control> {
-	    let mut control = C::spawn();
-	    if let Some(item) = RecursiveTupleVec::get_mut_at_vec(&mut self.items, indexes) {
-    	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(item.id.as_str().into());
-	    }
-    	control
+    fn node_at(&self, indexes: &[usize]) -> Option<adapter::Node> {
+        self.item.get(indexes).map(|n| if n.value.is_some() { adapter::Node::Branch(true) } else { adapter::Node::Leaf })
+    }
+	fn spawn_item_view(&mut self, indexes: &[usize], _: &dyn Adapted) -> Option<Box<dyn Control>> {
+	    self.item.get(indexes).map(|n| {
+    	    let mut control = C::spawn();
+    	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(n.id.as_str().into());
+    	    
+        	control
+	    })
 	}
 }
 impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringTupleVecAdapter<C> {

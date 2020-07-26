@@ -67,20 +67,28 @@ impl<C: HasLabel + Spawnable> AsAny for StringVecAdapter<C> {
     }
 }
 impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
-    fn len_at(&self, indexes: &[usize]) -> usize {
+    fn len_at(&self, indexes: &[usize]) -> Option<usize> {
         if indexes.len() == 0 {
-            self.items.len()
+            Some(self.items.len())
         } else {
-            0
+            None
         }
     }
-    fn node_at(&self, _: &[usize]) -> adapter::Node {
-        adapter::Node::Leaf
+    fn node_at(&self, indexes: &[usize]) -> Option<adapter::Node> {
+        if indexes.len() == 1 {
+            Some(adapter::Node::Leaf)
+        } else {
+            None
+        }
     }
-	fn spawn_item_view(&mut self, indexes: &[usize], _node: adapter::Node, _parent: &dyn Adapted) -> Box<dyn Control> {
-	    let mut control = C::spawn();
-	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[indexes[0]].as_str().into());
-    	control
+	fn spawn_item_view(&mut self, indexes: &[usize], _parent: &dyn Adapted) -> Option<Box<dyn Control>> {
+	    if indexes.len() == 1 {
+	        let mut control = C::spawn();
+    	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[indexes[0]].as_str().into());
+        	Some(control)
+        } else {
+            None
+        }
 	}
 }
 impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringVecAdapter<C> {

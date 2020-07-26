@@ -136,49 +136,6 @@ impl<K: Sized + Default> RecursiveTupleVec<K> {
 }
 
 impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
-    pub fn get_mut_at_vec<'a, 'b:'a, A: AsMut<[Self]>>(this: &'a mut A, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
-        let this = this.as_mut();
-        println!("+{:?} - {:?}", indexes, this);
-        if indexes.len() == 0 || this.len() == 0 {
-            return None;
-        }
-        
-        let index = indexes[0];
-        let total = this.len();
-        let ret = if indexes.len() == 1 {
-            if total > index { 
-                Some(&mut this[index])
-            } else {
-                None
-            }
-        } else {
-            if total > index {
-                this[index].get_mut(&indexes[1..])
-            } else {
-                None
-            }
-        };
-        println!("-{:?} - {:?}", indexes, ret);
-        ret
-    }
-    pub fn get_at_vec<'a, 'b:'a, A: AsRef<[Self]>>(this: &'a A, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
-        let this = this.as_ref();
-        println!("+{:?} - {:?}", indexes, this);
-        if indexes.len() == 0 || this.len() == 0 {
-            return None;
-        }
-        let index = indexes[0];
-        let valid_index = this.len()-1;
-        let ret = if valid_index == index { 
-            Some(&this[index])
-        } else if valid_index > index {
-            this[index].get(&indexes[1..])
-        } else {
-            None
-        };
-        println!("-{:?} - {:?}", indexes, ret);
-        ret
-    }
     pub fn with_value(id: K, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
         Self { id, value }
     }
@@ -222,14 +179,13 @@ impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
     }
     
     fn get_mut_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
-        println!("{:?} - {:?}", indexes, value);
         if indexes.len() < 1 {
             return None;
         }
         if let Some(ivalue) = value {
             let len = ivalue.len();
             if indexes[0] < len {
-                if len <= 1 {
+                if indexes.len() == 1 {
                     return Some(&mut ivalue[indexes[0]]);
                 } else {
                     return Self::get_mut_inner(ivalue[indexes[0]].value.as_mut(), &indexes[1..]);
@@ -243,14 +199,13 @@ impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
     }
     
     fn get_inner<'a, 'b: 'a>(value: Option<&'a Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
-        println!("{:?} - {:?}", indexes, value);
         if indexes.len() < 1 {
             return None;
         }
         if let Some(ivalue) = value {
             let len = ivalue.len();
             if indexes[0] < len {
-                if len <= 1 {
+                if indexes.len() == 1 {
                     return Some(&ivalue[indexes[0]]);
                 } else {
                     return Self::get_inner(ivalue[indexes[0]].value.as_ref(), &indexes[1..]);

@@ -14,7 +14,7 @@ define_abstract! {
             fn adapter(&self) -> &dyn types::Adapter;
             fn adapter_mut(&mut self) -> &mut dyn types::Adapter;
             
-            fn len_at(&self, indexes: &[usize]) -> usize {
+            fn len_at(&self, indexes: &[usize]) -> Option<usize> {
                 self.adapter().len_at(indexes)
             }
         }
