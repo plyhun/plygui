@@ -1,4 +1,5 @@
 use crate::controls;
+use std::{mem, slice};
 
 pub mod imp;
 
@@ -8,7 +9,7 @@ pub mod adapter {
 
 pub use crate::inner::{
     auto::{AsAny, Spawnable},
-    adapter::{Adapter},
+    adapter::{Adapter, AdapterIterator},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -135,7 +136,7 @@ impl<K: Sized + Default> RecursiveTupleVec<K> {
     }
 }
 
-impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
+impl<K: Sized> RecursiveTupleVec<K> {
     pub fn with_value(id: K, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
         Self { id, value }
     }
@@ -195,7 +196,11 @@ impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
         None
     }
     pub fn get_mut<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<K>> {
-        Self::get_mut_inner(self.value.as_mut(), indexes)
+        if indexes.len() == 0 {
+            Some(self)
+        } else {
+            Self::get_mut_inner(self.value.as_mut(), indexes)
+        }
     }
     
     fn get_inner<'a, 'b: 'a>(value: Option<&'a Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
@@ -215,10 +220,143 @@ impl<K: Sized + ::std::fmt::Debug> RecursiveTupleVec<K> {
         None
     }
     pub fn get<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<K>> {
-        Self::get_inner(self.value.as_ref(), indexes)
+        if indexes.len() == 0 {
+            Some(self)
+        } else {
+            Self::get_inner(self.value.as_ref(), indexes)
+        }
     }
 }
 
+pub struct RecursiveTupleVecIteratorWrapper<'a, K: Sized> {
+    pub inner: RecursiveTupleVecIterator<'a, K>,
+}
+
+impl<'a, K: Sized> Iterator for RecursiveTupleVecIteratorWrapper<'a, K> {
+    type Item = (&'a [usize], adapter::Node);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(indexes, node, _)| (indexes, node))
+    }
+}
+impl<'a, K: Sized> AdapterIterator<'a> for RecursiveTupleVecIteratorWrapper<'a, K> {}
+
+
+pub struct SliceIteratorWrapper<'a, K: Sized> {
+    pub inner: slice::Iter<'a, K>,
+    index: [usize; 1],
+}
+
+impl<'a, K: Sized> SliceIteratorWrapper<'a, K> {
+    pub fn from_iterator(a: slice::Iter<'a, K>) -> Self {
+        Self {
+            inner: a,
+            index: [0]
+        }
+    }
+    pub fn from_into_iterator<II: IntoIterator<IntoIter=slice::Iter<'a, K>,Item=&'a K>>(a: II) -> Self {
+        Self::from_iterator(a.into_iter())
+    }
+}
+
+impl<'a, K: Sized> Iterator for SliceIteratorWrapper<'a, K> {
+    type Item = (&'a [usize], adapter::Node);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|_| {
+            let ret = (unsafe { mem::transmute(&self.index[..]) }, adapter::Node::Leaf);
+            self.index[0] += 1;
+            ret
+        })
+    }
+}
+impl<'a, K: Sized> AdapterIterator<'a> for SliceIteratorWrapper<'a, K> {}
+
+
+#[derive(Debug, Clone, )]
+enum RecursiveTupleVecIteratorStatus {
+    Created,
+    Root,
+    Node(usize),
+    Branch(usize),
+}
+pub struct RecursiveTupleVecIterator<'a, K: Sized> {
+    status: RecursiveTupleVecIteratorStatus,
+    indexes: Vec<usize>,
+    item: &'a RecursiveTupleVec<K>
+}
+impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
+    pub fn with_item(item: &'a RecursiveTupleVec<K>) -> Self {
+        RecursiveTupleVecIterator {
+            status: RecursiveTupleVecIteratorStatus::Created,
+            indexes: vec![],
+            item: item,
+        }
+    }
+    fn node(&self) -> Option<adapter::Node> {
+        self.item.get(&self.indexes).map(|n| if n.value.is_some() { adapter::Node::Branch(true) } else { adapter::Node::Leaf })
+    }
+    fn get(&mut self) -> Option<(&'a [usize], adapter::Node, &'a K)> {
+        let indexes = unsafe { ::std::mem::transmute(self.indexes.as_slice()) }; // assume that we don't use collectors
+        match self.status {
+            RecursiveTupleVecIteratorStatus::Branch(_) | RecursiveTupleVecIteratorStatus::Node(_) if self.indexes.len() == 0 => {
+                None
+            }
+            _ => {
+                self.item.get(indexes).map(|r| {
+                    //self.len = if let Some(ref r) = r.value { r.len() } else { 0 };    
+                    let node = self.node().unwrap();
+                    self.status = if let Some(ref value) = r.value {
+                        self.indexes.push(0);
+                        RecursiveTupleVecIteratorStatus::Branch(value.len())
+                    } else {
+                        RecursiveTupleVecIteratorStatus::Node(0)
+                    };
+                    (indexes, node, &r.id)
+                })
+            }
+        }
+    }
+}
+impl<'a, K: Sized> Iterator for RecursiveTupleVecIterator<'a, K> {
+    type Item = (&'a [usize], adapter::Node, &'a K);
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        let ilen = self.indexes.len();
+        match self.status {
+            RecursiveTupleVecIteratorStatus::Created => {
+                self.status = RecursiveTupleVecIteratorStatus::Root;
+                Some((&[], self.node().unwrap(), &self.item.id))
+            },
+            RecursiveTupleVecIteratorStatus::Root => {
+                self.status = if let Some(ref value) = self.item.value {
+                    self.indexes.push(0);
+                    RecursiveTupleVecIteratorStatus::Branch(value.len())
+                } else {
+                    RecursiveTupleVecIteratorStatus::Node(0)
+                };
+                self.get()
+            },
+            RecursiveTupleVecIteratorStatus::Node(len) => {
+                let ilen1 = ilen-1;
+                if self.indexes[ilen1] >= len {
+                    self.indexes.pop();
+                    if self.indexes.len() > 0 {
+                        self.indexes[ilen1-1] += 1; 
+                    }
+                } else {
+                    self.status = RecursiveTupleVecIteratorStatus::Node(len-1);
+                    self.indexes[ilen1] += 1; 
+                }
+                self.get()
+            },
+            RecursiveTupleVecIteratorStatus::Branch(len) => {
+                self.status = RecursiveTupleVecIteratorStatus::Node(len);
+                self.get()
+            }
+        }
+    }
+}
 pub enum ApplicationResult {
     New(Box<dyn controls::Application>),
     Existing(Box<dyn controls::Application>),
