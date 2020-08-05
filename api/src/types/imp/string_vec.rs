@@ -1,6 +1,6 @@
 use crate::controls::{Adapted, Control, HasLabel};
 use crate::sdk;
-use crate::types::{adapter, AsAny, Adapter, Spawnable};
+use crate::types::{adapter, AsAny, Adapter, AdapterIterator, Spawnable, SliceIteratorWrapper};
 use std::any::Any;
 use std::marker::PhantomData;
 
@@ -89,6 +89,9 @@ impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
         } else {
             None
         }
+	}
+	unsafe fn into_items_indexes_iter<'a>(&'a self) -> Box<dyn AdapterIterator<'a> + 'a> {
+	    Box::new(SliceIteratorWrapper::from_into_iterator(&self.items))
 	}
 }
 impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringVecAdapter<C> {
