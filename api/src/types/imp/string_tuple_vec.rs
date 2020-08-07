@@ -1,7 +1,7 @@
 use crate::controls::{Adapted, Control, HasLabel};
-use crate::types::{RecursiveTupleVecIterator, RecursiveTupleVecIteratorWrapper};
+use crate::types::{RecursiveTupleVecIterator};
 use crate::sdk;
-use crate::types::{adapter, Adapter, AdapterIterator, AsAny, RecursiveTupleVec, Spawnable};
+use crate::types::{adapter, Adapter, AsAny, RecursiveTupleVec, Spawnable};
 use std::any::Any;
 use std::marker::PhantomData;
 use std::usize;
@@ -11,15 +11,6 @@ pub struct StringTupleVecAdapter<C: HasLabel + Spawnable> {
     on_item_change: Option<sdk::AdapterInnerCallback>,
     _marker: PhantomData<C>,
 }
-impl<'a, C: HasLabel + Spawnable> IntoIterator for &'a StringTupleVecAdapter<C> {
-    type Item = (&'a [usize], adapter::Node, &'a String);
-    type IntoIter = RecursiveTupleVecIterator<'a, String>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        RecursiveTupleVecIterator::with_item(&self.item)
-    }
-}
-
 impl<C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
     pub fn new() -> Self {
         Self::from(RecursiveTupleVec::default())
@@ -72,12 +63,11 @@ impl<C: HasLabel + Spawnable> Adapter for StringTupleVecAdapter<C> {
             control
         })
     }
-    unsafe fn into_items_indexes_iter<'a>(&'a self) -> Box<dyn AdapterIterator<'a> + 'a> {
-        Box::new(
-            RecursiveTupleVecIteratorWrapper {
-                inner: IntoIterator::into_iter(self)
-            }
-        )
+    fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
+        let mut iterator = RecursiveTupleVecIterator::with_item(&self.item);
+        while let Some((indexes, ref node, _item)) = iterator.next() {
+            f(indexes, node);
+        }
     }
 }
 impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringTupleVecAdapter<C> {

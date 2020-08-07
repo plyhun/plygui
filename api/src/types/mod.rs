@@ -1,15 +1,14 @@
 use crate::controls;
-use std::{mem, slice};
 
 pub mod imp;
 
 pub mod adapter {
-	pub use crate::inner::adapter::{Node, Change};
+	pub use crate::inner::adapter::{Node, Change, FnNodeItem};
 }
 
 pub use crate::inner::{
     auto::{AsAny, Spawnable},
-    adapter::{Adapter, AdapterIterator},
+    adapter::{Adapter},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -228,51 +227,6 @@ impl<K: Sized> RecursiveTupleVec<K> {
     }
 }
 
-pub struct RecursiveTupleVecIteratorWrapper<'a, K: Sized> {
-    pub inner: RecursiveTupleVecIterator<'a, K>,
-}
-
-impl<'a, K: Sized> Iterator for RecursiveTupleVecIteratorWrapper<'a, K> {
-    type Item = (&'a [usize], adapter::Node);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|(indexes, node, _)| (indexes, node))
-    }
-}
-impl<'a, K: Sized> AdapterIterator<'a> for RecursiveTupleVecIteratorWrapper<'a, K> {}
-
-
-pub struct SliceIteratorWrapper<'a, K: Sized> {
-    pub inner: slice::Iter<'a, K>,
-    index: [usize; 1],
-}
-
-impl<'a, K: Sized> SliceIteratorWrapper<'a, K> {
-    pub fn from_iterator(a: slice::Iter<'a, K>) -> Self {
-        Self {
-            inner: a,
-            index: [0]
-        }
-    }
-    pub fn from_into_iterator<II: IntoIterator<IntoIter=slice::Iter<'a, K>,Item=&'a K>>(a: II) -> Self {
-        Self::from_iterator(a.into_iter())
-    }
-}
-
-impl<'a, K: Sized> Iterator for SliceIteratorWrapper<'a, K> {
-    type Item = (&'a [usize], adapter::Node);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|_| {
-            let ret = (unsafe { mem::transmute(&self.index[..]) }, adapter::Node::Leaf);
-            self.index[0] += 1;
-            ret
-        })
-    }
-}
-impl<'a, K: Sized> AdapterIterator<'a> for SliceIteratorWrapper<'a, K> {}
-
-
 #[derive(Debug, Clone, )]
 enum RecursiveTupleVecIteratorStatus {
     Created,
@@ -280,7 +234,7 @@ enum RecursiveTupleVecIteratorStatus {
     Node(usize),
     Branch(usize),
 }
-pub struct RecursiveTupleVecIterator<'a, K: Sized> {
+struct RecursiveTupleVecIterator<'a, K: Sized> {
     status: RecursiveTupleVecIteratorStatus,
     indexes: Vec<usize>,
     item: &'a RecursiveTupleVec<K>

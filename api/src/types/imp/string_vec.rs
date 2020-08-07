@@ -1,8 +1,9 @@
 use crate::controls::{Adapted, Control, HasLabel};
 use crate::sdk;
-use crate::types::{adapter, AsAny, Adapter, AdapterIterator, Spawnable, SliceIteratorWrapper};
+use crate::types::{adapter, AsAny, Adapter, Spawnable};
 use std::any::Any;
 use std::marker::PhantomData;
+use std::slice;
 
 pub struct StringVecAdapter<C: HasLabel + Spawnable> {
     items: Vec<String>,
@@ -90,8 +91,11 @@ impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
             None
         }
 	}
-	unsafe fn into_items_indexes_iter<'a>(&'a self) -> Box<dyn AdapterIterator<'a> + 'a> {
-	    Box::new(SliceIteratorWrapper::from_into_iterator(&self.items))
+	fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
+	    let mut iter = self.items.iter().enumerate();
+	    while let Some((index, _item)) = iter.next() {
+	        f(&[index], &adapter::Node::Leaf);
+	    }
 	}
 }
 impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringVecAdapter<C> {
