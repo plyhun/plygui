@@ -3,7 +3,6 @@ use crate::sdk;
 use crate::types::{adapter, AsAny, Adapter, Spawnable};
 use std::any::Any;
 use std::marker::PhantomData;
-use std::slice;
 
 pub struct StringVecAdapter<C: HasLabel + Spawnable> {
     items: Vec<String>,

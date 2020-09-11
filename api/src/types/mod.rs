@@ -250,14 +250,15 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
     fn node(&self) -> Option<adapter::Node> {
         self.item.get(&self.indexes).map(|n| if n.value.is_some() { adapter::Node::Branch(true) } else { adapter::Node::Leaf })
     }
-    fn get(&mut self) -> Option<(&'a [usize], adapter::Node, &'a K)> {
-        let indexes = unsafe { ::std::mem::transmute(self.indexes.as_slice()) }; // assume that we don't use collectors
+    fn get(&mut self) -> Option<(&[usize], adapter::Node, &'a K)> {
         match self.status {
             RecursiveTupleVecIteratorStatus::Branch(_) | RecursiveTupleVecIteratorStatus::Node(_) if self.indexes.len() == 0 => {
                 None
             }
             _ => {
-                self.item.get(indexes).map(|r| {
+                let indexes = unsafe { ::std::mem::transmute(self.indexes.as_slice()) };
+                let maybe_r = self.item.get(indexes);
+                if let Some(r) = maybe_r {
                     //self.len = if let Some(ref r) = r.value { r.len() } else { 0 };    
                     let node = self.node().unwrap();
                     self.status = if let Some(ref value) = r.value {
@@ -266,16 +267,14 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
                     } else {
                         RecursiveTupleVecIteratorStatus::Node(0)
                     };
-                    (indexes, node, &r.id)
-                })
+                    Some((self.indexes.as_slice(), node, &r.id))
+                } else { 
+                    None
+                }
             }
         }
     }
-}
-impl<'a, K: Sized> Iterator for RecursiveTupleVecIterator<'a, K> {
-    type Item = (&'a [usize], adapter::Node, &'a K);
-    
-    fn next(&mut self) -> Option<Self::Item> {
+    pub fn next(&mut self) -> Option<(&[usize], adapter::Node, &'a K)> {
         let ilen = self.indexes.len();
         match self.status {
             RecursiveTupleVecIteratorStatus::Created => {
@@ -311,6 +310,7 @@ impl<'a, K: Sized> Iterator for RecursiveTupleVecIterator<'a, K> {
         }
     }
 }
+
 pub enum ApplicationResult {
     New(Box<dyn controls::Application>),
     Existing(Box<dyn controls::Application>),
