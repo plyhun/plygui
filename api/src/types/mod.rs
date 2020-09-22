@@ -237,6 +237,7 @@ enum RecursiveTupleVecIteratorStatus {
 struct RecursiveTupleVecIterator<'a, K: Sized> {
     status: RecursiveTupleVecIteratorStatus,
     indexes: Vec<usize>,
+    lengths: Vec<usize>,
     item: &'a RecursiveTupleVec<K>
 }
 impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
@@ -244,6 +245,7 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
         RecursiveTupleVecIterator {
             status: RecursiveTupleVecIteratorStatus::Created,
             indexes: vec![],
+            lengths: vec![],
             item: item,
         }
     }
@@ -262,10 +264,9 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
                     //self.len = if let Some(ref r) = r.value { r.len() } else { 0 };    
                     let node = self.node().unwrap();
                     self.status = if let Some(ref value) = r.value {
-                        self.indexes.push(0);
                         RecursiveTupleVecIteratorStatus::Branch(value.len())
                     } else {
-                        RecursiveTupleVecIteratorStatus::Node(0)
+                        RecursiveTupleVecIteratorStatus::Node(self.lengths[self.lengths.len()-1])
                     };
                     Some((self.indexes.as_slice(), node, &r.id))
                 } else { 
@@ -284,6 +285,7 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
             RecursiveTupleVecIteratorStatus::Root => {
                 self.status = if let Some(ref value) = self.item.value {
                     self.indexes.push(0);
+                    self.lengths.push(value.len());
                     RecursiveTupleVecIteratorStatus::Branch(value.len())
                 } else {
                     RecursiveTupleVecIteratorStatus::Node(0)
@@ -292,11 +294,17 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
             },
             RecursiveTupleVecIteratorStatus::Node(len) => {
                 let ilen1 = ilen-1;
-                if self.indexes[ilen1] >= len {
+                if self.indexes[ilen1]+1 >= len {
                     self.indexes.pop();
+                    self.lengths.pop();
                     if self.indexes.len() > 0 {
                         self.indexes[ilen1-1] += 1; 
                     }
+                    self.status = if self.lengths.len() > 0 && self.lengths[self.lengths.len()-1] > 0 {
+                        RecursiveTupleVecIteratorStatus::Branch(self.lengths[self.lengths.len()-1])
+                    } else {
+                        RecursiveTupleVecIteratorStatus::Node(0)
+                    };
                 } else {
                     self.status = RecursiveTupleVecIteratorStatus::Node(len-1);
                     self.indexes[ilen1] += 1; 
@@ -304,6 +312,13 @@ impl<'a, K: Sized> RecursiveTupleVecIterator<'a, K> {
                 self.get()
             },
             RecursiveTupleVecIteratorStatus::Branch(len) => {
+                let indexes = unsafe { ::std::mem::transmute(self.indexes.as_slice()) };
+                if let Some(r) = self.item.get(indexes) {
+                    if let Some(ref value) = r.value {
+                        self.indexes.push(0);
+                        self.lengths.push(value.len());
+                    }
+                }
                 self.status = RecursiveTupleVecIteratorStatus::Node(len);
                 self.get()
             }
