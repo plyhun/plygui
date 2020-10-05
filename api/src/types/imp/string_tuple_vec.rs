@@ -15,6 +15,12 @@ impl<C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
     pub fn new() -> Self {
         Self::from(RecursiveTupleVec::default())
     }
+    pub fn root(&self) -> &RecursiveTupleVec<String> {
+    	&self.item
+    }
+    pub fn root_mut(&mut self) -> &mut RecursiveTupleVec<String> {
+    	&mut self.item
+    }
 }
 impl<C: HasLabel + Spawnable> From<RecursiveTupleVec<String>> for StringTupleVecAdapter<C> {
     fn from(a: RecursiveTupleVec<String>) -> Self {
