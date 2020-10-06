@@ -12,14 +12,32 @@ pub struct StringTupleVecAdapter<C: HasLabel + Spawnable> {
     _marker: PhantomData<C>,
 }
 impl<C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
-    pub fn new() -> Self {
+	pub fn new() -> Self {
         Self::from(RecursiveTupleVec::default())
     }
-    pub fn root(&self) -> &RecursiveTupleVec<String> {
-    	&self.item
+    pub fn put<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: Option<RecursiveTupleVec<String>>) -> Result<Option<RecursiveTupleVec<String>>, &'b [usize]> {
+    	let value_some = value.as_ref().is_some();
+        let value_is_branch = if value_some { value.as_ref().unwrap().value.is_some() } else { false };
+        println!("{:?} / {} / {}", indexes, value_some, value_is_branch);
+        let ret = self.item.put(indexes, value);
+        if let Some(ref mut cb) = self.on_item_change.as_mut() {
+        	if ret.is_ok() {
+        		let change = match ret.as_ref().unwrap() {
+        			Some(_) if value_some => adapter::Change::Edited(indexes, if value_is_branch {adapter::Node::Branch(false)} else {adapter::Node::Leaf}),
+        			Some(_) => adapter::Change::Removed(indexes),
+        			None if value_some => adapter::Change::Added(indexes, if value_is_branch {adapter::Node::Branch(false)} else {adapter::Node::Leaf}),
+        			_ => adapter::Change::Edited(indexes, adapter::Node::Leaf),
+        		};
+        		cb.on_item_change(change);
+        	}            
+        }
+        ret
     }
-    pub fn root_mut(&mut self) -> &mut RecursiveTupleVec<String> {
-    	&mut self.item
+    pub fn get_mut<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize]) -> Option<&'a mut RecursiveTupleVec<String>> {
+        self.item.get_mut(indexes)
+    }
+    pub fn get<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a RecursiveTupleVec<String>> {
+	    self.item.get(indexes)    
     }
 }
 impl<C: HasLabel + Spawnable> From<RecursiveTupleVec<String>> for StringTupleVecAdapter<C> {

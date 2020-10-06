@@ -136,8 +136,8 @@ impl<K: Sized + Default> RecursiveTupleVec<K> {
 }
 
 impl<K: Sized> RecursiveTupleVec<K> {
-    pub fn with_value(id: K, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
-        Self { id, value }
+    pub fn with_value<IK: Into<K>>(id: IK, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
+        Self { id: id.into(), value }
     }
     fn put_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, mut new: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
         if indexes.len() == (passed+1) {
