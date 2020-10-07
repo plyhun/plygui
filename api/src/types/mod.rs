@@ -83,6 +83,53 @@ pub enum FindBy<'a> {
     Tag(&'a str),
 }
 
+pub enum VecItemChangeOption<T: Sized> {
+	Replace(T),
+	Insert(T),
+	Remove
+}
+impl<T: Sized> VecItemChangeOption<T> {
+	pub fn replacement(value: Option<T>) -> Self {
+		match value {
+			Some(value) => Self::Replace(value),
+			None => Self::Remove
+		}
+	}
+	pub fn insertion(value: Option<T>) -> Self {
+		match value {
+			Some(value) => Self::Insert(value),
+			None => Self::Remove
+		}
+	}
+	pub fn is_some(&self) -> bool {
+		match self {
+			Self::Remove => false,
+			_ => true
+		}
+	}
+	pub fn is_none(&self) -> bool {
+		!self.is_some()
+	}
+}
+impl<T: Sized> AsRef<T> for VecItemChangeOption<T> {
+	fn as_ref(&self) -> &T {
+		match self {
+			Self::Insert(ref value) => value,
+			Self::Replace(ref value) => value,
+			Self::Remove => panic!("Empty VecItemChangeOption"),
+		}
+	}
+}
+impl<T: Sized> AsMut<T> for VecItemChangeOption<T> {
+	fn as_mut(&mut self) -> &mut T {
+		match self {
+			Self::Insert(ref mut value) => value,
+			Self::Replace(ref mut value) => value,
+			Self::Remove => panic!("Empty VecItemChangeOption"),
+		}
+	}
+}
+
 #[derive(Debug, Clone)]
 pub struct RecursiveTupleVec<K: Sized>{ pub id: K, pub value: Option<Vec<RecursiveTupleVec<K>>> }
 
@@ -94,24 +141,30 @@ impl<K: Sized + Default> Default for RecursiveTupleVec<K> {
     }
 }
 impl<K: Sized + Default> RecursiveTupleVec<K> {
-    fn put_with_defaults_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, mut new: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+    fn put_with_defaults_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, new: VecItemChangeOption<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
         if indexes.len() == (passed+1) {
             if let Some(value) = value {
                 if value.len() > indexes[passed] {
-                    if new.is_some() {
-                        if let Some(ref mut new) = new {
-                            ::std::mem::swap(new, &mut value[indexes[passed]]);
-                        }
-                        Ok(new)
-                    } else {
-                        Ok(Some(value.remove(indexes[passed])))
-                    }
+                	match new {
+                		VecItemChangeOption::Remove => Ok(Some(value.remove(indexes[passed]))),
+                		VecItemChangeOption::Replace(mut new) => {
+                			::std::mem::swap(&mut new, &mut value[indexes[passed]]);
+	                        Ok(Some(new))
+                		},
+                		VecItemChangeOption::Insert(new) => {
+                			value.insert(indexes[passed], new);
+	                		Ok(None)
+                		}
+                	}
                 } else {
                     if value.len() == indexes[passed] {
-                        if new.is_some() {
-                            value.push(new.unwrap());
-                        }
-                        Ok(None)
+                    	match new {
+                    		VecItemChangeOption::Remove => {},
+	                		VecItemChangeOption::Replace(new) | VecItemChangeOption::Insert(new) => {
+	                			value.push(new);
+	                		}
+                    	}
+                    	Ok(None)
                     } else {
                         value.push(Default::default());
                         Self::put_with_defaults_inner(value[indexes[passed]].value.as_mut(), indexes, passed+1, new)
@@ -130,7 +183,7 @@ impl<K: Sized + Default> RecursiveTupleVec<K> {
             panic!("Should not happen: indexes.len({}) < passed=1({})", indexes.len(), (passed+1))
         }
     }
-    pub fn put_with_defaults<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+    pub fn put_with_defaults<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: VecItemChangeOption<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
         Self::put_with_defaults_inner(self.value.as_mut(), indexes, 0, value)
     }
 }
@@ -139,25 +192,31 @@ impl<K: Sized> RecursiveTupleVec<K> {
     pub fn with_value<IK: Into<K>>(id: IK, value: Option<Vec<RecursiveTupleVec<K>>>) -> Self {
         Self { id: id.into(), value }
     }
-    fn put_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, mut new: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+    fn put_inner<'a, 'b: 'a>(value: Option<&'a mut Vec<RecursiveTupleVec<K>>>, indexes: &'b [usize], passed: usize, new: VecItemChangeOption<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
         if indexes.len() == (passed+1) {
             if let Some(value) = value {
                 if value.len() > indexes[passed] {
-                    if new.is_some() {
-                        if let Some(ref mut new) = new {
-                            ::std::mem::swap(new, &mut value[indexes[passed]]);
-                        }
-                        Ok(new)
-                    } else {
-                        Ok(Some(value.remove(indexes[passed])))
-                    }
+                    match new {
+                		VecItemChangeOption::Remove => Ok(Some(value.remove(indexes[passed]))),
+                		VecItemChangeOption::Replace(mut new) => {
+                			::std::mem::swap(&mut new, &mut value[indexes[passed]]);
+	                        Ok(Some(new))
+                		},
+                		VecItemChangeOption::Insert(new) => {
+                			value.insert(indexes[passed], new);
+	                		Ok(None)
+                		}
+                	}
                 } else {
                     if value.len() == indexes[passed] {
-                        if new.is_some() {
-                            value.push(new.unwrap());
-                        }
+                        match new {
+                    		VecItemChangeOption::Remove => {},
+	                		VecItemChangeOption::Replace(new) | VecItemChangeOption::Insert(new) => {
+	                			value.push(new);
+	                		}
+                    	}
                         Ok(None)
-                    } else {// here
+                    } else {
                         Err(indexes)
                     }
                 }
@@ -174,7 +233,7 @@ impl<K: Sized> RecursiveTupleVec<K> {
             Err(indexes)
         }
     }
-    pub fn put<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: Option<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
+    pub fn put<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: VecItemChangeOption<RecursiveTupleVec<K>>) -> Result<Option<RecursiveTupleVec<K>>, &'b [usize]> {
         Self::put_inner(self.value.as_mut(), indexes, 0, value)
     }
     

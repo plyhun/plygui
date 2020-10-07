@@ -1,7 +1,7 @@
 use crate::controls::{Adapted, Control, HasLabel};
 use crate::types::{RecursiveTupleVecIterator};
 use crate::sdk;
-use crate::types::{adapter, Adapter, AsAny, RecursiveTupleVec, Spawnable};
+use crate::types::{adapter, Adapter, AsAny, RecursiveTupleVec, Spawnable, VecItemChangeOption};
 use std::any::Any;
 use std::marker::PhantomData;
 use std::usize;
@@ -15,10 +15,9 @@ impl<C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
 	pub fn new() -> Self {
         Self::from(RecursiveTupleVec::default())
     }
-    pub fn put<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: Option<RecursiveTupleVec<String>>) -> Result<Option<RecursiveTupleVec<String>>, &'b [usize]> {
-    	let value_some = value.as_ref().is_some();
-        let value_is_branch = if value_some { value.as_ref().unwrap().value.is_some() } else { false };
-        println!("{:?} / {} / {}", indexes, value_some, value_is_branch);
+    pub fn put<'a, 'b: 'a>(&'a mut self, indexes: &'b [usize], value: VecItemChangeOption<RecursiveTupleVec<String>>) -> Result<Option<RecursiveTupleVec<String>>, &'b [usize]> {
+    	let value_some = value.is_some();
+        let value_is_branch = if value_some { value.as_ref().value.is_some() } else { false };
         let ret = self.item.put(indexes, value);
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
         	if ret.is_ok() {
