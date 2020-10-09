@@ -22,9 +22,9 @@ impl<C: HasLabel + Spawnable> StringTupleVecAdapter<C> {
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
         	if ret.is_ok() {
         		let change = match ret.as_ref().unwrap() {
-        			Some(_) if value_some => adapter::Change::Edited(indexes, if value_is_branch {adapter::Node::Branch(false)} else {adapter::Node::Leaf}),
+        			Some(_) if value_some => adapter::Change::Edited(indexes, if value_is_branch {adapter::Node::Branch(true)} else {adapter::Node::Leaf}),
         			Some(_) => adapter::Change::Removed(indexes),
-        			None if value_some => adapter::Change::Added(indexes, if value_is_branch {adapter::Node::Branch(false)} else {adapter::Node::Leaf}),
+        			None if value_some => adapter::Change::Added(indexes, if value_is_branch {adapter::Node::Branch(true)} else {adapter::Node::Leaf}),
         			_ => adapter::Change::Edited(indexes, adapter::Node::Leaf),
         		};
         		cb.on_item_change(change);
