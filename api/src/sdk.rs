@@ -31,5 +31,5 @@ pub use crate::inner::{
     adapted::{AAdapted, AdaptedInner, AdapterInnerCallback},
     adapter::{AdapterInner},
     list::{AList, ListInner, NewListInner},
-    tree::{ATree, TreeInner, NewTreeInner},
+    tree::{ATree, TreeInner, NewTreeInner, TreeNode, TreeNodeList},
 };
