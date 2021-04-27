@@ -6,6 +6,7 @@ use super::item_clickable::{ItemClickable, ItemClickableInner};
 use super::adapted::{AAdapted, Adapted, AdaptedInner};
 use super::control::{AControl, Control, ControlInner};
 use super::member::{AMember, Member};
+use super::adapter::Node;
 
 define! {
     Tree: Control + Adapted + ItemClickable {
@@ -87,4 +88,73 @@ impl<T: TreeInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATree<T>>>
     fn spawn() -> Box<dyn Control> {
         <T as Spawnable>::spawn()
     }
+}
+
+pub struct TreeNode<T: Sized> {
+    pub node: Node,
+    pub root: Box<dyn Control>,
+    pub native: T,
+    pub branches: Vec<Self>,
+}
+
+impl<T: Sized, I: AsRef<[usize]>> std::ops::Index<I> for TreeNode<T> {
+	type Output = Self;
+	fn index(&self, index: I) -> &Self::Output {
+		let mut i = 0;
+		let index = index.as_ref();
+		let mut ret = self;
+		while i < index.len() {
+			ret = &ret.branches[index[i]];
+			i += 1; 
+		}
+		ret
+	}
+}
+
+impl<T: Sized, I: AsRef<[usize]>> std::ops::IndexMut<I> for TreeNode<T> {
+	fn index_mut(&mut self, index: I) -> &mut Self::Output {
+		let mut i = 0;
+		let index = index.as_ref();
+		let mut ret = self;
+		while i < index.len() {
+			ret = &mut ret.branches[index[i]];
+			i += 1; 
+		}
+		ret
+	}
+}
+
+pub struct TreeNodeList<T: Sized> (pub Vec<TreeNode<T>>);
+
+impl<T: Sized, I: AsRef<[usize]>> std::ops::Index<I> for TreeNodeList<T> {
+	type Output = TreeNode<T>;
+	fn index(&self, index: I) -> &Self::Output {
+		let index = index.as_ref();
+		if index.len() < 1 {
+			panic!("Empty index!");
+		}
+		&self.0.as_slice()[index[0]][index[1..].as_ref()]
+	}
+}
+
+impl<T: Sized, I: AsRef<[usize]>> std::ops::IndexMut<I> for TreeNodeList<T> {
+	fn index_mut(&mut self, index: I) -> &mut Self::Output {
+		let index = index.as_ref();
+		if index.len() < 1 {
+			panic!("Empty index!");
+		}
+		&mut self.0.as_mut_slice()[index[0]][index[1..].as_ref()]
+	}
+}
+
+impl<T: Sized> std::ops::Deref for TreeNodeList<T> {
+	type Target = [TreeNode<T>];
+	fn deref(&self) -> &Self::Target {
+		self.0.as_slice()
+	}
+}
+impl<T: Sized> std::ops::DerefMut for TreeNodeList<T> {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		self.0.as_mut_slice()
+	}
 }

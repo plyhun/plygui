@@ -9,3 +9,5 @@ pub const MEMBER_ID_IMAGE: MemberId = "PlyguiImage";
 pub const MEMBER_ID_SPLITTED: MemberId = "PlyguiSplitted";
 pub const MEMBER_ID_TRAY: MemberId = "PlyguiTray";
 pub const MEMBER_ID_PROGRESSBAR: MemberId = "PlyguiProgressBar";
+pub const MEMBER_ID_LIST: MemberId = "PlyguiList";
+pub const MEMBER_ID_TREE: MemberId = "PlyguiTree";
