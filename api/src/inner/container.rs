@@ -6,16 +6,19 @@ use super::member::{AMember, Member, MemberInner};
 use super::container_single::{MaybeSingleContainer};
 use super::container_multi::{MaybeMultiContainer};
 use super::adapted::{MaybeAdapted};
+use super::has_native_id::HasNativeIdInner;
 
 define_abstract! {
     Container: Member {
         outer: {
             fn find_control_mut<'a>(&'a mut self, arg: types::FindBy<'a>) -> Option<&'a mut dyn Control>;
             fn find_control<'a>(&'a self, arg: types::FindBy<'a>) -> Option<&'a dyn Control>;
+            unsafe fn native_container_id(&self) -> usize;
         },
         inner: {
             fn find_control_mut<'a>(&'a mut self, arg: types::FindBy<'a>) -> Option<&'a mut dyn Control>;
             fn find_control<'a>(&'a self, arg: types::FindBy<'a>) -> Option<&'a dyn Control>;
+            fn native_container_id(&self) -> <Self as HasNativeIdInner>::Id { self.native_id() }
         }
         extends: {
             MaybeSingleContainer + MaybeMultiContainer + MaybeAdapted
@@ -43,6 +46,10 @@ impl<T: ContainerInner> Container for AMember<T> {
     #[inline]
     default fn into_container(self: Box<Self>) -> Box<dyn Container> {
         self
+    }
+    #[inline]
+    default unsafe fn native_container_id(&self) -> usize {
+        self.inner.native_container_id().into()
     }
 }
 impl<T: ContainerInner + ControlInner> Container for AMember<AControl<T>> {
@@ -104,5 +111,9 @@ impl<II: ContainerInner, T: HasInner<I = II> + Abstract + 'static> ContainerInne
     #[inline]
     fn find_control<'a>(&'a self, arg: types::FindBy<'a>) -> Option<&'a dyn Control> {
         self.inner().find_control(arg)
+    }
+    #[inline]
+    fn native_container_id(&self) -> <Self as HasNativeIdInner>::Id {
+    	self.inner().native_container_id()
     }
 }
