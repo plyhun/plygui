@@ -39,6 +39,9 @@ pub trait Member: HasNativeId + AsAny + Sealed
     fn as_member(&self) -> &dyn Member;
     fn as_member_mut(&mut self) -> &mut dyn Member;
     fn into_member(self: Box<Self>) -> Box<dyn Member>;
+    
+    fn as_base(&self) -> &MemberBase;
+    fn as_base_mut(&mut self) -> &mut MemberBase;
 }
 
 pub trait MemberInner: HasNativeIdInner + Sized + 'static {}
@@ -137,6 +140,15 @@ impl<T: MemberInner> Member for AMember<T> {
     #[inline]
     fn into_member(self: Box<Self>) -> Box<dyn Member> {
         self
+    }
+    
+    #[inline]
+    fn as_base(&self) -> &MemberBase {
+    	&self.base
+    }
+    #[inline]
+    fn as_base_mut(&mut self) -> &mut MemberBase {
+    	&mut self.base
     }
 }
 impl<T: MemberInner> AsAny for AMember<T> {
