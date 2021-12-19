@@ -91,10 +91,20 @@ impl<T: TreeInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATree<T>>>
 }
 
 pub struct TreeNode<T: Sized> {
-    pub node: Node,
+    pub expanded: bool,
     pub root: Box<dyn Control>,
     pub native: T,
     pub branches: Vec<Self>,
+}
+
+impl<T: Sized> TreeNode<T> {
+	pub fn node(&self) -> Node {
+		if self.branches.len() == 0 {
+			Node::Leaf
+		} else {
+			Node::Branch(self.expanded)
+		}
+	}
 }
 
 impl<T: Sized, I: AsRef<[usize]>> std::ops::Index<I> for TreeNode<T> {
