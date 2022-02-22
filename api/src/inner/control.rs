@@ -13,6 +13,7 @@ use super::splitted::MaybeSplitted;
 use super::frame::MaybeFrame;
 use super::image::MaybeImage;
 use super::list::MaybeList;
+use super::tree::MaybeTree;
 use super::progress_bar::MaybeProgressBar;
 use super::text::MaybeText;
 use super::seal::Sealed;
@@ -50,7 +51,7 @@ impl<T: ControlInner> OuterControl for AMember<AControl<T>> {
 }
 
 pub trait Control: Member + HasSize + HasVisibility + HasLayout + OuterDrawable + OuterControl
-        + MaybeButton + MaybeLinearLayout + MaybeSplitted + MaybeFrame + MaybeImage + MaybeList + MaybeProgressBar + MaybeText {
+        + MaybeButton + MaybeLinearLayout + MaybeSplitted + MaybeFrame + MaybeImage + MaybeList + MaybeTree + MaybeProgressBar + MaybeText {
     fn parent(&self) -> Option<&dyn Member>;
     fn parent_mut(&mut self) -> Option<&mut dyn Member>;
     fn root(&self) -> Option<&dyn Member>;
