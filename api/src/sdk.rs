@@ -32,4 +32,5 @@ pub use crate::inner::{
     adapter::{AdapterInner},
     list::{AList, ListInner, NewListInner},
     tree::{ATree, TreeInner, NewTreeInner, TreeNode, TreeNodeList},
+    table::{ATable, TableInner, NewTableInner, TableData, TableColumn, TableCell},
 };

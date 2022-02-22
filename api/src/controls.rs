@@ -29,4 +29,5 @@ pub use crate::inner::{
     adapted::{Adapted, MaybeAdapted},
     list::{List, MaybeList, NewList},
     tree::{Tree, MaybeTree, NewTree},
+    table::{Table, MaybeTable, NewTable},
 };
