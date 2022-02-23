@@ -79,12 +79,14 @@ impl<C: HasLabel + Spawnable> Adapter for StringTupleVecAdapter<C> {
         self.item.get(indexes).map(|n| if n.value.is_some() { adapter::Node::Branch(true) } else { adapter::Node::Leaf })
     }
     fn spawn_item_view(&mut self, indexes: &[usize], _: &dyn Adapted) -> Option<Box<dyn Control>> {
-        self.item.get(indexes).map(|n| {
+        self.alt_text_at(indexes).map(|str| {
             let mut control = C::spawn();
-            control.as_any_mut().downcast_mut::<C>().unwrap().set_label(n.id.as_str().into());
-
+            control.as_any_mut().downcast_mut::<C>().unwrap().set_label(str.into());
             control
         })
+    }
+    fn alt_text_at<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a str> {
+        self.item.get(indexes).map(|n| n.id.as_str())
     }
     fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
         let mut iterator = RecursiveTupleVecIterator::with_item(&self.item);

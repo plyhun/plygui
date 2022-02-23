@@ -96,11 +96,11 @@ pub struct TableData<T: Sized> {
 }
 pub struct TableColumn<T: Sized> {
     pub cells: Vec<Option<TableCell<T>>>,
-    pub root: Box<dyn Control>,
+    pub control: Option<Box<dyn Control>>,
     pub native: T,
 }
 pub struct TableCell<T: Sized> {
-    pub root: Box<dyn Control>,
+    pub control: Option<Box<dyn Control>>,
     pub native: T,
 }
 

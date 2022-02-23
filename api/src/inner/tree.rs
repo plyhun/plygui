@@ -92,7 +92,7 @@ impl<T: TreeInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATree<T>>>
 
 pub struct TreeNode<T: Sized> {
     pub expanded: bool,
-    pub root: Box<dyn Control>,
+    pub control: Box<dyn Control>,
     pub native: T,
     pub branches: Vec<Self>,
 }

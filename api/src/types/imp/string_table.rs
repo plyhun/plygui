@@ -163,15 +163,11 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
         }
     }
 	fn spawn_item_view(&mut self, indexes: &[usize], _parent: &dyn Adapted) -> Option<Box<dyn Control>> {
-	    if indexes.len() == 2 {
-	        self.columns[indexes[0]].cells[indexes[1]].as_ref().map(|str| {
+	    self.alt_text_at(indexes).map(|str| {
     	        let mut control = C::spawn();
-        	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(str.as_str().into());
+        	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(str.into());
             	control
 	        })
-        } else {
-            None
-        }
 	}
 	fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
 	    let mut cols = self.columns.iter().enumerate();
@@ -182,6 +178,13 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
 	            f(&[x, y], &adapter::Node::Leaf);
 	        }
 	    }
+	}
+	fn alt_text_at<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a str> {
+    	if indexes.len() == 2 {
+	        self.columns[indexes[0]].cells[indexes[1]].as_ref().map(|text| text.as_str())
+        } else {
+            None
+        }
 	}
 }
 impl<C: HasLabel + Spawnable> sdk::AdapterInner for StringTableAdapter<C> {

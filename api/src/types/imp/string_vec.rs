@@ -82,14 +82,19 @@ impl<C: HasLabel + Spawnable> Adapter for StringVecAdapter<C> {
         }
     }
 	fn spawn_item_view(&mut self, indexes: &[usize], _parent: &dyn Adapted) -> Option<Box<dyn Control>> {
-	    if indexes.len() == 1 {
-	        let mut control = C::spawn();
-    	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(self.items[indexes[0]].as_str().into());
-        	Some(control)
+	    self.alt_text_at(indexes).map(|str| {
+    	    let mut control = C::spawn();
+    	    control.as_any_mut().downcast_mut::<C>().unwrap().set_label(str.into());
+        	control
+	    })
+	}
+	fn alt_text_at<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a str> {
+        if indexes.len() == 1 {
+	        self.items.get(indexes[0]).map(|text| text.as_str())
         } else {
             None
         }
-	}
+    }
 	fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
 	    let mut iter = self.items.iter().enumerate();
 	    while let Some((index, _item)) = iter.next() {
