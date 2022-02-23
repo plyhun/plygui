@@ -155,6 +155,8 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
     }
     fn node_at(&self, indexes: &[usize]) -> Option<adapter::Node> {
         if indexes.len() == 1 {
+            Some(adapter::Node::Branch(true))
+        } else if indexes.len() == 2 {
             Some(adapter::Node::Leaf)
         } else {
             None
@@ -174,6 +176,7 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
 	fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
 	    let mut cols = self.columns.iter().enumerate();
 	    while let Some((x, column)) = cols.next() {
+	        f(&[x], &adapter::Node::Branch(true));
 	        let mut cells = column.cells.iter().enumerate();
 	        while let Some((y, _cell)) = cells.next() {
 	            f(&[x, y], &adapter::Node::Leaf);

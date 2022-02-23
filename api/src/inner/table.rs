@@ -95,8 +95,8 @@ pub struct TableData<T: Sized> {
     pub cols: Vec<TableColumn<T>>,
 }
 pub struct TableColumn<T: Sized> {
-    pub cells: Vec<TableCell<T>>,
-    pub label: String,
+    pub cells: Vec<Option<TableCell<T>>>,
+    pub root: Box<dyn Control>,
     pub native: T,
 }
 pub struct TableCell<T: Sized> {
@@ -110,7 +110,7 @@ impl<T: Sized> TableData<T> {
 		if index.len() != 2 {
 		    None
 		} else {
-    		self.cols.get(index[0]).and_then(|col| col.cells.get(index[1]))
+    		self.cols.get(index[0]).and_then(|col| col.cells.get(index[1])).and_then(|cell| cell.as_ref())
 		}
 	}
 	pub fn cell_at_mut<I: AsRef<[usize]>>(&mut self, index: I) -> Option<&mut TableCell<T>> {
@@ -118,7 +118,7 @@ impl<T: Sized> TableData<T> {
 		if index.len() != 2 {
 		    None
 		} else {
-    		self.cols.get_mut(index[0]).and_then(|row_col| row_col.cells.get_mut(index[1]))
+    		self.cols.get_mut(index[0]).and_then(|col| col.cells.get_mut(index[1])).and_then(|cell| cell.as_mut())
 		}
 	}
 	pub fn column_at(&self, index: usize) -> Option<&TableColumn<T>> {

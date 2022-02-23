@@ -11,3 +11,4 @@ pub const MEMBER_ID_TRAY: MemberId = "PlyguiTray";
 pub const MEMBER_ID_PROGRESSBAR: MemberId = "PlyguiProgressBar";
 pub const MEMBER_ID_LIST: MemberId = "PlyguiList";
 pub const MEMBER_ID_TREE: MemberId = "PlyguiTree";
+pub const MEMBER_ID_TABLE: MemberId = "PlyguiTable";

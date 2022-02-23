@@ -50,3 +50,49 @@ where
     &mut *(this as *mut _ as *mut T)
 }
 */
+pub fn find_by_mut<'a>(control: &'a mut dyn controls::Control, arg: types::FindBy<'a>) -> Option<&'a mut dyn controls::Control> {
+    match arg {
+        types::FindBy::Id(id) => {
+            if control.as_member_mut().id() == id {
+                return Some(control);
+            }
+        },
+        types::FindBy::Tag(tag) => {
+            if let Some(mytag) = control.as_member_mut().tag() {
+                if tag == mytag {
+                    return Some(control);
+                }
+            }
+        }
+    }
+    if let Some(c) = control.is_container_mut() {
+        let ret = c.find_control_mut(arg.clone());
+        if ret.is_some() {
+            return ret;
+        }
+    }
+    None
+}
+pub fn find_by<'a>(control: &'a dyn controls::Control, arg: types::FindBy<'a>) -> Option<&'a dyn controls::Control> {
+    match arg {
+        types::FindBy::Id(id) => {
+            if control.as_member().id() == id {
+                return Some(control);
+            }
+        },
+        types::FindBy::Tag(tag) => {
+            if let Some(mytag) = control.as_member().tag() {
+                if tag == mytag {
+                    return Some(control);
+                }
+            }
+        }
+    }
+    if let Some(c) = control.is_container() {
+        let ret = c.find_control(arg.clone());
+        if ret.is_some() {
+            return ret;
+        }
+    }
+    None
+}
