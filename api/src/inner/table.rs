@@ -103,7 +103,11 @@ pub struct TableCell<T: Sized> {
     pub control: Option<Box<dyn Control>>,
     pub native: T,
 }
-
+impl<T: Sized> Default for TableData<T> {
+    fn default() -> Self {
+        Self { cols: Vec::new() }
+    }
+}
 impl<T: Sized> TableData<T> {
 	pub fn cell_at<I: AsRef<[usize]>>(&self, index: I) -> Option<&TableCell<T>> {
 		let index = index.as_ref();

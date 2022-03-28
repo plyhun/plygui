@@ -170,9 +170,10 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
 	        })
 	}
 	fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn adapter::FnNodeItem) {
-	    let mut cols = self.columns.iter().enumerate();
-	    while let Some((x, column)) = cols.next() {
+	    for (x, _) in self.columns.iter().enumerate() {
 	        f(&[x], &adapter::Node::Branch(true));
+	    }
+	    for (x, column) in self.columns.iter().enumerate() {
 	        let mut cells = column.cells.iter().enumerate();
 	        while let Some((y, _cell)) = cells.next() {
 	            f(&[x, y], &adapter::Node::Leaf);
