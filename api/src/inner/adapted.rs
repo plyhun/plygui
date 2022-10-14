@@ -55,6 +55,15 @@ impl<T: AdaptedInner + ControlInner + 'static> AMember<AControl<AContainer<AAdap
     pub unsafe fn adapter_base_parts_mut(base: &mut MemberBase) -> (&mut MemberBase, &mut ControlBase, &mut AdaptedBase, &mut T) {
         utils::base_to_impl_mut::<Self>(base).as_adapted_parts_mut()
     }
+    #[inline]
+    pub fn as_adapted_parts(&self) -> (&MemberBase, &ControlBase, &AdaptedBase, &T) {
+        let this = self as *const Self;
+        (& unsafe { &*this }.base, & unsafe { &*this }.inner.base, & unsafe { &*this }.inner.inner.inner.base, & unsafe { &*this }.inner.inner.inner.inner)
+    }
+    #[inline]
+    pub unsafe fn adapter_base_parts(base: &MemberBase) -> (&MemberBase, &ControlBase, &AdaptedBase, &T) {
+        utils::base_to_impl::<Self>(base).as_adapted_parts()
+    }
 }
 
 pub struct AdapterInnerCallback {

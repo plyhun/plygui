@@ -3,19 +3,32 @@ use crate::types;
 use super::auto::{HasInner, Abstract, Spawnable};
 use super::container::AContainer;
 use super::item_clickable::{ItemClickable, ItemClickableInner};
-use super::adapted::{AAdapted, Adapted, AdaptedInner};
-use super::control::{AControl, Control, ControlInner};
-use super::member::{AMember, Member};
+use super::adapted::{AAdapted, Adapted, AdaptedInner, AdaptedBase};
+use super::control::{AControl, Control, ControlInner, ControlBase};
+use super::member::{AMember, Member, MemberBase};
 
 define! {
     Table: Control + Adapted + ItemClickable {
 	    /*base: {
             pub on_item_click: Option<OnItemClick>,
         }*/
-	    inner: {}
-	    outer: {}
+	    inner: {
+            fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize);
+            fn size(&self, member: &MemberBase, control: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
+                (adapted.adapter.len_at(&[]).unwrap_or(0), adapted.adapter.len_at(&[0]).unwrap_or(0))
+            }
+        }
+	    outer: {
+            fn resize(&mut self, width: usize, height: usize) -> (usize, usize);
+            fn size(&self) -> (usize, usize);
+        }
 	    constructor: {
     	    fn with_adapter_initial_size(adapter: Box<dyn types::Adapter>, width: usize, height: usize) -> Box<dyn Table>;
+            fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn Table> {
+                let width = adapter.len_at(&[]).unwrap_or(0);
+                let height = adapter.len_at(&[0]).unwrap_or(0);
+                Self::with_adapter_initial_size(adapter, width, height)
+            }
 	    }
 	    inner_constructor_params: {
             width: usize, height: usize
@@ -34,6 +47,14 @@ impl<II: TableInner, T: HasInner<I = II> + Abstract + 'static> TableInner for T 
     #[inline]
     fn with_adapter_initial_size(adapter: Box<dyn types::Adapter>, width: usize, height: usize) -> Box<dyn Table> {
         <<Self as HasInner>::I as TableInner>::with_adapter_initial_size(adapter, width, height)
+    }
+    #[inline]
+    fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize) {
+        self.inner_mut().resize(member, control, adapted, width, height)
+    }
+    #[inline]
+    fn size(&self, member: &MemberBase, control: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
+        self.inner().size(member, control, adapted)
     }
 }
 impl<T: TableInner> NewTable for AMember<AControl<AContainer<AAdapted<ATable<T>>>>> {
@@ -73,6 +94,16 @@ impl<T: TableInner> NewTable for AMember<AControl<AContainer<AAdapted<ATable<T>>
 
 impl<T: TableInner> Table for AMember<AControl<AContainer<AAdapted<ATable<T>>>>> {
     #[inline]
+    fn resize(&mut self, width: usize, height: usize) -> (usize, usize) {
+        let (m,c,a,t) = self.as_adapted_parts_mut();
+        t.resize(m, c, a, width, height)
+    }
+    #[inline]
+    fn size(&self) -> (usize, usize) {
+        let (m,c,a,t) = self.as_adapted_parts();
+        t.size(m, c, a)
+    }
+    #[inline]
     fn as_table(&self) -> &dyn Table {
         self
     }
@@ -108,7 +139,11 @@ pub struct TableCell<T: Sized> {
     pub control: Option<Box<dyn Control>>,
     pub native: T,
 }
-
+impl<T: Sized> Default for TableData<T> {
+    fn default() -> Self {
+        Self { cols: Vec::new() }
+    }
+}
 impl<T: Sized> TableData<T> {
 	pub fn cell_at<I: AsRef<[usize]>>(&self, index: I) -> Option<&TableCell<T>> {
 		let index = index.as_ref();
