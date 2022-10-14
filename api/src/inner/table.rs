@@ -125,6 +125,11 @@ impl<T: TableInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATable<T>
 pub struct TableData<T: Sized> {
     pub cols: Vec<TableColumn<T>>,
 }
+impl <T: Sized> Default for TableData<T> {
+	fn default() -> Self {
+		Self { cols: Vec::new() }
+	}
+}
 pub struct TableColumn<T: Sized> {
     pub cells: Vec<Option<TableCell<T>>>,
     pub control: Option<Box<dyn Control>>,
