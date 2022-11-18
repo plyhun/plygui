@@ -7,6 +7,8 @@ use super::adapted::{AAdapted, Adapted, AdaptedInner, AdaptedBase};
 use super::control::{AControl, Control, ControlInner, ControlBase};
 use super::member::{AMember, Member, MemberBase};
 
+use std::collections::HashMap;
+
 define! {
     Table: Control + Adapted + ItemClickable {
 	    /*base: {
@@ -14,6 +16,7 @@ define! {
         }*/
 	    inner: {
 	        fn set_column_width(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
+            fn set_row_height(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
             fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize);
             fn size(&self, _: &MemberBase, _: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
                 (adapted.adapter.len_at(&[]).unwrap_or(0), adapted.adapter.len_at(&[0]).unwrap_or(0))
@@ -23,6 +26,7 @@ define! {
             fn resize(&mut self, width: usize, height: usize) -> (usize, usize);
             fn size(&self) -> (usize, usize);
             fn set_column_width(&mut self, index: usize, size: layout::Size);
+            fn set_row_height(&mut self, index: usize, size: layout::Size);
         }
 	    constructor: {
     	    fn with_adapter_initial_size(adapter: Box<dyn types::Adapter>, width: usize, height: usize) -> Box<dyn Table>;
@@ -61,6 +65,10 @@ impl<II: TableInner, T: HasInner<I = II> + Abstract + 'static> TableInner for T 
     #[inline]
     fn set_column_width(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size) {
         self.inner_mut().set_column_width(member, control, adapted, index, size)
+    }
+    #[inline]
+    fn set_row_height(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size) {
+        self.inner_mut().set_row_height(member, control, adapted, index, size)
     }
 }
 impl<T: TableInner> NewTable for AMember<AControl<AContainer<AAdapted<ATable<T>>>>> {
@@ -115,6 +123,11 @@ impl<T: TableInner> Table for AMember<AControl<AContainer<AAdapted<ATable<T>>>>>
         t.set_column_width(m, c, a, index, size)
     }
     #[inline]
+    fn set_row_height(&mut self, index: usize, size: layout::Size) {
+        let (m,c,a,t) = self.as_adapted_parts_mut();
+        t.set_row_height(m, c, a, index, size)
+    }
+    #[inline]
     fn as_table(&self) -> &dyn Table {
         self
     }
@@ -135,10 +148,12 @@ impl<T: TableInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATable<T>
 }
 pub struct TableData<T: Sized> {
     pub cols: Vec<TableColumn<T>>,
+    pub default_row_height: layout::Size,
+    pub row_heights: HashMap<usize, layout::Size>
 }
 impl <T: Sized> Default for TableData<T> {
 	fn default() -> Self {
-		Self { cols: Vec::new() }
+		Self { cols: Vec::new(), default_row_height: layout::Size::WrapContent, row_heights: HashMap::default() }
 	}
 }
 pub struct TableColumn<T: Sized> {
