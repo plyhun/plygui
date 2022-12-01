@@ -166,6 +166,14 @@ pub struct TableCell<T: Sized> {
     pub control: Option<Box<dyn Control>>,
     pub native: T,
 }
+impl<T: Sized> TableColumn<T> {
+	pub fn cell_at(&self, index: usize) -> Option<&TableCell<T>> {
+		self.cells.get(index).and_then(|cell| cell.as_ref())
+	}
+	pub fn cell_at_mut(&mut self, index: usize) -> Option<&mut TableCell<T>> {
+		self.cells.get_mut(index).and_then(|cell| cell.as_mut())
+	}
+}
 impl<T: Sized> TableData<T> {
 	pub fn cell_at<I: AsRef<[usize]>>(&self, index: I) -> Option<&TableCell<T>> {
 		let index = index.as_ref();
