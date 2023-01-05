@@ -136,6 +136,12 @@ impl<T: Sized, I: AsRef<[usize]>> std::ops::IndexMut<I> for TreeNode<T> {
 
 pub struct TreeNodeList<T: Sized> (pub Vec<TreeNode<T>>);
 
+impl<T: Sized> std::default::Default for TreeNodeList<T> {
+    fn default() -> Self {
+        TreeNodeList(Vec::new())
+    }
+}
+
 impl<T: Sized, I: AsRef<[usize]>> std::ops::Index<I> for TreeNodeList<T> {
 	type Output = TreeNode<T>;
 	fn index(&self, index: I) -> &Self::Output {
