@@ -148,25 +148,30 @@ impl<T: TableInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATable<T>
 }
 pub struct TableData<T: Sized> {
     pub cols: Vec<TableColumn<T>>,
-    pub default_row_height: layout::Size,
-    pub row_heights: HashMap<usize, layout::Size>
+    pub rows: Vec<TableRow<T>>,
+    pub default_row_height: layout::Size
 }
 impl <T: Sized> Default for TableData<T> {
 	fn default() -> Self {
-		Self { cols: Vec::new(), default_row_height: layout::Size::WrapContent, row_heights: HashMap::default() }
+		Self { cols: Vec::new(), default_row_height: layout::Size::WrapContent, rows: Vec::new() }
 	}
 }
 pub struct TableColumn<T: Sized> {
-    pub cells: Vec<Option<TableCell<T>>>,
     pub control: Option<Box<dyn Control>>,
     pub native: T,
     pub width: layout::Size,
+}
+pub struct TableRow<T: Sized> {
+    pub cells: Vec<Option<TableCell<T>>>,
+    pub control: Option<Box<dyn Control>>,
+    pub native: T,
+    pub height: layout::Size,
 }
 pub struct TableCell<T: Sized> {
     pub control: Option<Box<dyn Control>>,
     pub native: T,
 }
-impl<T: Sized> TableColumn<T> {
+impl<T: Sized> TableRow<T> {
 	pub fn cell_at(&self, index: usize) -> Option<&TableCell<T>> {
 		self.cells.get(index).and_then(|cell| cell.as_ref())
 	}
@@ -180,7 +185,7 @@ impl<T: Sized> TableData<T> {
 		if index.len() != 2 {
 		    None
 		} else {
-    		self.cols.get(index[0]).and_then(|col| col.cells.get(index[1])).and_then(|cell| cell.as_ref())
+    		self.rows.get(index[0]).and_then(|row| row.cells.get(index[1])).and_then(|cell| cell.as_ref())
 		}
 	}
 	pub fn cell_at_mut<I: AsRef<[usize]>>(&mut self, index: I) -> Option<&mut TableCell<T>> {
@@ -188,7 +193,7 @@ impl<T: Sized> TableData<T> {
 		if index.len() != 2 {
 		    None
 		} else {
-    		self.cols.get_mut(index[0]).and_then(|col| col.cells.get_mut(index[1])).and_then(|cell| cell.as_mut())
+    		self.rows.get_mut(index[0]).and_then(|row| row.cells.get_mut(index[1])).and_then(|cell| cell.as_mut())
 		}
 	}
 	pub fn column_at(&self, index: usize) -> Option<&TableColumn<T>> {
@@ -196,6 +201,12 @@ impl<T: Sized> TableData<T> {
 	}
 	pub fn column_at_mut(&mut self, index: usize) -> Option<&mut TableColumn<T>> {
 		self.cols.get_mut(index)
+	}
+    pub fn row_at(&self, index: usize) -> Option<&TableRow<T>> {
+		self.rows.get(index)
+	}
+	pub fn row_at_mut(&mut self, index: usize) -> Option<&mut TableRow<T>> {
+		self.rows.get_mut(index)
 	}
 }
 
