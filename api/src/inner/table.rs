@@ -7,8 +7,6 @@ use super::adapted::{AAdapted, Adapted, AdaptedInner, AdaptedBase};
 use super::control::{AControl, Control, ControlInner, ControlBase};
 use super::member::{AMember, Member, MemberBase};
 
-use std::collections::HashMap;
-
 define! {
     Table: Control + Adapted + ItemClickable {
 	    /*base: {
@@ -146,80 +144,3 @@ impl<T: TableInner> Spawnable for AMember<AControl<AContainer<AAdapted<ATable<T>
         <T as Spawnable>::spawn()
     }
 }
-pub struct TableData<T: Sized> {
-    pub cols: Vec<TableColumn<T>>,
-    pub rows: Vec<TableRow<T>>,
-    pub default_row_height: layout::Size
-}
-impl <T: Sized> Default for TableData<T> {
-	fn default() -> Self {
-		Self { cols: Vec::new(), default_row_height: layout::Size::WrapContent, rows: Vec::new() }
-	}
-}
-pub struct TableColumn<T: Sized> {
-    pub control: Option<Box<dyn Control>>,
-    pub native: T,
-    pub width: layout::Size,
-}
-pub struct TableRow<T: Sized> {
-    pub cells: Vec<Option<TableCell<T>>>,
-    pub control: Option<Box<dyn Control>>,
-    pub native: T,
-    pub height: layout::Size,
-}
-pub struct TableCell<T: Sized> {
-    pub control: Option<Box<dyn Control>>,
-    pub native: T,
-}
-impl<T: Sized> TableRow<T> {
-	pub fn cell_at(&self, index: usize) -> Option<&TableCell<T>> {
-		self.cells.get(index).and_then(|cell| cell.as_ref())
-	}
-	pub fn cell_at_mut(&mut self, index: usize) -> Option<&mut TableCell<T>> {
-		self.cells.get_mut(index).and_then(|cell| cell.as_mut())
-	}
-}
-impl<T: Sized> TableData<T> {
-	pub fn cell_at<I: AsRef<[usize]>>(&self, index: I) -> Option<&TableCell<T>> {
-		let index = index.as_ref();
-		if index.len() != 2 {
-		    None
-		} else {
-    		self.rows.get(index[0]).and_then(|row| row.cells.get(index[1])).and_then(|cell| cell.as_ref())
-		}
-	}
-	pub fn cell_at_mut<I: AsRef<[usize]>>(&mut self, index: I) -> Option<&mut TableCell<T>> {
-		let index = index.as_ref();
-		if index.len() != 2 {
-		    None
-		} else {
-    		self.rows.get_mut(index[0]).and_then(|row| row.cells.get_mut(index[1])).and_then(|cell| cell.as_mut())
-		}
-	}
-	pub fn column_at(&self, index: usize) -> Option<&TableColumn<T>> {
-		self.cols.get(index)
-	}
-	pub fn column_at_mut(&mut self, index: usize) -> Option<&mut TableColumn<T>> {
-		self.cols.get_mut(index)
-	}
-    pub fn row_at(&self, index: usize) -> Option<&TableRow<T>> {
-		self.rows.get(index)
-	}
-	pub fn row_at_mut(&mut self, index: usize) -> Option<&mut TableRow<T>> {
-		self.rows.get_mut(index)
-	}
-}
-
-impl<T: Sized, I: AsRef<[usize]>> std::ops::Index<I> for TableData<T> {
-	type Output = TableCell<T>;
-	fn index(&self, index: I) -> &Self::Output {
-		self.cell_at(index).unwrap()
-	}
-}
-
-impl<T: Sized, I: AsRef<[usize]>> std::ops::IndexMut<I> for TableData<T> {
-	fn index_mut(&mut self, index: I) -> &mut Self::Output {
-		self.cell_at_mut(index).unwrap()
-	}
-}
-

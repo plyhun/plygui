@@ -5,6 +5,9 @@ pub mod imp;
 pub mod adapter {
 	pub use crate::inner::adapter::{Node, Change, FnNodeItem};
 }
+pub mod matrix {
+    pub use crate::types::imp::matrix::{Matrix, Column, Row, Cell};
+}
 
 pub use crate::inner::{
     auto::{AsAny, Spawnable},
