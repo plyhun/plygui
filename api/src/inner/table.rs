@@ -15,13 +15,13 @@ define! {
 	    inner: {
 	        fn set_column_width(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
             fn set_row_height(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
-            fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize);
+            //fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize);
             fn size(&self, _: &MemberBase, _: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
                 (adapted.adapter.len_at(&[]).unwrap_or(0), adapted.adapter.len_at(&[0]).unwrap_or(0))
             }
         }
 	    outer: {
-            fn resize(&mut self, width: usize, height: usize) -> (usize, usize);
+            //fn resize(&mut self, width: usize, height: usize) -> (usize, usize);
             fn size(&self) -> (usize, usize);
             fn set_column_width(&mut self, index: usize, size: layout::Size);
             fn set_row_height(&mut self, index: usize, size: layout::Size);
@@ -52,10 +52,10 @@ impl<II: TableInner, T: HasInner<I = II> + Abstract + 'static> TableInner for T 
     fn with_adapter_initial_size(adapter: Box<dyn types::Adapter>, width: usize, height: usize) -> Box<dyn Table> {
         <<Self as HasInner>::I as TableInner>::with_adapter_initial_size(adapter, width, height)
     }
-    #[inline]
-    fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize) {
-        self.inner_mut().resize(member, control, adapted, width, height)
-    }
+//    #[inline]
+//    fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize) {
+//        self.inner_mut().resize(member, control, adapted, width, height)
+//    }
     #[inline]
     fn size(&self, member: &MemberBase, control: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
         self.inner().size(member, control, adapted)
@@ -106,10 +106,10 @@ impl<T: TableInner> NewTable for AMember<AControl<AContainer<AAdapted<ATable<T>>
 
 impl<T: TableInner> Table for AMember<AControl<AContainer<AAdapted<ATable<T>>>>> {
     #[inline]
-    fn resize(&mut self, width: usize, height: usize) -> (usize, usize) {
-        let (m,c,a,t) = self.as_adapted_parts_mut();
-        t.resize(m, c, a, width, height)
-    }
+//    fn resize(&mut self, width: usize, height: usize) -> (usize, usize) {
+//        let (m,c,a,t) = self.as_adapted_parts_mut();
+//        t.resize(m, c, a, width, height)
+//    }
     #[inline]
     fn size(&self) -> (usize, usize) {
         let (m,c,a,t) = self.as_adapted_parts();
