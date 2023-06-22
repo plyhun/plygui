@@ -91,10 +91,10 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
         let existed = self.columns.get_mut(x).is_some();
         self.columns[x].label = arg.map(|arg| arg.as_ref().into());
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
-            let indices = &[x];
             if !added && !existed {
                 return
             }
+            let indices = &[x];
             if added && existed {
                 cb.on_item_change(adapter::Change::Edited(indices, adapter::Node::Branch(true)))
             } else if added {
@@ -115,10 +115,10 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
         let existed = self.columns.get_mut(x).and_then(|col| col.cells.get_mut(y)).is_some();
         self.columns[x].cells[y] = arg.map(|arg| arg.as_ref().into());
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
-            let indices = &[x, y];
             if !added && !existed {
                 return
             }
+            let indices = &[x, y];
             if added && existed {
                 cb.on_item_change(adapter::Change::Edited(indices, adapter::Node::Leaf))
             } else if added {
@@ -183,6 +183,8 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
 	fn alt_text_at<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a str> {
     	if indexes.len() == 2 {
 	        self.columns[indexes[0]].cells[indexes[1]].as_ref().map(|text| text.as_str())
+        } else if indexes.len() == 1 {
+            self.columns[indexes[0]].label.as_ref().map(|label| label.as_str())
         } else {
             None
         }
