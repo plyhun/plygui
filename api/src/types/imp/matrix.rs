@@ -5,11 +5,12 @@ use crate::inner::control::Control;
 pub struct Matrix<T: Sized> {
     pub cols: Vec<Column<T>>,
     pub rows: Vec<Row<T>>,
-    pub default_row_height: layout::Size
+    pub default_row_height: layout::Size,
+    pub header_height: layout::Size
 }
 impl <T: Sized> Default for Matrix<T> {
 	fn default() -> Self {
-		Self { cols: Vec::new(), default_row_height: layout::Size::WrapContent, rows: Vec::new() }
+		Self { cols: Vec::new(), default_row_height: layout::Size::WrapContent, header_height: layout::Size::WrapContent, rows: Vec::new() }
 	}
 }
 pub struct Column<T: Sized> {
