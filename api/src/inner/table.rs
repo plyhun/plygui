@@ -13,6 +13,8 @@ define! {
             pub on_item_click: Option<OnItemClick>,
         }*/
 	    inner: {
+            fn set_headers_visible(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, visible: bool);
+            fn headers_visible(&self, member: &MemberBase, control: &ControlBase, adapted: &AdaptedBase) -> bool;
 	        fn set_column_width(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
             fn set_row_height(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
             //fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize);
@@ -21,7 +23,9 @@ define! {
             }
         }
 	    outer: {
-            //fn resize(&mut self, width: usize, height: usize) -> (usize, usize);
+            fn set_headers_visible(&mut self, visible: bool);
+            fn headers_visible(&self) -> bool;
+	        //fn resize(&mut self, width: usize, height: usize) -> (usize, usize);
             fn size(&self) -> (usize, usize);
             fn set_column_width(&mut self, index: usize, size: layout::Size);
             fn set_row_height(&mut self, index: usize, size: layout::Size);
@@ -56,6 +60,14 @@ impl<II: TableInner, T: HasInner<I = II> + Abstract + 'static> TableInner for T 
 //    fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize) {
 //        self.inner_mut().resize(member, control, adapted, width, height)
 //    }
+    #[inline]
+    fn headers_visible(&self, member: &MemberBase, control: &ControlBase, adapted: &AdaptedBase) -> bool {
+        self.inner().headers_visible(member, control, adapted)
+    }
+    #[inline]
+    fn set_headers_visible(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, visible: bool) {
+        self.inner_mut().set_headers_visible(member, control, adapted, visible)
+    }
     #[inline]
     fn size(&self, member: &MemberBase, control: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
         self.inner().size(member, control, adapted)
@@ -110,6 +122,16 @@ impl<T: TableInner> Table for AMember<AControl<AContainer<AAdapted<ATable<T>>>>>
 //        let (m,c,a,t) = self.as_adapted_parts_mut();
 //        t.resize(m, c, a, width, height)
 //    }
+    #[inline]
+    fn set_headers_visible(&mut self, visible: bool) {
+        let (m,c,a,t) = self.as_adapted_parts_mut();
+        t.set_headers_visible(m, c, a, visible)
+    }
+    #[inline]
+    fn headers_visible(&self) -> bool {
+        let (m,c,a,t) = self.as_adapted_parts();
+        t.headers_visible(m, c, a)
+    }
     #[inline]
     fn size(&self) -> (usize, usize) {
         let (m,c,a,t) = self.as_adapted_parts();
