@@ -53,7 +53,7 @@ impl Parse for Has {
         Ok(Self {
             name: input.parse()?,
             _paren: parenthesized!(content in input),
-            params: content.parse_terminated(Type::parse)?,
+            params: Punctuated::parse_terminated_with(&content, Type::parse)?,
             _colon: {
                 let lookahead = input.lookahead1();
                 if lookahead.peek(Token![:]) {
@@ -99,10 +99,10 @@ impl Parse for Has {
 
 impl ToTokens for Has {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let ident = &self.name.to_string().to_camel_case();
+        let ident = &self.name.to_string().to_upper_camel_case();
 
-        let has_ident = Ident::new(&format!("Has{}", ident).to_camel_case(), Span::call_site());
-        let has_ident_inner = Ident::new(&format!("Has{}Inner", ident).to_camel_case(), Span::call_site());
+        let has_ident = Ident::new(&format!("Has{}", ident).to_upper_camel_case(), Span::call_site());
+        let has_ident_inner = Ident::new(&format!("Has{}Inner", ident).to_upper_camel_case(), Span::call_site());
 
         let ident_fn = Ident::new(&format!("{}", ident).to_snake_case(), Span::call_site());
         let set_ident_fn = Ident::new(&format!("set_{}", ident).to_snake_case(), Span::call_site());
@@ -110,23 +110,23 @@ impl ToTokens for Has {
 
         let as_into = &crate::as_into::AsInto { ident_camel: &has_ident };
 
-        let params = &self.params;
+        let params = self.params.iter();
         let param_names = &(0..params.len()).map(|i| Ident::new(&format!("arg{}", i), Span::call_site())).collect::<Vec<_>>();
         let return_params = HasReturnParams {
             params: &self.params,
-            paren: token::Paren { span: Span::call_site() },
+            paren: token::Paren::default(),
         };
 
         let extends = self.extends.as_ref().map(|punct| punct.iter().map(|i| i.clone()).collect::<Vec<_>>()).unwrap_or(vec![]);
         let extends_inner = self
             .extends
             .as_ref()
-            .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_camel_case()), Span::call_site())).collect::<Vec<_>>())
+            .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_upper_camel_case()), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
         let extends_base = &self
             .extends
             .as_ref()
-            .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Base", i.to_string().to_camel_case()), Span::call_site())).collect::<Vec<_>>())
+            .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Base", i.to_string().to_upper_camel_case()), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
         let extends_base_names = &self
             .extends
@@ -134,12 +134,12 @@ impl ToTokens for Has {
             .map(|punct| punct.iter().map(|i| Ident::new(i.to_string().to_snake_case().as_str(), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
 
-        let on_ident = Ident::new(&ident.to_camel_case(), Span::call_site());
+        let on_ident = Ident::new(&ident.to_upper_camel_case(), Span::call_site());
         
         let on = if self.use_reactor {
             let mut on = crate::on::On {
                 name: on_ident.clone(),
-                paren: token::Paren { span: Span::call_site() },
+                paren: token::Paren::default(),
                 params: Punctuated::new(),
                 ret: crate::on::OnReturnParams::Single(
                     token::RArrow { spans: [Span::call_site(), Span::call_site()] },
@@ -207,7 +207,7 @@ impl ToTokens for Has {
 
         let on_ident_fn = if self.use_reactor {
             let on_ident_fn = Ident::new(&format!("on_{}", ident).to_snake_case(), Span::call_site());
-            let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
+            let on_ident = Ident::new(&format!("On{}", ident).to_upper_camel_case(), Span::call_site());
 
             quote! {
                 fn #on_ident_fn(&mut self, callback: Option<#on_ident>);
@@ -216,7 +216,7 @@ impl ToTokens for Has {
         
         let on_ident_inner_fn = if self.use_reactor && self.use_get_set {
             let on_ident_fn = Ident::new(&format!("on_{}", ident).to_snake_case(), Span::call_site());
-            let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
+            let on_ident = Ident::new(&format!("On{}", ident).to_upper_camel_case(), Span::call_site());
 
             quote! {
                 fn #on_ident_fn(&mut self #(,#extends_base_names: &mut #extends_base)* ,callback: Option<#on_ident>);
@@ -247,7 +247,7 @@ impl ToTokens for Has {
         let maybe = Maybe {
             name: has_ident.clone()
         };
-        
+        let params = self.params.iter();
         let expr = quote! {
             pub trait #has_ident: AsAny + 'static #(+#extends)* {
                 fn #ident_fn(&self) -> #return_params ;

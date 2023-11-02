@@ -17,7 +17,7 @@ pub(crate) struct Maybe {
 
 impl Maybe {
     pub fn maybe_ident<S: AsRef<str>>(ident: S) -> Ident {
-        Ident::new(&format!("Maybe{}", ident.as_ref()).to_camel_case(), Span::call_site())
+        Ident::new(&format!("Maybe{}", ident.as_ref()).to_upper_camel_case(), Span::call_site())
     }
     pub fn is_ident<S: AsRef<str>>(ident: S) -> Ident {
         Ident::new(&format!("is_{}", ident.as_ref()).to_snake_case(), Span::call_site())
@@ -35,13 +35,13 @@ impl Parse for Maybe {
 
 impl ToTokens for Maybe {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let ident = &self.name.to_string().to_camel_case();
+        let ident = &self.name.to_string().to_upper_camel_case();
 
         let maybe_ident = Maybe::maybe_ident(ident);
         let is_ident_fn = Maybe::is_ident(ident);
         let is_ident_mut_fn = Maybe::is_ident_mut(ident);
 
-        let ident = Ident::new(&ident.to_camel_case(), Span::call_site());
+        let ident = Ident::new(&ident.to_upper_camel_case(), Span::call_site());
 
         let expr = quote! {
             pub trait #maybe_ident: 'static {
