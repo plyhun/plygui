@@ -117,7 +117,7 @@ impl<T: TableInner> NewTable for AMember<AControl<AContainer<AAdapted<ATable<T>>
 }*/
 
 impl<T: TableInner> Table for AMember<AControl<AContainer<AAdapted<ATable<T>>>>> {
-    #[inline]
+//    #[inline]
 //    fn resize(&mut self, width: usize, height: usize) -> (usize, usize) {
 //        let (m,c,a,t) = self.as_adapted_parts_mut();
 //        t.resize(m, c, a, width, height)
