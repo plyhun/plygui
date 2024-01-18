@@ -1,5 +1,5 @@
 use crate::controls::{Adapted, Control, HasLabel};
-use crate::types::{RecursiveTupleVecIterator};
+use crate::types::RecursiveTupleVecIterator;
 use crate::sdk;
 use crate::types::{adapter, Adapter, AsAny, RecursiveTupleVec, Spawnable, VecItemChangeOption};
 use std::any::Any;

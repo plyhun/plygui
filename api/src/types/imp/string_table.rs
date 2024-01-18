@@ -21,6 +21,9 @@ impl<C: HasLabel + Spawnable> From<Vec<StringTableAdapterColumn>> for StringTabl
     }
 }
 impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
+    pub fn dimensions(&self) -> (usize, usize) {
+        self.column_at(0).map_or((0, 0), |col| col.cells.get(0).map_or((0, 0), |_| (self.columns.len(), col.cells.len())))
+    }
     pub fn empty() -> Self {
         Self::from(Vec::new())
     }
