@@ -21,8 +21,83 @@ impl<C: HasLabel + Spawnable> From<Vec<StringTableAdapterColumn>> for StringTabl
     }
 }
 impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
+    fn add_column_inner(&mut self, height: usize) {
+        let mut col = StringTableAdapterColumn {
+            cells:  Vec::with_capacity(height),
+            label: None,
+        };
+        for _ in 0..height {
+            col.cells.push(None);
+        }
+        self.columns.push(col);
+    }
+    pub fn insert_column(&mut self, index: usize) {
+        self.add_column_inner(index);
+        self.on_item_change.as_mut().map(|ref mut cb| {
+            cb.on_item_change(adapter::Change::Added(&[index], adapter::Node::Branch(true)))
+        });
+    }
+    pub fn remove_column(&mut self, index: usize) {
+        if index >= self.columns.len() {
+            return;
+        }
+        (0..self.columns[index].cells.len()).into_iter().for_each(|j| {
+            self.on_item_change.as_mut().map(|ref mut cb| {
+                cb.on_item_change(adapter::Change::Removed(&[index,j]));
+            });
+        });
+        self.on_item_change.as_mut().map(|ref mut cb| {
+            cb.on_item_change(adapter::Change::Removed(&[index]));
+        });
+        self.columns.remove(index);
+    }
+    pub fn insert_row(&mut self, index: usize) {
+        self.columns.iter_mut().for_each(|col| {
+            col.cells.insert(index, None);
+        });
+        (0..self.columns.len()).into_iter().for_each(|i| {
+            self.on_item_change.as_mut().map(|cb| {
+                cb.on_item_change(adapter::Change::Added(&[i,index], adapter::Node::Leaf))
+            });
+        });
+    }
+    pub fn remove_row(&mut self, index: usize) {
+        let (_,h) = self.dimensions();
+        if index >= h {
+            return;
+        }
+        (0..self.columns.len()).into_iter().for_each(|i| {
+            self.on_item_change.as_mut().map(|cb| {
+                cb.on_item_change(adapter::Change::Removed(&[i,index]))
+            });
+        });
+        self.columns.iter_mut().for_each(|col| {
+            col.cells.remove(index);
+        });
+    }
     pub fn dimensions(&self) -> (usize, usize) {
         self.column_at(0).map_or((0, 0), |col| col.cells.get(0).map_or((0, 0), |_| (self.columns.len(), col.cells.len())))
+    }
+    pub fn set_dimensions(&mut self, width: usize, height: usize) {
+        let (w,h) = self.dimensions();
+        if width > w {
+            (w..width).into_iter().for_each(|i| {
+                self.insert_column(i);
+            });
+        } else if width < w {
+            (width..w).into_iter().for_each(|i| {
+                self.remove_column(i);
+            });
+        }
+        if height > h {
+            (h..height).into_iter().for_each(|j| {
+                self.insert_row(j);
+            });
+        } else if height < h {
+            (height..h).into_iter().for_each(|j| {
+                self.remove_row(j);
+            });
+        }
     }
     pub fn empty() -> Self {
         Self::from(Vec::new())
@@ -30,14 +105,7 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
     pub fn with_dimensions(width: usize, height: usize) -> Self {
         let mut t = Self::from(Vec::with_capacity(width));
         for _ in 0..width {
-            let mut col = StringTableAdapterColumn {
-                cells:  Vec::with_capacity(height),
-                label: None,
-            };
-            for _ in 0..height {
-                col.cells.push(None);
-            }
-            t.columns.push(col);
+            t.add_column_inner(height);
         }
         t
     }

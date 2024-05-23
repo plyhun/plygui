@@ -11,7 +11,7 @@ pub mod matrix {
 
 pub use crate::inner::{
     auto::{AsAny, Spawnable},
-    adapter::{Adapter},
+    adapter::Adapter,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
