@@ -21,35 +21,35 @@ impl<C: HasLabel + Spawnable> From<Vec<StringTableAdapterColumn>> for StringTabl
     }
 }
 impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
-    fn add_column_inner(&mut self, height: usize) {
-        let mut col = StringTableAdapterColumn {
-            cells:  Vec::with_capacity(height),
+    fn add_column_inner(&mut self) {
+        self.insert_column(self.columns.len());
+    }
+    pub fn insert_column(&mut self, col: usize) {
+        let mut column = StringTableAdapterColumn {
+            cells:  Vec::new(),
             label: None,
         };
-        for _ in 0..height {
-            col.cells.push(None);
-        }
-        self.columns.push(col);
-    }
-    pub fn insert_column(&mut self, index: usize) {
-        self.add_column_inner(index);
+        self.column_at_mut(0).map(|column_| {
+            (0..column_.cells.len()).into_iter().for_each(|_| column.cells.push(None));
+        });
+        self.columns.insert(col, column);
         self.on_item_change.as_mut().map(|ref mut cb| {
-            cb.on_item_change(adapter::Change::Added(&[index], adapter::Node::Branch(true)))
+            cb.on_item_change(adapter::Change::Added(&[col], adapter::Node::Branch(true)))
         });
     }
-    pub fn remove_column(&mut self, index: usize) {
-        if index >= self.columns.len() {
+    pub fn remove_column(&mut self, col: usize) {
+        if col >= self.columns.len() {
             return;
         }
-        (0..self.columns[index].cells.len()).into_iter().for_each(|j| {
+        (0..self.columns[col].cells.len()).into_iter().for_each(|row| {
             self.on_item_change.as_mut().map(|ref mut cb| {
-                cb.on_item_change(adapter::Change::Removed(&[index,j]));
+                cb.on_item_change(adapter::Change::Removed(&[row, col]));
             });
         });
         self.on_item_change.as_mut().map(|ref mut cb| {
-            cb.on_item_change(adapter::Change::Removed(&[index]));
+            cb.on_item_change(adapter::Change::Removed(&[col]));
         });
-        self.columns.remove(index);
+        self.columns.remove(col);
     }
     pub fn insert_row(&mut self, index: usize) {
         self.columns.iter_mut().for_each(|col| {
@@ -57,7 +57,7 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
         });
         (0..self.columns.len()).into_iter().for_each(|i| {
             self.on_item_change.as_mut().map(|cb| {
-                cb.on_item_change(adapter::Change::Added(&[i,index], adapter::Node::Leaf))
+                cb.on_item_change(adapter::Change::Added(&[index, i], adapter::Node::Leaf))
             });
         });
     }
@@ -104,8 +104,13 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
     }
     pub fn with_dimensions(width: usize, height: usize) -> Self {
         let mut t = Self::from(Vec::with_capacity(width));
-        for _ in 0..width {
-            t.add_column_inner(height);
+        for col in 0..width {
+            t.add_column_inner();
+            t.column_at_mut(col).map(|column| {
+                for _ in 0..height {
+                    column.cells.push(None);
+                }
+            });
         }
         t
     }
@@ -151,21 +156,21 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
         }
         t
     }
-    pub fn column_at(&self, x: usize) -> Option<&StringTableAdapterColumn> {
-        self.columns.get(x)
+    pub fn column_at(&self, col: usize) -> Option<&StringTableAdapterColumn> {
+        self.columns.get(col)
     }
-    pub fn column_at_mut(&mut self, x: usize) -> Option<&mut StringTableAdapterColumn> {
-        self.columns.get_mut(x)
+    pub fn column_at_mut(&mut self, col: usize) -> Option<&mut StringTableAdapterColumn> {
+        self.columns.get_mut(col)
     }
-    pub fn set_column_label_at<T: AsRef<str>>(&mut self, arg: Option<T>, x: usize) {
+    pub fn set_column_label_at<T: AsRef<str>>(&mut self, arg: Option<T>, col: usize) {
         let added = arg.is_some();
-        let existed = self.columns.get_mut(x).is_some();
-        self.columns[x].label = arg.map(|arg| arg.as_ref().into());
+        let existed = self.columns.get_mut(col).is_some();
+        self.columns[col].label = arg.map(|arg| arg.as_ref().into());
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
             if !added && !existed {
                 return
             }
-            let indices = &[x];
+            let indices = &[col];
             if added && existed {
                 cb.on_item_change(adapter::Change::Edited(indices, adapter::Node::Branch(true)))
             } else if added {
@@ -175,21 +180,21 @@ impl<C: HasLabel + Spawnable> StringTableAdapter<C> {
             }
         }
     }
-    pub fn text_at(&self, x: usize, y: usize) -> Option<&String> {
-        self.columns.get(x).and_then(|col| col.cells.get(y)).and_then(|cell| cell.as_ref())
+    pub fn text_at(&self, row: usize, col: usize) -> Option<&String> {
+        self.columns.get(col).and_then(|col| col.cells.get(row)).and_then(|cell| cell.as_ref())
     }
-    pub fn text_at_mut(&mut self, x: usize, y: usize) -> Option<&mut String> {
-        self.columns.get_mut(x).and_then(|col| col.cells.get_mut(y)).and_then(|cell| cell.as_mut())
+    pub fn text_at_mut(&mut self, row: usize, col: usize) -> Option<&mut String> {
+        self.columns.get_mut(col).and_then(|col| col.cells.get_mut(row)).and_then(|cell| cell.as_mut())
     }
-    pub fn set_text_at<T: AsRef<str>>(&mut self, arg: Option<T>, x: usize, y: usize) {
+    pub fn set_text_at<T: AsRef<str>>(&mut self, arg: Option<T>, row: usize, col: usize) {
         let added = arg.is_some();
-        let existed = self.columns.get_mut(x).and_then(|col| col.cells.get_mut(y)).is_some();
-        self.columns[x].cells[y] = arg.map(|arg| arg.as_ref().into());
+        let existed = self.columns.get_mut(col).and_then(|column| column.cells.get_mut(row)).is_some();
+        self.columns[col].cells[row] = arg.map(|arg| arg.as_ref().into());
         if let Some(ref mut cb) = self.on_item_change.as_mut() {
             if !added && !existed {
                 return
             }
-            let indices = &[x, y];
+            let indices = &[row, col];
             if added && existed {
                 cb.on_item_change(adapter::Change::Edited(indices, adapter::Node::Leaf))
             } else if added {
@@ -217,7 +222,7 @@ impl<C: HasLabel + Spawnable> AsAny for StringTableAdapter<C> {
 impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
     fn len_at(&self, indexes: &[usize]) -> Option<usize> {
         if indexes.len() == 0 {
-            Some(self.columns.len())
+            Some(self.column_at(0).map(|column| column.cells.len()).unwrap_or(0))
         } else if indexes.len() == 1 {
             self.columns.get(indexes[0]).map(|col| col.cells.len())
         } else {
@@ -244,16 +249,17 @@ impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
 	    for (x, _) in self.columns.iter().enumerate() {
 	        f(&[x], &adapter::Node::Branch(true));
 	    }
-	    for (x, column) in self.columns.iter().enumerate() {
+	    for (col, column) in self.columns.iter().enumerate() {
 	        let mut cells = column.cells.iter().enumerate();
-	        while let Some((y, _cell)) = cells.next() {
-	            f(&[x, y], &adapter::Node::Leaf);
+	        while let Some((row, _cell)) = cells.next() {
+                dbg!(row, col);
+	            f(&[row, col], &adapter::Node::Leaf);
 	        }
 	    }
 	}
 	fn alt_text_at<'a, 'b: 'a>(&'a self, indexes: &'b [usize]) -> Option<&'a str> {
     	if indexes.len() == 2 {
-	        self.columns[indexes[0]].cells[indexes[1]].as_ref().map(|text| text.as_str())
+	        self.columns[indexes[1]].cells[indexes[0]].as_ref().map(|text| text.as_str())
         } else if indexes.len() == 1 {
             self.columns[indexes[0]].label.as_ref().map(|label| label.as_str())
         } else {

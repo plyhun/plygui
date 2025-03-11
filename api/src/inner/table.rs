@@ -33,8 +33,8 @@ define! {
 	    constructor: {
     	    fn with_adapter_initial_size(adapter: Box<dyn types::Adapter>, width: usize, height: usize) -> Box<dyn Table>;
             fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn Table> {
-                let width = adapter.len_at(&[]).unwrap_or(0);
-                let height = adapter.len_at(&[0]).unwrap_or(0);
+                let width = adapter.len_at(&[0]).unwrap_or(0);
+                let height = adapter.len_at(&[]).unwrap_or(0);
                 Self::with_adapter_initial_size(adapter, width, height)
             }
 	    }
