@@ -19,7 +19,7 @@ define! {
             fn set_row_height(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, index: usize, size: layout::Size);
             //fn resize(&mut self, member: &mut MemberBase, control: &mut ControlBase, adapted: &mut AdaptedBase, width: usize, height: usize) -> (usize, usize);
             fn size(&self, _: &MemberBase, _: &ControlBase, adapted: &AdaptedBase) -> (usize, usize) {
-                (adapted.adapter.len_at(&[]).unwrap_or(0), adapted.adapter.len_at(&[0]).unwrap_or(0))
+                (adapted.adapter.len_at(&[0]).unwrap_or(0), adapted.adapter.len_at(&[]).unwrap_or(0))
             }
         }
 	    outer: {
@@ -33,8 +33,8 @@ define! {
 	    constructor: {
     	    fn with_adapter_initial_size(adapter: Box<dyn types::Adapter>, width: usize, height: usize) -> Box<dyn Table>;
             fn with_adapter(adapter: Box<dyn types::Adapter>) -> Box<dyn Table> {
-                let width = adapter.len_at(&[0]).unwrap_or(0);
-                let height = adapter.len_at(&[]).unwrap_or(0);
+                let width = adapter.len_at(&[]).unwrap_or(0);
+                let height = adapter.len_at(&[0]).unwrap_or(0);
                 Self::with_adapter_initial_size(adapter, width, height)
             }
 	    }
