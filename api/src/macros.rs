@@ -23,6 +23,7 @@ macro_rules! default_pub_use {
             pub use crate::window::Window;
             pub use crate::list::List;
             pub use crate::tree::Tree;
+            pub use crate::table::Table;
         }
     };
 }
@@ -42,6 +43,8 @@ macro_rules! default_markup_register_members {
             registry.register_member(plygui_api::markup::MEMBER_TYPE_TEXT.into(), imp::Text::spawn).unwrap();
             registry.register_member(plygui_api::markup::MEMBER_TYPE_PROGRESS_BAR.into(), imp::ProgressBar::spawn).unwrap();
             registry.register_member(plygui_api::markup::MEMBER_TYPE_LIST.into(), imp::List::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_TREE.into(), imp::Tree::spawn).unwrap();
+            registry.register_member(plygui_api::markup::MEMBER_TYPE_TABLE.into(), imp::Table::spawn).unwrap();
         }
     };
 }

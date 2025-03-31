@@ -62,8 +62,8 @@ define! {
             }
             fn frame_sleep(&self) -> u32;
             fn set_frame_sleep(&mut self, value: u32);
-            fn roots<'a>(&'a self) -> Box<dyn Iterator<Item = &(dyn Member)> + 'a>;
-            fn roots_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &mut (dyn Member)> + 'a>;
+            fn roots<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a>;
+            fn roots_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a>;
         }
         constructor: {
             fn with_name<S: AsRef<str>>(name: S) -> Box<dyn Application>;
@@ -246,10 +246,10 @@ impl<II: ApplicationInner, T: HasInner<I = II> + Abstract + 'static> Application
     fn set_frame_sleep(&mut self, value: u32) {
         self.inner_mut().set_frame_sleep(value)
     }
-    fn roots<'a>(&'a self) -> Box<dyn Iterator<Item = &(dyn Member)> + 'a> {
+    fn roots<'a>(&'a self) -> Box<dyn Iterator<Item = &'a (dyn Member)> + 'a> {
         self.inner().roots()
     }
-    fn roots_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &mut (dyn Member)> + 'a> {
+    fn roots_mut<'a>(&'a mut self) -> Box<dyn Iterator<Item = &'a mut (dyn Member)> + 'a> {
         self.inner_mut().roots_mut()
     }
 }

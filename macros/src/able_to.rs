@@ -46,7 +46,7 @@ impl Parse for AbleTo {
                     None
                 }
             },
-            params: params.map(|content| content.parse_terminated(Type::parse).unwrap()),
+            params: params.map(|ref content| Punctuated::parse_terminated_with(content, Type::parse).unwrap()),
             _colon: {
                 let lookahead = input.lookahead1();
                 if lookahead.peek(Token![:]) {
@@ -91,7 +91,7 @@ impl Parse for AbleTo {
                     let lookahead = input.lookahead1();
                     if lookahead.peek(token::Paren) {
                         let content;
-                        OnReturnParams::Multi(arrow, parenthesized!(content in input), content.parse_terminated(Type::parse)?)
+                        OnReturnParams::Multi(arrow, parenthesized!(content in input), Punctuated::parse_terminated_with(&content, Type::parse)?)
                     } else {
                         OnReturnParams::Single(arrow, input.parse()?)
                     }
@@ -105,12 +105,12 @@ impl Parse for AbleTo {
 
 impl ToTokens for AbleTo {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let ident = Ident::new(&self.name.to_string().to_camel_case(), Span::call_site());
+        let ident = Ident::new(&self.name.to_string().to_upper_camel_case(), Span::call_site());
         
-        //let a_ident = Ident::new(&format!("A{}", ident).to_camel_case(), Span::call_site());
-        //let ident_base = Ident::new(&format!("{}Base", ident).to_camel_case(), Span::call_site());
-        let ident_able = Ident::new(&format!("{}able", ident).to_camel_case(), Span::call_site());
-        let ident_able_inner = Ident::new(&format!("{}ableInner", ident).to_camel_case(), Span::call_site());
+        //let a_ident = Ident::new(&format!("A{}", ident).to_upper_camel_case(), Span::call_site());
+        //let ident_base = Ident::new(&format!("{}Base", ident).to_upper_camel_case(), Span::call_site());
+        let ident_able = Ident::new(&format!("{}able", ident).to_upper_camel_case(), Span::call_site());
+        let ident_able_inner = Ident::new(&format!("{}ableInner", ident).to_upper_camel_case(), Span::call_site());
 
         let ident_fn = Ident::new(&format!("{}", ident).to_snake_case(), Span::call_site());
         let on_ident_fn = Ident::new(&format!("on_{}", ident).to_snake_case(), Span::call_site());
@@ -124,7 +124,7 @@ impl ToTokens for AbleTo {
         let extends_inner = self
             .extends
             .as_ref()
-            .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_camel_case()), Span::call_site())).collect::<Vec<_>>())
+            .map(|punct| punct.iter().map(|i| Ident::new(&format!("{}Inner", i.to_string().to_upper_camel_case()), Span::call_site())).collect::<Vec<_>>())
             .unwrap_or(vec![]);
 
         let custom = &self.custom;
@@ -144,7 +144,7 @@ impl ToTokens for AbleTo {
 
         let mut on = crate::on::On {
             name: ident.clone(),
-            paren: token::Paren { span: Span::call_site() },
+            paren: token::Paren::default(),
             //ident_owner_camel: ident_able.clone(),
             params: Punctuated::new(),
             ret: self.ret.clone(),
@@ -185,7 +185,7 @@ impl ToTokens for AbleTo {
             name: ident_able.clone()
         };
         
-        let on_ident = Ident::new(&format!("On{}", ident).to_camel_case(), Span::call_site());
+        let on_ident = Ident::new(&format!("On{}", ident).to_upper_camel_case(), Span::call_site());
 
         let expr = quote! {
             pub trait #ident_able: #static_ + AsAny #(+#extends)*{

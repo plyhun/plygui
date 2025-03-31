@@ -7,11 +7,13 @@ pub trait AdapterInner: 'static {
 }
 
 pub trait Adapter: AdapterInner + AsAny {
-	fn len_at(&self, indexes: &[usize]) -> Option<usize>;
-	fn node_at(&self, indexes: &[usize]) -> Option<Node>;
-	fn spawn_item_view(&mut self, indexes: &[usize], parent: &dyn Adapted) -> Option<Box<dyn Control>>;
+	fn len_at(&self, indices: &[usize]) -> Option<usize>;
+	fn node_at(&self, indices: &[usize]) -> Option<Node>;
+	fn spawn_item_view(&mut self, indices: &[usize], parent: &dyn Adapted) -> Option<Box<dyn Control>>;
 	
 	fn for_each<'a, 'b:'a, 'c: 'b>(&'c self, f: &'a mut dyn FnNodeItem);
+
+    fn alt_text_at<'a, 'b: 'a>(&'a self, _indices: &'b [usize]) -> Option<&'a str> { None }
 }
 
 pub trait FnNodeItem: for<'i, 'v> FnMut(&'i [usize], &'v Node) {}
