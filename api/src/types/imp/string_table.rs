@@ -222,7 +222,7 @@ impl<C: HasLabel + Spawnable> AsAny for StringTableAdapter<C> {
 impl<C: HasLabel + Spawnable> Adapter for StringTableAdapter<C> {
     fn len_at(&self, indexes: &[usize]) -> Option<usize> {
         if indexes.len() == 0 {
-            Some(self.column_at(0).map(|column| column.cells.len()).unwrap_or(0))
+            Some(self.columns.len())
         } else if indexes.len() == 1 {
             self.columns.get(indexes[0]).map(|col| col.cells.len())
         } else {
